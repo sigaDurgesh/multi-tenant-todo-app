@@ -1,0 +1,45 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs
+*.log
+logs/*.log
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Database stuff
+*.sqlite
+*.sqlite-journal
+pgdata/
+db-data/
+migrations/*.tmp
+
+# OS / IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Coverage / Testing
+coverage/
+.nyc_output/
+
+# Build artifacts (if using Babel/Webpack)
+dist/
+build/
+
+# Optional: Docker
+docker-compose.override.yml
+.docker/
