@@ -1,31 +1,33 @@
-// src/context/AuthContext.js
+
 import React, { createContext, useState, useEffect } from "react";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Load from localStorage OR use demo user for dev
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("auth"));
-      return saved || { name: "Lalit", role: "tenantAdmin" };
-    } catch (err) {
-      console.error("Error parsing auth from localStorage", err);
-      return { name: "Lalit", role: "tenantAdmin" };
-    }
-  });
+  // Load from localStorage on startup
+  const [user, setUser] = useState({name:"Lalit", role:"user"});
 
-  // Persist to localStorage only when `user` changes
+  // Save to localStorage whenever user changes
   useEffect(() => {
     if (user) {
-      localStorage.setItem("auth", JSON.stringify(user));
+      localStorage.setItem("user", JSON.stringify(user));
     } else {
-      localStorage.removeItem("auth");
+      localStorage.removeItem("user");
     }
   }, [user]);
 
+  // Mock login for testing (replace with real API call later)
+  const login = (name, role) => {
+    const newUser = { name, role };
+    setUser(newUser);
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

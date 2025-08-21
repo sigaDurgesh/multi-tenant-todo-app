@@ -23,6 +23,7 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import GroupIcon from "@mui/icons-material/Group";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useNavigate } from "react-router";
 
 
 
@@ -38,14 +39,12 @@ const CommonDashboard = () => {
   ];
 
   const { user } = useContext(AuthContext);
-  // user
-  console.log(" role:", user.role);
 
   const navigate = useNavigate();
 
   // 🔑 Handlers for each action
   const handleCreateTenant = () => {
-    navigate("/superAdmin/tenants/create"); // page where super admin creates a tenant
+    navigate("/superAdmin/create"); // page where super admin creates a tenant
   };
 
   const handleManageTenants = () => {
@@ -163,7 +162,7 @@ const CommonDashboard = () => {
               </Button>
             </Grid>
 
-            <Grid item>
+            {/* <Grid item>
               <Button
                 variant="outlined"
                 color="success"
@@ -172,9 +171,9 @@ const CommonDashboard = () => {
               >
                 View Reports
               </Button>
-            </Grid>
+            </Grid> */}
 
-            <Grid item>
+            {/* <Grid item>
               <Button
                 variant="outlined"
                 color="warning"
@@ -183,7 +182,7 @@ const CommonDashboard = () => {
               >
                 System Settings
               </Button>
-            </Grid>
+            </Grid> */}
           </Grid>
         </CardContent>
       </Card>
@@ -355,25 +354,7 @@ const CommonDashboard = () => {
         </Card>
       </Grid>
 
-      {/* User Growth Chart */}
-      <Grid item xs={12} sx={{ mt: 3 }}>
-        <Card sx={{ borderRadius: 2, boxShadow: 3, height: 300 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              User Growth (Last 5 Months)
-            </Typography>
-            <ResponsiveContainer width="100%" height="80%">
-              <LineChart data={activityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="users" stroke="#1976d2" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </Grid>
+      
 
       {/* Recent Activity */}
       <Grid item xs={12} sx={{ mt: 3 }}>

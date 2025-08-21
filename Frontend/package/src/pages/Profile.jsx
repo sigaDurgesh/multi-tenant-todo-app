@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useState } from "react";
 import {
   Typography,
   Card,
@@ -8,18 +8,50 @@ import {
   Divider,
   Button,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
+import { AuthContext } from "../context/AuthContext";
 
-const Profile = ({ takerole }) => {
-  // Dummy profile data (replace later with API)
+const Profile = () => {
+  const { user } = useContext(AuthContext);
+
+  // For dialog/form state
+  const [openDialog, setOpenDialog] = useState(false);
+  const [tenantRequest, setTenantRequest] = useState({
+    tenantName: "",
+    description: "",
+  });
+
   const profileData = {
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+1 987 654 3210",
-    role: takerole || "user",
-    tenant: "Acme Corp",
+    name: user?.name || "John Doe",
+    email: user?.email || "john@example.com",
+    phone: user?.phone || "+1 987 654 3210",
+    role: user?.role || "user",
+    tenant: user?.tenant || "N/A",
     joined: "Jan 12, 2023",
     status: "Active",
+  };
+
+  const handleSubmitRequest = async () => {
+    console.log("Tenant Request Submitted:", tenantRequest);
+
+    // 🚀 Example: send request to backend
+    // await fetch("/api/tenant-requests", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     userId: user.id,
+    //     ...tenantRequest,
+    //   }),
+    // });
+
+    setOpenDialog(false);
+    setTenantRequest({ tenantName: "", description: "" });
+    alert("Request sent to Super Admin!");
   };
 
   return (
@@ -80,7 +112,7 @@ const Profile = ({ takerole }) => {
               <Typography variant="body1">{profileData.phone}</Typography>
             </Grid>
 
-            {takerole !== "super_admin" && (
+            {user.role !== "super_admin" && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="textSecondary">
                   Tenant
@@ -111,7 +143,7 @@ const Profile = ({ takerole }) => {
       </Card>
 
       {/* Role-specific content */}
-      {takerole === "super_admin" && (
+      {user.role === "super_admin" && (
         <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 2 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -124,7 +156,7 @@ const Profile = ({ takerole }) => {
         </Card>
       )}
 
-      {takerole === "tenant_admin" && (
+      {user.role === "tenant_admin" && (
         <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 2 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -137,21 +169,69 @@ const Profile = ({ takerole }) => {
         </Card>
       )}
 
-      {takerole === "user" && (
-        <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 2 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              User Information
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              You can view your tasks, update your profile, and adjust personal settings.
-            </Typography>
-          </CardContent>
-        </Card>
+      {user.role === "user" && (
+        <>
+          <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                User Information
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                You can view your tasks, update your profile, and adjust personal settings.
+              </Typography>
+
+              {/* Become Tenant Button */}
+              <Button
+                variant="contained"
+                sx={{ mt: 2, borderRadius: 2 }}
+                onClick={() => setOpenDialog(true)}
+              >
+                Become a Tenant
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Tenant Request Dialog */}
+          <Dialog
+            open={openDialog}
+            onClose={() => setOpenDialog(false)}
+            fullWidth
+            maxWidth="sm"
+          >
+            <DialogTitle>Request to Become a Tenant</DialogTitle>
+            <DialogContent dividers>
+              <TextField
+                margin="normal"
+                label="Tenant Name"
+                fullWidth
+                value={tenantRequest.tenantName}
+                onChange={(e) =>
+                  setTenantRequest({ ...tenantRequest, tenantName: e.target.value })
+                }
+              />
+              <TextField
+                margin="normal"
+                label="Description"
+                fullWidth
+                multiline
+                rows={3}
+                value={tenantRequest.description}
+                onChange={(e) =>
+                  setTenantRequest({ ...tenantRequest, description: e.target.value })
+                }
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+              <Button variant="contained" onClick={handleSubmitRequest}>
+                Submit Request
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </>
       )}
     </div>
   );
 };
 
 export default Profile;
-    
