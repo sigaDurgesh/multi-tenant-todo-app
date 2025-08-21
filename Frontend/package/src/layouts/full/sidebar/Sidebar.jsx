@@ -20,7 +20,7 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import AddBusinessIcon from "@mui/icons-material/AddBusiness";
 import LoginIcon from "@mui/icons-material/Login";
 import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
-
+import PersonIcon from "@mui/icons-material/Person";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 
