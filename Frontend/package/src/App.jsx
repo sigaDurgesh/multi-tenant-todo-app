@@ -1,10 +1,9 @@
 
-
-import './App.css';
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { baselightTheme } from './theme/DefaultColors';
-import { AuthContext, AuthProvider } from './context/AuthContext';
+import "./App.css";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { baselightTheme } from "./theme/DefaultColors";
+import { AuthProvider } from "./context/AuthContext";
 
 // Layout
 import Layout from "./layouts/full/Layout";
@@ -20,11 +19,8 @@ import { useContext } from 'react';
 import { CreateTenant } from "./pages/superAdmin/CreateTenant";
 import PrivateRoute from './routes/PrivateRoute';
 import Forbidden from './pages/Forbbiden';
-
 function App() {
   const theme = baselightTheme;
-
-  const takerole = useContext(AuthContext);
 
   return (
     <ThemeProvider theme={theme}>
@@ -59,14 +55,12 @@ function App() {
                    </PrivateRoute>
                 }
               />
-
               <Route
                 path="superAdmin/tenants"
                 element={
                   <PrivateRoute allowedRoles={["superAdmin"]}>
                     <TenantList />
                   </PrivateRoute>
-
                   // /superAdmin/tenants/create
                 }
               />
@@ -104,8 +98,10 @@ function App() {
 
               {/* 404 */}
               <Route path="/403" element={<Forbidden />} />
-
             </Route>
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

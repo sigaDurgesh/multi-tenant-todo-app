@@ -7,23 +7,41 @@ import PageContainer from 'src/components/container/PageContainer';
 // import Logo from 'src/layouts/full/shared/logo/Logo';
 import AuthLogin from './auth/AuthLogin';
 
+
 const Login2 = () => {
-  
+  const { setUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // 🔑 Handle login success (mock auth)
+  const handleLogin = (credentials) => {
+    const { username, password } = credentials;
+
+    if (username === "super" && password === "123") {
+      setUser({ name: "Super Admin", role: "super-admin" });
+      navigate("/superAdmin/tenants");
+    } else if (username === "tenant" && password === "123") {
+      setUser({ name: "Tenant Admin", role: "tenant-admin" });
+      navigate("/tenant-admin/users");
+    } else if (username === "user" && password === "123") {
+      setUser({ name: "Regular User", role: "user" });
+      navigate("/user/todos");
+    } else {
+      alert("Invalid username or password");
+    }
+  };
+
   return (
     <PageContainer title="Login" description="this is Login page">
       <Box
         sx={{
-          position: 'relative',
-          '&:before': {
-            content: '""',
-            background: 'radial-gradient(#d2f1df, #d3d7fa, #bad8f4)',
-            backgroundSize: '400% 400%',
-            animation: 'gradient 15s ease infinite',
-            position: 'absolute',
-            height: '100%',
-            width: '100%',
-            opacity: '0.3',
-          },
+          position: "relative",
+          background:
+            "linear-gradient(135deg, #e3f2fd 0%, #fce4ec 100%)",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 2,
         }}
       >
         <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
@@ -69,6 +87,7 @@ const Login2 = () => {
             </Card>
           </Grid>
         </Grid>
+
       </Box>
     </PageContainer>
   );

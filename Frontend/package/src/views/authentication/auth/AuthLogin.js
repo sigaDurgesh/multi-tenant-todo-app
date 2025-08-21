@@ -145,6 +145,7 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
 
       {subtitle}
     </>
+
   );
 };
 

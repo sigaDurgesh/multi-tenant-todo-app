@@ -11,11 +11,11 @@ import {
   Typography,
   Divider,
 } from "@mui/material";
+
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
-import PersonIcon from "@mui/icons-material/Person";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import AddBusinessIcon from "@mui/icons-material/AddBusiness";
 import LoginIcon from "@mui/icons-material/Login";
@@ -57,7 +57,11 @@ const Sidebar = () => {
       sx={{
         width: 240,
         flexShrink: 0,
-        [`& .MuiDrawer-paper`]: { width: 240, boxSizing: "border-box" },
+        [`& .MuiDrawer-paper`]: {
+          width: 240,
+          boxSizing: "border-box",
+          backgroundColor: "#fafafa",
+        },
       }}
     >
       {/* User Info Section */}

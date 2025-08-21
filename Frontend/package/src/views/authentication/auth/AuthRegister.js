@@ -129,6 +129,7 @@ const AuthRegister = ({ title, subtitle, subtext }) => {
       </Box>
 
       {subtitle}
+
     </>
   );
 };
