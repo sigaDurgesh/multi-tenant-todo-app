@@ -1,0 +1,35 @@
+import { DataTypes } from "sequelize";
+import sequelize from "../db.js";
+
+const User = sequelize.define("User", {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  tenant_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+  },
+  email: {
+    type: DataTypes.STRING(255),
+    allowNull: false,
+    unique: true,
+  },
+  password_hash: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  is_deleted: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  deleted_at: {
+    type: DataTypes.DATE,
+  },
+}, {
+  timestamps: true,
+  tableName: "users",
+});
+
+export default User;
