@@ -6,41 +6,49 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Box,
+  Avatar,
+  Typography,
+  Divider,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import ApartmentIcon from "@mui/icons-material/Apartment";
-import NoteIcon from "@mui/icons-material/Note";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import PersonIcon from "@mui/icons-material/Person";
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import AddBusinessIcon from "@mui/icons-material/AddBusiness";
+import LoginIcon from "@mui/icons-material/Login";
+import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
 
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 
 const Sidebar = () => {
-  const { takerole } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
-  console.log("User role:", takerole);
 
   const menuItems = {
-    super_admin: [
-      { text: "Dashboard", icon: <DashboardIcon />, path: "/commondashboard" },
+    superAdmin: [
+      { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
       { text: "Tenants", icon: <ApartmentIcon />, path: "/superAdmin/tenants" },
-      { text: "Profile", icon: <NoteIcon />, path: "profile" },
+      { text: "Create Tenant", icon: <AddBusinessIcon />, path: "/superAdmin/create" },
+      { text: "Profile", icon: <PersonIcon />, path: "/profile" },
     ],
-    tenant_admin: [
-      { text: "Dashboard", icon: <DashboardIcon />, path: "/commondashboard" },
+    tenantAdmin: [
+      { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
       { text: "Users", icon: <PeopleIcon />, path: "/tenant-admin/users" },
-      { text: "Profile", icon: <NoteIcon />, path: "profile" },
+      { text: "Profile", icon: <PersonIcon />, path: "/profile" },
     ],
     user: [
-  { text: "Add Todos", icon: <NoteAddIcon />, path: "/user/addtodos" },
-  { text: "My Todos", icon: <ListAltIcon />, path: "/user/todos" },
-  { text: "Profile", icon: <NoteIcon />, path: "profile" },
-
-
-],
+      { text: "Add Todos", icon: <NoteAddIcon />, path: "/user/addtodos" },
+      { text: "My Todos", icon: <ListAltIcon />, path: "/user/todos" },
+      { text: "Profile", icon: <PersonIcon />, path: "/profile" },
+    ],
+    guest: [
+      { text: "Login", icon: <LoginIcon />, path: "/login" },
+      { text: "Register", icon: <AppRegistrationIcon />, path: "/register" },
+    ],
   };
 
   return (
@@ -52,10 +60,33 @@ const Sidebar = () => {
         [`& .MuiDrawer-paper`]: { width: 240, boxSizing: "border-box" },
       }}
     >
-            <h3 style={{padding:"10px", paddingLeft:"20px" , backgroundColor:"yellow"}}>Role : {takerole}</h3>
+      {/* User Info Section */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          flexDirection: "column",
+          p: 2,
+          bgcolor: "primary.main",
+          color: "white",
+        }}
+      >
+        <Avatar sx={{ bgcolor: "secondary.main", mb: 1 }}>
+          {user?.name ? user.name[0].toUpperCase() : "?"}
+        </Avatar>
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+          {user?.name || "Guest"}
+        </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.8 }}>
+          {user?.role || "guest"}
+        </Typography>
+      </Box>
 
+      <Divider />
+
+      {/* Menu Items */}
       <List>
-        {(menuItems[takerole] || []).map((item) => (
+        {(menuItems[user?.role] || []).map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton component={Link} to={item.path}>
               <ListItemIcon>{item.icon}</ListItemIcon>
@@ -63,7 +94,6 @@ const Sidebar = () => {
             </ListItemButton>
           </ListItem>
         ))}
-
       </List>
     </Drawer>
   );

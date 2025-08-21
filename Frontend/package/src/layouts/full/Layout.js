@@ -23,8 +23,8 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const Layout = () => {
-  const auth = useContext(AuthContext);
-  const role = typeof auth === "string" ? auth : auth?.role || "user";
+  const {user} = useContext(AuthContext);
+  const role = typeof user.role === "string" ? user.role : user.role?.takerole || "user";
 
   const navigate = useNavigate();
 
@@ -41,9 +41,8 @@ const Layout = () => {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem("auth"); // clear stored session
-    // If you manage auth with context:
-    // auth.setRole(null);
+    localStorage.removeItem("auth.user.role"); // clear stored session
+    // user.role.logout(); // call logout function from context
     navigate("/login");
   };
 
@@ -53,16 +52,16 @@ const Layout = () => {
   const handleNotifOpen = (e) => setNotifAnchor(e.currentTarget);
   const handleNotifClose = () => setNotifAnchor(null);
 
-  const notifications = [
-    { id: 1, message: "New tenant registered: Acme Corp" },
-    { id: 2, message: "Your password will expire in 7 days" },
-    { id: 3, message: "New feature deployed 🎉" },
-  ];
+  // const notifications = [
+  //   { id: 1, message: "New tenant registered: Acme Corp" },
+  //   { id: 2, message: "Your password will expire in 7 days" },
+  //   { id: 3, message: "New feature deployed 🎉" },
+  // ];
 
   return (
     <Box sx={{ display: "flex" }}>
       {/* Desktop Sidebar */}
-      <Sidebar takerole={role} />
+      <Sidebar takerole={user.role} />
 
       {/* Mobile Sidebar */}
       <Drawer
@@ -77,7 +76,6 @@ const Layout = () => {
       >
         <Sidebar takerole={role} />
       </Drawer>
-
       {/* Main content area */}
       <Box component="main" sx={{ flexGrow: 1 }}>
         {/* Top AppBar */}
@@ -108,8 +106,7 @@ const Layout = () => {
 
             {/* Right side */}
             <Box display="flex" alignItems="center" gap={2}>
-              {/* Notifications */}
-              <IconButton onClick={handleNotifOpen}>
+              {/* <IconButton onClick={handleNotifOpen}>
                 <Badge badgeContent={notifications.length} color="error">
                   <NotificationsIcon />
                 </Badge>
@@ -135,16 +132,15 @@ const Layout = () => {
                 ) : (
                   <MenuItem disabled>No notifications</MenuItem>
                 )}
-              </Menu>
+              </Menu> */}
 
-              {/* Profile Menu */}
               <IconButton onClick={handleMenuOpen}>
                 <Avatar sx={{ bgcolor: "primary.main" }}>
                   {role.charAt(0).toUpperCase()}
                 </Avatar>
               </IconButton>
               <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-                <MenuItem disabled>Role: {role}</MenuItem>
+                <MenuItem disabled>Role: {user.role}</MenuItem>
                 <MenuItem onClick={() => navigate("/profile")}>Profile</MenuItem>
                 <MenuItem onClick={() => navigate("/settings")}>
                   Settings
@@ -153,13 +149,15 @@ const Layout = () => {
               </Menu>
             </Box>
           </Toolbar>
+          
         </AppBar>
 
-        {/* Page Content */}
         <Box sx={{ p: 3, minHeight: "100vh", backgroundColor: "#f9f9f9" }}>
-          <Outlet /> {/* Renders child route content */}
+          <Outlet /> 
         </Box>
+        
       </Box>
+      
     </Box>
   );
 };

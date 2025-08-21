@@ -1,30 +1,4 @@
-// import './App.css';
-// import { CssBaseline, ThemeProvider } from '@mui/material';
-// import { BrowserRouter, RouterProvider } from 'react-router-dom';
-// import { baselightTheme } from './theme/DefaultColors';
-// import router from './routes/Router';
-// import { AuthProvider } from './context/AuthContext';
-// import Sidebar from './layouts/full/sidebar/Sidebar';
 
-// function App() {
-//   const theme = baselightTheme;
-
-//   return (
-//     <BrowserRouter>
-//     {/* <ThemeProvider> */}
-//       <Sidebar>
-//       <CssBaseline />
-//       <AuthProvider>
-//         <RouterProvider router={router} />
-//       </AuthProvider>
-//       </Sidebar>
-//     {/* </ThemeProvider> */}
-//     </BrowserRouter>
-    
-//   );
-// }
-
-// export default App;
 
 import './App.css';
 import { CssBaseline, ThemeProvider } from '@mui/material';
@@ -33,22 +7,19 @@ import { baselightTheme } from './theme/DefaultColors';
 import { AuthContext, AuthProvider } from './context/AuthContext';
 
 // Layout
-import Layout from './layouts/full/Layout';
-// import { Dashboard } from './pages/superAdmin/Dashboard';
-import TenantList from './pages/superAdmin/TenantList';
-import TodosList from './pages/user/TodosList';
-import CommonDashboard from './pages/Dashboard';
+import Layout from "./layouts/full/Layout";
+import TenantList from "./pages/superAdmin/TenantList";
+import TodosList from "./pages/user/TodosList";
+import CommonDashboard from "./pages/Dashboard";
+import UsersList from "./pages/tenant-admin/UsersList";
+import CreateTodo from "./pages/user/CreateTodo";
+import Profile from "./pages/Profile";
+import Login2 from "./views/authentication/Login";
+import Register2 from "./views/authentication/Register";
 import { useContext } from 'react';
-import UsersList from './pages/tenant-admin/UsersList';
-import CreateTodo from './pages/user/CreateTodo';
-import Profile from './pages/Profile';
-// import TenantDashboard from './pages/tenant-admin/TenantDashboard';
-
-// Pages
-
-
-
-// import NotFound from './pages/NotFound';
+import { CreateTenant } from "./pages/superAdmin/CreateTenant";
+import PrivateRoute from './routes/PrivateRoute';
+import Forbidden from './pages/Forbbiden';
 
 function App() {
   const theme = baselightTheme;
@@ -61,23 +32,79 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Layout wraps all routes */}
-            <Route path="/" element={<Layout />}>
-              <Route path="commondashboard" element={<CommonDashboard role={takerole} />} />
-              <Route path="profile" element={<Profile />} />
+            <Route path="/login" element={<Login2 />} />
+            <Route path="/register" element={<Register2 />} />
 
-              {/* Super Admin */}
-              <Route path="superAdmin/tenants" element={<TenantList />} />
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route
+                path="dashboard"
+                element={
+                  <PrivateRoute>
+                    <CommonDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <PrivateRoute>
+                    <Profile />
+                   </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="superAdmin/tenants"
+                element={
+                  <PrivateRoute allowedRoles={["superAdmin"]}>
+                    <TenantList />
+                  </PrivateRoute>
+
+                  // /superAdmin/tenants/create
+                }
+              />
+               <Route
+                path="superAdmin/create"
+                element={
+                  <PrivateRoute allowedRoles={["superAdmin"]}>
+                    <CreateTenant />
+                  </PrivateRoute>
+                }
+              />
 
               {/* Tenant Admin */}
-              <Route path="tenant-admin/users" element={<UsersList />} />
+              <Route
+                path="tenant-admin/users"
+                element={
+                  <PrivateRoute allowedRoles={["tenantAdmin"]}>
+                    <UsersList />
+                  </PrivateRoute>
+                }
+              />
+             
 
               {/* User */}
-              <Route path="user/addtodos" element={<CreateTodo />} />
-              <Route path="user/todos" element={<TodosList />} />
+              <Route path="user/addtodos" element={
+                 <PrivateRoute allowedRoles={["user"]}>
+                    <CreateTodo />
+                  </PrivateRoute>
+              } />
+              <Route path="user/todos" element={
+                <PrivateRoute allowedRoles={["user"]}>
+                    <UsersList />
+                  </PrivateRoute>
+              } />
 
               {/* 404 */}
-              {/* <Route path="*" element={<NotFound />} /> */}
+              <Route path="/403" element={<Forbidden />} />
+
             </Route>
           </Routes>
         </BrowserRouter>
