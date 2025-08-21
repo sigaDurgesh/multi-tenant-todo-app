@@ -6,41 +6,45 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Typography,
+  Box,
 } from "@mui/material";
+
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import ApartmentIcon from "@mui/icons-material/Apartment";
 import NoteIcon from "@mui/icons-material/Note";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
-import PersonIcon from "@mui/icons-material/Person";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 
 const Sidebar = () => {
-  const { takerole } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
-  console.log("User role:", takerole);
+  const role = user?.role || "user"; // fallback role
 
   const menuItems = {
-    super_admin: [
+    superAdmin: [
       { text: "Dashboard", icon: <DashboardIcon />, path: "/commondashboard" },
       { text: "Tenants", icon: <ApartmentIcon />, path: "/superAdmin/tenants" },
-      { text: "Profile", icon: <NoteIcon />, path: "profile" },
+      { text: "Profile", icon: <NoteIcon />, path: "/profile" },
     ],
-    tenant_admin: [
+    tenantAdmin: [
       { text: "Dashboard", icon: <DashboardIcon />, path: "/commondashboard" },
       { text: "Users", icon: <PeopleIcon />, path: "/tenant-admin/users" },
-      { text: "Profile", icon: <NoteIcon />, path: "profile" },
+      { text: "Profile", icon: <NoteIcon />, path: "/profile" },
     ],
     user: [
-  { text: "Add Todos", icon: <NoteAddIcon />, path: "/user/addtodos" },
-  { text: "My Todos", icon: <ListAltIcon />, path: "/user/todos" },
-  { text: "Profile", icon: <NoteIcon />, path: "profile" },
-
-
-],
+      { text: "Add Todos", icon: <NoteAddIcon />, path: "/user/addtodos" },
+      { text: "My Todos", icon: <ListAltIcon />, path: "/user/todos" },
+      { text: "Profile", icon: <NoteIcon />, path: "/profile" },
+    ],
+    guest: [
+      { text: "Login", icon: <DashboardIcon />, path: "/login" },
+      { text: "Register", icon: <PeopleIcon />, path: "/register" },
+    ],
   };
 
   return (
@@ -49,13 +53,26 @@ const Sidebar = () => {
       sx={{
         width: 240,
         flexShrink: 0,
-        [`& .MuiDrawer-paper`]: { width: 240, boxSizing: "border-box" },
+        [`& .MuiDrawer-paper`]: {
+          width: 240,
+          boxSizing: "border-box",
+          backgroundColor: "#fafafa",
+        },
       }}
     >
-            <h3 style={{padding:"10px", paddingLeft:"20px" , backgroundColor:"yellow"}}>Role : {takerole}</h3>
+      {/* User Info Section */}
+      <Box sx={{ p: 2, backgroundColor: "#1976d2", color: "#fff" }}>
+        <Typography variant="subtitle1">
+          {user?.name || "Guest User"}
+        </Typography>
+        <Typography variant="body2">
+          Role: {role}
+        </Typography>
+      </Box>
 
+      {/* Menu Items */}
       <List>
-        {(menuItems[takerole] || []).map((item) => (
+        {(menuItems[role] || []).map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton component={Link} to={item.path}>
               <ListItemIcon>{item.icon}</ListItemIcon>
@@ -63,7 +80,6 @@ const Sidebar = () => {
             </ListItemButton>
           </ListItem>
         ))}
-
       </List>
     </Drawer>
   );
