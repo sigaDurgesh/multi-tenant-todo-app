@@ -1,5 +1,6 @@
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import React, { useContext } from "react";
+import {useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -36,14 +37,33 @@ const CommonDashboard = () => {
     { month: "May", users: 48 },
   ];
 
+  const { user } = useContext(AuthContext);
+  // user
+  console.log(" role:", user.role);
 
-  const { takerole } = useContext(AuthContext);
-  console.log(" role:", takerole);
+  const navigate = useNavigate();
 
-  if (takerole === "super_admin") {
+  // 🔑 Handlers for each action
+  const handleCreateTenant = () => {
+    navigate("/superAdmin/tenants/create"); // page where super admin creates a tenant
+  };
+
+  const handleManageTenants = () => {
+    navigate("/superAdmin/tenants"); // tenant list page
+  };
+
+  const handleViewReports = () => {
+    navigate("/reports"); // reports dashboard
+  };
+
+  const handleSystemSettings = () => {
+    navigate("/settings"); // system-wide settings page
+  };
+
+  if (user.role === "superAdmin") {
     return (
        <div>
-         (
+         
     <Box>
       {/* Header */}
       <Typography variant="h5" gutterBottom>
@@ -112,55 +132,62 @@ const CommonDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Quick Actions */}
-      <Grid item xs={12} sx={{ mt: 3 }}>
-        <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Quick Actions
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Grid container spacing={2}>
-              <Grid item>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<AddBusinessIcon />}
-                >
-                  Create Tenant
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  startIcon={<PeopleIcon />}
-                >
-                  Manage Tenants
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button
-                  variant="outlined"
-                  color="success"
-                  startIcon={<AssessmentIcon />}
-                >
-                  View Reports
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  startIcon={<SettingsIcon />}
-                >
-                  System Settings
-                </Button>
-              </Grid>
+     <Grid item xs={12} sx={{ mt: 3 }}>
+      <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Quick Actions
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+
+          <Grid container spacing={2}>
+            <Grid item>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddBusinessIcon />}
+                onClick={handleCreateTenant}
+              >
+                Create Tenant
+              </Button>
             </Grid>
-          </CardContent>
-        </Card>
-      </Grid>
+
+            <Grid item>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<PeopleIcon />}
+                onClick={handleManageTenants}
+              >
+                Manage Tenants
+              </Button>
+            </Grid>
+
+            <Grid item>
+              <Button
+                variant="outlined"
+                color="success"
+                startIcon={<AssessmentIcon />}
+                onClick={handleViewReports}
+              >
+                View Reports
+              </Button>
+            </Grid>
+
+            <Grid item>
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={<SettingsIcon />}
+                onClick={handleSystemSettings}
+              >
+                System Settings
+              </Button>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    </Grid>
 
       {/* System Health */}
       <Grid item xs={12} sx={{ mt: 3 }}>
@@ -237,7 +264,7 @@ const CommonDashboard = () => {
     );
   }
 
-  if (takerole === "tenant_admin") {
+  if (user.role === "tenantAdmin") {
     return (
        <div>
         <Box>
@@ -416,7 +443,7 @@ const CommonDashboard = () => {
     );
   }
 
-  if (takerole === "user") {
+  if (user.role === "user") {
   return (
     <div>
       <Typography variant="h5" gutterBottom>
