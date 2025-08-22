@@ -81,12 +81,12 @@ export const reviewTenantRequest = async (req, res) => {
 
       // Assign "tenant_admin" role
       const tenantAdminRole = await Role.findOne({
-        where: { name: "tenant_admin" },
+        where: { name: "tenantAdmin" },
         transaction: t,
       });
       if (!tenantAdminRole) {
         await t.rollback();
-        return res.status(500).json({ message: "Role 'tenant_admin' not found" });
+        return res.status(500).json({ message: "Role 'tenantAdmin' not found" });
       }
 
       await UserRole.create(
