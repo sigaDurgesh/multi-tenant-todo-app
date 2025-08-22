@@ -56,11 +56,18 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // extract role names
-    const roles = user.Roles.map(r => r.name);
-    console.log("User roles:", roles);
+    let roles = user.Roles.map(r => r.name);
 
-     const token = jwt.sign(
+    // If user has no roles, assign 'user' role
+    if (roles.length === 0) {
+      const defaultRole = await Role.findOne({ where: { name: "user" } });
+      if (defaultRole) {
+        await user.addRole(defaultRole); // Sequelize magic method
+        roles = ["user"];
+      }
+    }
+
+    const token = jwt.sign(
       { id: user.id, email: user.email, tenant_id: user.tenant_id, roles },
       process.env.JWT_SECRET || "supersecretkey",
       { expiresIn: "1h" }
