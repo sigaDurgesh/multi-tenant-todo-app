@@ -1,11 +1,20 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import sequelize from './db.js';
+import cors from 'cors';
+import tenantRequestRoutes from './routes/tenantRequest.routes.js';
+import authRouter from "./routes/authRoutes.js";
 
 dotenv.config();
 
 const app = express();
+
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // For JSON body parsing
+app.use(express.urlencoded({ extended: true })); // For URL-encoded body parsing
+
+app.use("/tenant-requests", tenantRequestRoutes);
+app.use('/api/auth', authRouter); // Mount the auth routes
 
 const PORT = process.env.PORT || 5000;
 
