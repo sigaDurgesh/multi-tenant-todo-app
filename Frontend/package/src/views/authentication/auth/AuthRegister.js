@@ -22,14 +22,15 @@ const validationSchema = Yup.object({
     .required("Password is required"),
 });
 
-const AuthRegister = ({ title, subtitle, subtext }) => {
+const AuthRegister = ({ title, subtitle, subtext, onSubmit }) => {
   // ✅ Formik hook
   const formik = useFormik({
     initialValues: { name: "", email: "", password: "" },
     validationSchema,
     onSubmit: (values) => {
-      console.log("Form Submitted:", values);
-      // 🔹 Here you can call API to register the user
+      if (onSubmit) {
+        onSubmit(values); // 🔥 call parent handler
+      }
     },
   });
 

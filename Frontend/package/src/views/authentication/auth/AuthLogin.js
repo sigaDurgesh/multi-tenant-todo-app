@@ -16,22 +16,22 @@ import CustomTextField from "../../../components/forms/theme-elements/CustomText
 
 // ✅ Validation Schema
 const validationSchema = Yup.object({
-  username: Yup.string()
-    .min(3, "Username must be at least 3 characters")
-    .required("Username is required"),
+   email: Yup.string()
+  .email("Invalid email format")
+  .required("Email is required"),
   password: Yup.string()
     .min(6, "Password must be at least 6 characters")
     .required("Password is required"),
 });
 
-const AuthLogin = ({ title, subtitle, subtext }) => {
-  // ✅ Formik hook
+const AuthLogin = ({ title, subtitle, subtext , onSubmit}) => {
   const formik = useFormik({
-    initialValues: { username: "", password: "", remember: true },
+    initialValues: { email: "", password: "", remember: true },
     validationSchema,
     onSubmit: (values) => {
-      console.log("Login form submitted:", values);
-      // 🔹 Here call your login API (backend auth)
+      if (onSubmit) {
+        onSubmit(values); // 🔥 call parent’s handleLogin
+      }
     },
   });
 
@@ -55,11 +55,11 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
               htmlFor="username"
               mb="5px"
             >
-              Username
+              Email
             </Typography>
             <CustomTextField
               id="username"
-              name="username"
+              name="email"
               variant="outlined"
               fullWidth
               value={formik.values.username}
@@ -138,7 +138,7 @@ const AuthLogin = ({ title, subtitle, subtext }) => {
             type="submit"
             disabled={!formik.isValid || formik.isSubmitting}
           >
-            Sign In
+            Login
           </Button>
         </Box>
       </Box>
