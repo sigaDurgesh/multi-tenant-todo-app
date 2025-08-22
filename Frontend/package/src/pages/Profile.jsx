@@ -84,9 +84,9 @@ const Profile = () => {
               <Chip
                 label={profileData.role.toUpperCase()}
                 color={
-                  profileData.role === "super_admin"
+                  profileData.role === "superAdmin"
                     ? "error"
-                    : profileData.role === "tenant_admin"
+                    : profileData.role === "tenantAdmin"
                     ? "secondary"
                     : "primary"
                 }
@@ -143,7 +143,7 @@ const Profile = () => {
       </Card>
 
       {/* Role-specific content */}
-      {user.role === "super_admin" && (
+      {user.role === "superAdmin" && (
         <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 2 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -156,7 +156,7 @@ const Profile = () => {
         </Card>
       )}
 
-      {user.role === "tenant_admin" && (
+      {user.role === "tenantAdmin" && (
         <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 2 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
