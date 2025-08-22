@@ -32,14 +32,18 @@ const Login2 = () => {
       if (response.status === 200) {
         const user = data.user;
 
-        setUser(user);
+        setUser(user.roles[0]);
+        console.log("Logged in user:", typeof user.roles[0]); 
 
-        if (user.role === "super_admin") {
+        if (user.roles[0] === "superAdmin") {
           navigate("/superAdmin/tenants");
-        } else if (user.role === "tenant_admin") {
+          return
+        } else if (user.roles[0] === "tenantAdmin") {
           navigate("/tenant-admin/users");
-        } else if (user.role === "user") {
+          return
+        } else if (user.roles[0] === "user") {
           navigate("/user/todos");
+          return
         } else {
           navigate("/");
         }
