@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Grid, Box, Card, Stack, Typography } from '@mui/material';
 import { useContext } from 'react';
 
@@ -14,22 +14,43 @@ import { AuthContext } from '../../context/AuthContext';
 const Login2 = () => {
   const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  // 🔑 Handle login success (mock auth)
-  const handleLogin = (credentials) => {
-    const { username, password } = credentials;
+  const handleLogin = async (credentials) => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
 
-    if (username === "super" && password === "123") {
-      setUser({ name: "Super Admin", role: "super-admin" });
-      navigate("/superAdmin/tenants");
-    } else if (username === "tenant" && password === "123") {
-      setUser({ name: "Tenant Admin", role: "tenant-admin" });
-      navigate("/tenant-admin/users");
-    } else if (username === "user" && password === "123") {
-      setUser({ name: "Regular User", role: "user" });
-      navigate("/user/todos");
-    } else {
-      alert("Invalid username or password");
+      const data = await response.json();
+
+      if (response.status === 200) {
+        const user = data.user;
+
+        setUser(user);
+
+        if (user.role === "super_admin") {
+          navigate("/superAdmin/tenants");
+        } else if (user.role === "tenant_admin") {
+          navigate("/tenant-admin/users");
+        } else if (user.role === "user") {
+          navigate("/user/todos");
+        } else {
+          navigate("/");
+        }
+      } else {
+        alert(data.message || "Invalid username or password");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,28 +69,20 @@ const Login2 = () => {
         }}
       >
         <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
-          <Grid
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            size={{
-              xs: 12,
-              sm: 12,
-              lg: 4,
-              xl: 3
-            }}>
-            <Card elevation={9} sx={{ p: 4, zIndex: 1, width: '100%', maxWidth: '500px' }}>
+          <Grid item xs={12} sm={10} md={6} lg={4} xl={3}>
+            <Card elevation={9} sx={{ p: { xs: 3, sm: 4 }, borderRadius: 3, width: '100%', maxWidth: '500px', mx: 'auto', }} >
               {/* <Box display="flex" alignItems="center" justifyContent="center">
                 <Logo />
               </Box> */}
               <AuthLogin
+                onSubmit={handleLogin}
                 subtext={
                   <Typography variant="subtitle1" textAlign="center" color="textSecondary" mb={1}>
                     Your Social Campaigns
                   </Typography>
                 }
                 subtitle={
-                  <Stack direction="row" spacing={1} justifyContent="center" mt={3}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mt={3} flexWrap="wrap">
                     <Typography color="textSecondary" variant="h6" fontWeight="500">
                       New to Modernize?
                     </Typography>
@@ -77,10 +90,7 @@ const Login2 = () => {
                       component={Link}
                       to="/register"
                       fontWeight="500"
-                      sx={{
-                        textDecoration: 'none',
-                        color: 'primary.main',
-                      }}
+                      sx={{ textDecoration: 'none', color: 'primary.main' }}
                     >
                       Create an account
                     </Typography>
