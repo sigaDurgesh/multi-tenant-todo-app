@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
+import Role from "../models/role.model.js";
 
-// ------------------ REGISTER ------------------
 export const signup = async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -32,14 +32,20 @@ export const signup = async (req, res) => {
   }
 };
 
-// ------------------ LOGIN ------------------
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const role = "superAdmin"
 
-    // find user
-    const user = await User.findOne({ where: { email } });
+    // find user with their roles
+    const user = await User.findOne({
+      where: { email },
+      include: {
+        model: Role,
+        through: { attributes: [] }, // hide join table
+        attributes: ["name"],        // only return role name
+      },
+    });
+
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
@@ -50,9 +56,12 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // generate JWT
-    const token = jwt.sign(
-      { id: user.id, email: user.email, tenant_id: user.tenant_id },
+    // extract role names
+    const roles = user.Roles.map(r => r.name);
+    console.log("User roles:", roles);
+
+     const token = jwt.sign(
+      { id: user.id, email: user.email, tenant_id: user.tenant_id, roles },
       process.env.JWT_SECRET || "supersecretkey",
       { expiresIn: "1h" }
     );
@@ -60,7 +69,11 @@ export const login = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
-      user: { id: user.id, email: user.email, tenant_id: user.tenant_id , role },
+      user: {
+        id: user.id,
+        email: user.email,
+        tenant_id: user.tenant_id
+      },
     });
   } catch (error) {
     return res.status(500).json({ message: "Error logging in", error: error.message });
