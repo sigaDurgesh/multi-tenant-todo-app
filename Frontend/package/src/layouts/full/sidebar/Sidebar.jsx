@@ -90,7 +90,7 @@ const Sidebar = () => {
 
       {/* Menu Items */}
       <List>
-        {(menuItems[user] || []).map((item) => (
+        {(menuItems[user.role] || []).map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton component={Link} to={item.path}>
               <ListItemIcon>{item.icon}</ListItemIcon>

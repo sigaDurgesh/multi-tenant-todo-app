@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Grid, Box, Card, Stack, Typography } from '@mui/material';
 import { useContext } from 'react';
+import { jwtDecode } from "jwt-decode";
 
 
 // components
@@ -17,46 +18,58 @@ const Login2 = () => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (credentials) => {
-    setLoading(true);
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(credentials),
-      });
+  setLoading(true);
+  try {
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(credentials),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.status === 200) {
-        const user = data.user;
+    if (response.status === 200) {
+      const token = data.token;
 
-        setUser(user.roles[0]);
-        console.log("Logged in user:", typeof user.roles[0]); 
+      // decode token payload
+      const decoded = jwtDecode(token);
+      console.log("Decoded token:", decoded);
+      const role = decoded.roles[0] || "user";
 
-        if (user.roles[0] === "superAdmin") {
-          navigate("/superAdmin/tenants");
-          return
-        } else if (user.roles[0] === "tenantAdmin") {
-          navigate("/tenant-admin/users");
-          return
-        } else if (user.roles[0] === "user") {
-          navigate("/user/todos");
-          return
-        } else {
-          navigate("/");
-        }
-      } else {
-        alert(data.message || "Invalid username or password");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      console.log("User role:", role);
+
+      const newUser = {
+    id: decoded.id,
+    email: decoded.email,
+    role: role,
+    name: decoded.name || "User",
+    token, // optional, keep JWT for API calls
   };
+
+  setUser(newUser);
+
+      // navigation logic
+      if (role === "superAdmin") {
+        navigate("/superAdmin/tenants");
+      } else if (role === "tenantAdmin") {
+        navigate("/tenant-admin/users");
+      } else if (role === "user") {
+        navigate("/user/todos");
+      } else {
+        navigate("/");
+      }
+    } else {
+      alert(data.message || "Invalid username or password");
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    alert("Login failed. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <PageContainer title="Login" description="this is Login page">

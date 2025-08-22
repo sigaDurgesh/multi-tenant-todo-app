@@ -5,7 +5,10 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   // Load from localStorage on startup
-  const [user, setUser] = useState({name:"Lalit", role:"superAdmin"});
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   // Save to localStorage whenever user changes
   useEffect(() => {

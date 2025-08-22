@@ -112,7 +112,7 @@ const Profile = () => {
               <Typography variant="body1">{profileData.phone}</Typography>
             </Grid>
 
-            {user.role !== "super_admin" && (
+            {user.role !== "superAdmin" && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="textSecondary">
                   Tenant

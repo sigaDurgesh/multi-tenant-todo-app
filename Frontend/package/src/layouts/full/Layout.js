@@ -23,7 +23,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const Layout = () => {
-  const {user} = useContext(AuthContext);
+  const {user , setUser} = useContext(AuthContext);
   const role = typeof user.role === "string" ? user.role : user.role?.takerole || "user";
 
   const navigate = useNavigate();
@@ -41,8 +41,7 @@ const Layout = () => {
 
   // Logout
   const handleLogout = () => {
-    localStorage.removeItem("auth.user.role"); // clear stored session
-    // user.role.logout(); // call logout function from context
+    setUser(null);
     navigate("/login");
   };
 
