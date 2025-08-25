@@ -27,12 +27,16 @@ import { AuthContext } from "../../../context/AuthContext";
 const Sidebar = () => {
   const { user } = useContext(AuthContext);
 
-
   const menuItems = {
     superAdmin: [
       { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
       { text: "Tenants", icon: <ApartmentIcon />, path: "/superAdmin/tenants" },
       { text: "Create Tenant", icon: <AddBusinessIcon />, path: "/superAdmin/create" },
+      {
+        text: "Tenant Requests",
+        icon: <NoteAddIcon />,
+        path: "superAdmin/tenantrequest",
+      },
       { text: "Profile", icon: <PersonIcon />, path: "/profile" },
     ],
     tenantAdmin: [
@@ -44,6 +48,7 @@ const Sidebar = () => {
       { text: "Add Todos", icon: <NoteAddIcon />, path: "/user/addtodos" },
       { text: "My Todos", icon: <ListAltIcon />, path: "/user/todos" },
       { text: "Profile", icon: <PersonIcon />, path: "/profile" },
+      { text: "Become a Tenant", icon: <PersonIcon />, path: "/" },
     ],
     guest: [
       { text: "Login", icon: <LoginIcon />, path: "/login" },
