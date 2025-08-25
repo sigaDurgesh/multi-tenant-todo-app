@@ -51,11 +51,11 @@ const Layout = () => {
   const handleNotifOpen = (e) => setNotifAnchor(e.currentTarget);
   const handleNotifClose = () => setNotifAnchor(null);
 
-  // const notifications = [
-  //   { id: 1, message: "New tenant registered: Acme Corp" },
-  //   { id: 2, message: "Your password will expire in 7 days" },
-  //   { id: 3, message: "New feature deployed 🎉" },
-  // ];
+  const notifications = [
+    { id: 1, message: "New tenant registered: Acme Corp" },
+    { id: 2, message: "Your password will expire in 7 days" },
+    { id: 3, message: "New feature deployed 🎉" },
+  ];
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -105,7 +105,7 @@ const Layout = () => {
 
             {/* Right side */}
             <Box display="flex" alignItems="center" gap={2}>
-              {/* <IconButton onClick={handleNotifOpen}>
+              <IconButton onClick={handleNotifOpen}>
                 <Badge badgeContent={notifications.length} color="error">
                   <NotificationsIcon />
                 </Badge>
@@ -131,7 +131,7 @@ const Layout = () => {
                 ) : (
                   <MenuItem disabled>No notifications</MenuItem>
                 )}
-              </Menu> */}
+              </Menu>
 
               <IconButton onClick={handleMenuOpen}>
                 <Avatar sx={{ bgcolor: "primary.main" }}>

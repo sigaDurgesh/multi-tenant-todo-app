@@ -5,18 +5,14 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   // Load from localStorage on startup
   const [user, setUser] = useState(() => {
-    const savedRole = localStorage.getItem("user"); // actually storing role only
-    return savedRole ? { role: JSON.parse(savedRole) } : null;
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  // Save only role to localStorage whenever user changes
+  // Persist user to localStorage whenever it changes
   useEffect(() => {
-    if (user?.roles && user.roles.length > 0) {
-      const role = user.roles[0]; // safe now
-      localStorage.setItem("user", JSON.stringify(role));
-    } else if (user?.role) {
-      // if role already normalized
-      localStorage.setItem("user", JSON.stringify(user.role));
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
     } else {
       localStorage.removeItem("user");
     }
@@ -24,9 +20,10 @@ export const AuthProvider = ({ children }) => {
 
   // Real login (backend provides token + user info)
   const login = (userData) => {
-    // userData = { id, email, name, tenant_id, roles, token }
-    const role = Array.isArray(userData.roles) ? userData.roles[0] : userData.role;
-    setUser({ ...userData, role });
+    const role = Array.isArray(userData.roles) ? userData.roles[0]
+      : userData.role;
+    const newUser = { ...userData, role };
+    setUser(newUser);
   };
 
   const logout = () => {
