@@ -5,6 +5,7 @@ import Role from "../models/role.model.js";
 import UserRole from "../models/userRole.model.js";
 import AuditLog from "../models/auditLog.model.js";
 import { sequelize } from "../models/index.js";
+import nodemailer from "nodemailer";
 
 export const listReviewedTenantRequests = async (req, res) => {
   try {
@@ -52,10 +53,19 @@ export const createTenantRequest = async (req, res) => {
       return res.status(400).json({ message: "You already have a pending request" });
     }
 
+    const existingTenant = await TenantRequest.findOne({
+      where: { tenant_name, status: "pending" },
+    });
+    if (existingTenant) {
+        return res
+          .status(400)
+          .json({ message: "This tenant name already has a pending request" });
+    }
+
     // Create request
     const request = await TenantRequest.create({ user_id, tenant_name , email });
 
-      await AuditLog.create({
+    await AuditLog.create({
       actor_user_id: user_id, // who performed the action
       action: "CREATE_TENANT_REQUEST",
       entity_type: "TenantRequest",
@@ -67,12 +77,53 @@ export const createTenantRequest = async (req, res) => {
       },
     });
 
-    return res.status(201).json({
-      message: "Tenant request submitted successfully",
-      data: request,
-    });
+    const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: "suryadurgesh18@gmail.com",
+    pass: "rrezrvaceqjrrjnd",
+  },
+});
+
+
+    const mailOptions = {
+      from: `"Tenant Request System" <${process.env.EMAIL_USER}>`,
+      to: "suryadurgesh18@gmail.com",
+      subject: "New Tenant Request Submitted",
+      html: `
+        <h2>New Tenant Request</h2>
+        <p><b>Tenant Name:</b> ${tenant_name}</p>
+        <p><b>Email:</b> ${email}</p>
+        <p><b>User ID:</b> ${user_id}</p>
+        <p><b>Status:</b> ${request.status}</p>
+        <p><b>Request ID:</b> ${request.id}</p>
+      `,
+    };
+
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log("✅ Email sent:", info.messageId);
+
+      // Only send success response if email is sent
+      return res.status(201).json({
+        message: "Tenant request submitted successfully (email sent)",
+        data: request,
+      });
+    } catch (err) {
+      console.error("❌ Failed to send email:", err);
+
+      // Rollback? (Optional: delete tenant request if email fails)
+      await request.destroy();
+
+      return res.status(500).json({
+        message: "Tenant request failed: could not send notification email",
+        error: err.message,
+      });
+    }
   } catch (error) {
-    return res
+        return res
       .status(500)
       .json({ message: "Error creating request", error: error.message });
   }
@@ -164,5 +215,7 @@ export const reviewTenantRequest = async (req, res) => {
       .json({ message: "Error reviewing request", error: error.message });
   }
 };
+
+
 
 
