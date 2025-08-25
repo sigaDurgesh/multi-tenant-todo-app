@@ -6,28 +6,66 @@ import UserRole from "../models/userRole.model.js";
 import AuditLog from "../models/auditLog.model.js";
 import { sequelize } from "../models/index.js";
 
-// ------------------ CREATE REQUEST ------------------
+export const listReviewedTenantRequests = async (req, res) => {
+  try {
+    const requests = await TenantRequest.findAll({
+      where: {
+        status : "pending",
+      },
+      attributes: [
+        "id",
+        "tenant_name",
+        "user_id",
+        "status",
+        "requested_at",
+        "reviewed_at",
+        "reviewed_by"
+      ],
+      include: [
+        { model: User, as: "requester", attributes: ["id", "email"] },
+        { model: User, as: "reviewer", attributes: ["id", "email"] },
+      ],
+      order: [["reviewed_at", "DESC"]],
+    });
+
+    return res.status(200).json({
+      message: "Reviewed tenant requests fetched successfully",
+      data: requests,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error fetching reviewed tenant requests",
+      error: error.message,
+    });
+  }
+};
+
 export const createTenantRequest = async (req, res) => {
   try {
-    const userId = req.body.data[0].user_id; // take logged-in user from JWT
+    const { user_id, tenant_name , email } = req.body.data[0]; // <-- get both values
 
     // Check if user already has a pending request
     const existing = await TenantRequest.findOne({
-      where: { user_id: userId, status: "pending" },
+      where: { user_id, status: "pending" },
     });
     if (existing) {
       return res.status(400).json({ message: "You already have a pending request" });
     }
 
     // Create request
-    const request = await TenantRequest.create({ user_id: userId });
+    const request = await TenantRequest.create({ user_id, tenant_name , email });
 
-    // Log action
-    // await AuditLog.create({
-    //   actor_user_id: userId,
-    //   action: "tenant_request_created",
-    //   description: `User ${userId} requested to become a tenant owner.`,
-    // });
+      await AuditLog.create({
+      actor_user_id: user_id, // who performed the action
+      action: "CREATE_TENANT_REQUEST",
+      entity_type: "TenantRequest",
+      entity_id: request.id, // the new tenant request id
+      details: {
+        tenant_name,
+        email,
+        status: request.status,
+      },
+    });
 
     return res.status(201).json({
       message: "Tenant request submitted successfully",
@@ -127,20 +165,4 @@ export const reviewTenantRequest = async (req, res) => {
   }
 };
 
-// ------------------ LIST REQUESTS (Super Admin) ------------------
-export const listTenantRequests = async (req, res) => {
-  try {
-    const requests = await TenantRequest.findAll({
-      include: [
-        { model: User, as: "requester", attributes: ["id", "email"] },
-        { model: User, as: "reviewer", attributes: ["id", "email"] },
-      ],
-    });
 
-    return res.status(200).json({ data: requests });
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error fetching requests", error: error.message });
-  }
-};

@@ -41,8 +41,8 @@ export const login = async (req, res) => {
       where: { email },
       include: {
         model: Role,
-        through: { attributes: [] }, // hide join table
-        attributes: ["name"],        // only return role name
+        through: { attributes: [] },
+        attributes: ["name"], // only return role name
       },
     });
 
@@ -62,7 +62,7 @@ export const login = async (req, res) => {
     if (roles.length === 0) {
       const defaultRole = await Role.findOne({ where: { name: "user" } });
       if (defaultRole) {
-        await user.addRole(defaultRole); // Sequelize magic method
+        await user.addRole(defaultRole);
         roles = ["user"];
       }
     }
@@ -79,7 +79,9 @@ export const login = async (req, res) => {
       user: {
         id: user.id,
         email: user.email,
-        tenant_id: user.tenant_id
+        name: user.name || "User",
+        tenant_id: user.tenant_id,
+        roles,
       },
     });
   } catch (error) {

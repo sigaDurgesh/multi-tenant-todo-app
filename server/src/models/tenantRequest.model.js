@@ -10,6 +10,10 @@ const TenantRequest = sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    tenant_name : {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+    },
     user_id: {
       type: DataTypes.UUID,
       allowNull: false,
@@ -18,6 +22,13 @@ const TenantRequest = sequelize.define(
         key: "id",
       },
       onDelete: "CASCADE",
+    },
+    email : {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      validate: {
+        isEmail: true,
+      },
     },
     status: {
       type: DataTypes.ENUM("pending", "approved", "rejected"),
