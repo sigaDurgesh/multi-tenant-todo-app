@@ -17,7 +17,7 @@ const Login2 = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (credentials) => {
+ const handleLogin = async (credentials) => {
   setLoading(true);
   try {
     const response = await fetch("http://localhost:5000/api/auth/login", {
@@ -31,34 +31,23 @@ const Login2 = () => {
     const data = await response.json();
 
     if (response.status === 200) {
-      const token = data.token;
+      const { token, user } = data;
 
-      // decode token payload
-      const decoded = jwtDecode(token);
-      console.log("Decoded token:", decoded);
-      const role = decoded.roles[0] || "user";
-
-      console.log("User role:", role);
-
+      // build new user object with token
       const newUser = {
-    id: decoded.id,
-    email: decoded.email,
-    role: role,
-    name: decoded.name || "User",
-    token, // optional, keep JWT for API calls
-  };
+        ...user,
+        token, // keep JWT for API calls
+      };
 
-  setUser(newUser);
-
-      // navigation logic
+      setUser(newUser);
+      // navigate by role
+      const role = user.roles[0];
       if (role === "superAdmin") {
         navigate("/superAdmin/tenants");
       } else if (role === "tenantAdmin") {
         navigate("/tenant-admin/users");
-      } else if (role === "user") {
-        navigate("/user/todos");
       } else {
-        navigate("/");
+        navigate("/user/todos");
       }
     } else {
       alert(data.message || "Invalid username or password");
@@ -70,6 +59,7 @@ const Login2 = () => {
     setLoading(false);
   }
 };
+
 
   return (
     <PageContainer title="Login" description="this is Login page">
