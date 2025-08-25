@@ -1,96 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   Box,
   Container,
   Typography,
   TextField,
   Button,
-  Grid,
   Paper,
-  Stepper,
-  Step,
-  StepLabel,
   CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from "@mui/material";
-
-// ✅ Icons
-import DomainIcon from "@mui/icons-material/Domain";
-import EmailIcon from "@mui/icons-material/Email";
-import PersonIcon from "@mui/icons-material/Person";
-import PhoneIcon from "@mui/icons-material/Phone";
-import BusinessIcon from "@mui/icons-material/Business";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import BusinessIcon from "@mui/icons-material/Business";
+import EmailIcon from "@mui/icons-material/Email";
 
-const steps = ["Organization Info", "Contact Details", "Confirmation"];
+// ✅ Example AuthContext (adjust path as per your project)
+import { AuthContext } from "../context/AuthContext";
 
 const BecomeTenant = () => {
-  const [activeStep, setActiveStep] = useState(0);
+  const { user } = useContext(AuthContext); // { id, email, name, roles, ... }
+  const [tenantName, setTenantName] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // ✅ Form data
-  const [formData, setFormData] = useState({
-    organization: "",
-    domain: "",
-    contactPerson: "",
-    email: "",
-    phone: "",
-  });
-
-  const [errors, setErrors] = useState({});
-
-  // ✅ Handle input change
-  const handleChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
-    setErrors({ ...errors, [field]: "" }); // clear error when typing
-  };
-
-  // ✅ Validation rules
-  const validateStep = () => {
-    let newErrors = {};
-    if (activeStep === 0) {
-      if (!formData.organization.trim())
-        newErrors.organization = "Organization name is required";
-      if (!formData.domain.trim())
-        newErrors.domain = "Domain is required";
+  const handleSubmit = async () => {
+    if (!tenantName.trim()) {
+      setError("Tenant name is required");
+      return;
     }
-    if (activeStep === 1) {
-      if (!formData.contactPerson.trim())
-        newErrors.contactPerson = "Contact person is required";
-      if (!formData.email.trim())
-        newErrors.email = "Email is required";
-      else if (!/\S+@\S+\.\S+/.test(formData.email))
-        newErrors.email = "Enter a valid email";
-      if (!formData.phone.trim())
-        newErrors.phone = "Phone number is required";
-      else if (!/^\d{10}$/.test(formData.phone))
-        newErrors.phone = "Enter a valid 10-digit phone number";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
-  const handleNext = () => {
-    if (!validateStep()) return;
+    setLoading(true);
+    setError("");
 
-    if (activeStep === steps.length - 1) {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
+    const payload = {
+      user_id: user.id,
+      tenant_name: tenantName,
+      email: user.email,
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/tenant-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
         setSubmitted(true);
-      }, 1500);
-    } else {
-      setActiveStep((prev) => prev + 1);
+      } else {
+        const errData = await res.json();
+        setError(errData.message || "Something went wrong");
+      }
+    } catch (err) {
+      console.error("Error submitting tenant request:", err);
+      setError("Failed to submit request");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const handleBack = () => {
-    setActiveStep((prev) => prev - 1);
   };
 
   return (
@@ -103,210 +70,78 @@ const BecomeTenant = () => {
         alignItems: "center",
       }}
     >
-      <Container maxWidth="md">
-        {/* Header */}
-        <Typography
-          variant="h3"
-          align="center"
-          sx={{
-            fontWeight: 900,
-            mb: 6,
-            color: "#1a237e",
-          }}
-        >
-          Become a Tenant
-        </Typography>
-
+      <Container maxWidth="sm">
         <Paper
           elevation={6}
           sx={{
-            p: { xs: 3, md: 5 },
+            p: 5,
             borderRadius: 4,
-            backdropFilter: "blur(16px)",
+            textAlign: "center",
             background: "rgba(255, 255, 255, 0.95)",
           }}
         >
-          {/* Stepper */}
-          <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 5 }}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-
-          {/* Form Sections */}
           {!submitted ? (
             <>
-              {activeStep === 0 && (
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Organization Name"
-                      variant="outlined"
-                      value={formData.organization}
-                      onChange={(e) => handleChange("organization", e.target.value)}
-                      error={!!errors.organization}
-                      helperText={errors.organization}
-                      InputProps={{
-                        startAdornment: <BusinessIcon sx={{ mr: 1, color: "#5e35b1" }} />,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Domain"
-                      variant="outlined"
-                      value={formData.domain}
-                      onChange={(e) => handleChange("domain", e.target.value)}
-                      error={!!errors.domain}
-                      helperText={errors.domain}
-                      InputProps={{
-                        startAdornment: <DomainIcon sx={{ mr: 1, color: "#5e35b1" }} />,
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              )}
+              <Typography variant="h4" sx={{ fontWeight: 800, mb: 3, color: "#1a237e" }}>
+                Tenant Request
+              </Typography>
 
-              {activeStep === 1 && (
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Contact Person"
-                      variant="outlined"
-                      value={formData.contactPerson}
-                      onChange={(e) => handleChange("contactPerson", e.target.value)}
-                      error={!!errors.contactPerson}
-                      helperText={errors.contactPerson}
-                      InputProps={{
-                        startAdornment: <PersonIcon sx={{ mr: 1, color: "#5e35b1" }} />,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Email"
-                      type="email"
-                      variant="outlined"
-                      value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
-                      error={!!errors.email}
-                      helperText={errors.email}
-                      InputProps={{
-                        startAdornment: <EmailIcon sx={{ mr: 1, color: "#5e35b1" }} />,
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Phone"
-                      type="tel"
-                      variant="outlined"
-                      value={formData.phone}
-                      onChange={(e) => handleChange("phone", e.target.value)}
-                      error={!!errors.phone}
-                      helperText={errors.phone}
-                      InputProps={{
-                        startAdornment: <PhoneIcon sx={{ mr: 1, color: "#5e35b1" }} />,
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              )}
+              {/* Tenant Name */}
+              <TextField
+                fullWidth
+                label="Tenant Name"
+                variant="outlined"
+                value={tenantName}
+                onChange={(e) => setTenantName(e.target.value)}
+                error={!!error}
+                helperText={error}
+                InputProps={{
+                  startAdornment: <BusinessIcon sx={{ mr: 1, color: "#5e35b1" }} />,
+                }}
+                sx={{ mb: 3 }}
+              />
 
-              {activeStep === 2 && (
-                <Box sx={{ textAlign: "center" }}>
-                  <InfoOutlinedIcon sx={{ fontSize: 60, color: "#5e35b1", mb: 2 }} />
-                  <Typography variant="h6" gutterBottom sx={{ color: "#333" }}>
-                    Review your details and submit your tenant request.
-                  </Typography>
-                  <Typography sx={{ color: "#555", mt: 2 }}>
-                    <strong>Organization:</strong> {formData.organization} <br />
-                    <strong>Domain:</strong> {formData.domain} <br />
-                    <strong>Contact:</strong> {formData.contactPerson} <br />
-                    <strong>Email:</strong> {formData.email} <br />
-                    <strong>Phone:</strong> {formData.phone}
-                  </Typography>
-                </Box>
-              )}
+              {/* Email (readonly from auth) */}
+              <TextField
+                fullWidth
+                label="Email"
+                value={user.email}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: <EmailIcon sx={{ mr: 1, color: "#5e35b1" }} />,
+                }}
+                sx={{ mb: 3 }}
+              />
 
-              {/* Action Buttons */}
-              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 5 }}>
-                <Button
-                  disabled={activeStep === 0}
-                  onClick={handleBack}
-                  sx={{ color: "#5e35b1" }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleNext}
-                  endIcon={
-                    loading ? <CircularProgress size={20} /> : <CheckCircleIcon />
-                  }
-                  sx={{
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    px: 4,
-                    py: 1.2,
-                    fontWeight: 600,
-                    borderRadius: 3,
-                  }}
-                  disabled={loading}
-                >
-                  {activeStep === steps.length - 1 ? "Submit" : "Next"}
-                </Button>
-              </Box>
+              {/* Submit */}
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                disabled={loading}
+                endIcon={loading ? <CircularProgress size={20} /> : <CheckCircleIcon />}
+                sx={{
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  px: 4,
+                  py: 1.2,
+                  fontWeight: 600,
+                  borderRadius: 3,
+                }}
+              >
+                Submit
+              </Button>
             </>
           ) : (
-            <Box sx={{ textAlign: "center", py: 5 }}>
+            <Box>
               <CheckCircleIcon sx={{ fontSize: 80, color: "limegreen", mb: 3 }} />
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: "#1a237e" }}>
-                Request Submitted!
+              <Typography variant="h5" sx={{ fontWeight: 700, color: "#1a237e" }}>
+                Tenant Request Submitted!
               </Typography>
-              <Typography variant="body1" sx={{ color: "#333" }}>
-                Thank you for your request. Our team will review and contact you soon.
+              <Typography sx={{ mt: 2, color: "#333" }}>
+                Thank you {user.name}, we’ll review your request and get back to you soon.
               </Typography>
             </Box>
           )}
         </Paper>
-
-        {/* FAQ Section */}
-        <Box sx={{ mt: 8 }}>
-          <Typography
-            variant="h4"
-            align="center"
-            sx={{ fontWeight: 800, mb: 4, color: "#1a237e" }}
-          >
-            Frequently Asked Questions
-          </Typography>
-          <Accordion sx={{ mb: 2 }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>What is a Tenant?</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography>
-                A tenant is your organization’s space in the application with dedicated users and resources.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-          <Accordion sx={{ mb: 2 }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography>How long does approval take?</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography>
-                Approval usually takes 1–2 business days depending on verification.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-        </Box>
       </Container>
     </Box>
   );

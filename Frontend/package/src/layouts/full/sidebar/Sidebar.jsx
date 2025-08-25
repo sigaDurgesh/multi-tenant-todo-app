@@ -10,6 +10,7 @@ import {
   Avatar,
   Typography,
   Divider,
+  Badge,
 } from "@mui/material";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -24,8 +25,9 @@ import PersonIcon from "@mui/icons-material/Person";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 
-const Sidebar = () => {
+const Sidebar = ({ total, pending, approved, rejected }) => {
   const { user } = useContext(AuthContext);
+  const { tenantRequestsCount } = useContext(AuthContext);
 
   const menuItems = {
     superAdmin: [
@@ -34,8 +36,13 @@ const Sidebar = () => {
       { text: "Create Tenant", icon: <AddBusinessIcon />, path: "/superAdmin/create" },
       {
         text: "Tenant Requests",
-        icon: <NoteAddIcon />,
+        icon:(
+      <Badge badgeContent={tenantRequestsCount} color="error">
+        <NoteAddIcon />
+      </Badge>
+    ),
         path: "superAdmin/tenantrequest",
+        total:{total}
       },
       { text: "Profile", icon: <PersonIcon />, path: "/profile" },
     ],
