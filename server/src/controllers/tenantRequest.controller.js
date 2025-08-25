@@ -42,7 +42,7 @@ export const listReviewedTenantRequests = async (req, res) => {
 
 export const createTenantRequest = async (req, res) => {
   try {
-    const { user_id, tenant_name , email } = req.body.data[0]; // <-- get both values
+    const { user_id, tenant_name , email } = req.body; // <-- get both values
 
     // Check if user already has a pending request
     const existing = await TenantRequest.findOne({
