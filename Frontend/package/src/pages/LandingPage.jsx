@@ -375,7 +375,7 @@ const LandingPage = () => {
               designed for excellence.
             </Typography>
 
-            {/* Buttons Section */}
+            {/* ✅ Buttons Section */}
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={3}
@@ -383,42 +383,26 @@ const LandingPage = () => {
               alignItems="center"
               sx={{ mb: 8 }}
             >
-              <GradientButton
-                size="large"
-                endIcon={<ArrowForward />}
-                sx={{ minWidth: 200 }}
-              >
-                Start Free Trial
-              </GradientButton>
-
-              <Button
-                size="large"
-                startIcon={<PlayArrow />}
-                sx={{
-                  color: "white",
-                  border: "2px solid rgba(255, 255, 255, 0.2)",
-                  borderRadius: "50px",
-                  px: 4,
-                  py: 1.5,
-                  fontSize: "1.1rem",
-                  fontWeight: "bold",
-                  textTransform: "none",
-                  backdropFilter: "blur(16px)",
-                  background: alpha("#ffffff", 0.05),
-                  minWidth: 180,
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    background: alpha("#ffffff", 0.1),
-                    transform: "translateY(-2px)",
-                    border: "2px solid rgba(255, 255, 255, 0.3)",
-                  },
-                }}
-              >
-                Watch Demo
-              </Button>
-
-              {/* ✅ Conditional: Show Login if not logged in, else Become Tenant */}
               {!user ? (
+                // If not logged in → show Login
+                <div>
+                  <Button
+                  size="large"
+                  variant="contained"
+                  sx={{
+                    borderRadius: "50px",
+                    px: 4,
+                    py: 1.5,
+                    fontSize: "1.1rem",
+                    fontWeight: "bold",
+                    background:
+                      "linear-gradient(135deg, #d3e910a9 0%, #43c8cfff 100%)",
+                  }}
+                  onClick={() => navigate("/register")}
+                >
+                  SignIn
+                </Button>
+                  
                 <Button
                   size="large"
                   variant="contained"
@@ -428,18 +412,28 @@ const LandingPage = () => {
                     py: 1.5,
                     fontSize: "1.1rem",
                     fontWeight: "bold",
-                    background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                    background:
+                      "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
                   }}
                   onClick={() => navigate("/login")}
                 >
                   Login
                 </Button>
-              ) : (
-                user.role === "user" && (
+                </div>
+              ) : user.role === "user" ? (
+                // If logged in as normal user → show Become Tenant
+                <Stack
+                  direction={{ xs: "column", sm: "row" }} // column on mobile, row on desktop
+                  spacing={3}
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  {/* ✅ Become a Tenant */}
                   <Button
                     size="large"
                     sx={{
-                      background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)",
+                      background:
+                        "linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)",
                       color: "white",
                       borderRadius: "50px",
                       px: 4,
@@ -459,14 +453,65 @@ const LandingPage = () => {
                   >
                     Become a Tenant
                   </Button>
-                )
+
+                  {/* ✅ Go to Workspace */}
+                  <Button
+                    size="large"
+                    sx={{
+                      background:
+                        "linear-gradient(135deg, #38ef7d 0%, #11998e 100%)",
+                      color: "white",
+                      borderRadius: "50px",
+                      px: 4,
+                      py: 1.5,
+                      fontSize: "1.1rem",
+                      fontWeight: "bold",
+                      textTransform: "none",
+                      minWidth: 200,
+                      boxShadow: "0 8px 32px rgba(17, 153, 142, 0.3)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-4px) scale(1.02)",
+                        boxShadow: "0 12px 40px rgba(17, 153, 142, 0.4)",
+                      },
+                    }}
+                    onClick={() => navigate("/user/todos")}
+                  >
+                    Go to Workspace
+                  </Button>
+                </Stack>
+              ) : (
+                // If already a tenant / admin → show Dashboard
+                <Button
+                  size="large"
+                  sx={{
+                    background:
+                      "linear-gradient(135deg, #38ef7d 0%, #11998e 100%)",
+                    color: "white",
+                    borderRadius: "50px",
+                    px: 4,
+                    py: 1.5,
+                    fontSize: "1.1rem",
+                    fontWeight: "bold",
+                    textTransform: "none",
+                    minWidth: 200,
+                    boxShadow: "0 8px 32px rgba(17, 153, 142, 0.3)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-4px) scale(1.02)",
+                      boxShadow: "0 12px 40px rgba(17, 153, 142, 0.4)",
+                    },
+                  }}
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Go to Dashboard
+                </Button>
               )}
             </Stack>
-
           </Box>
         </Fade>
 
-        {/* Stats Section */}
+        {/* Stats Section (unchanged) */}
         <Slide in={statsVisible} direction="up" timeout={1000}>
           <Grid container spacing={4} justifyContent="center">
             {stats.map((stat, index) => (
@@ -517,148 +562,148 @@ const LandingPage = () => {
       </Container>
 
       {/* 🚀 Features Section */}
-<Container maxWidth="lg" sx={{ py: { xs: 10, md: 14 } }}>
-  {/* 🌟 Section Header */}
-  <Box sx={{ textAlign: "center", mb: { xs: 8, md: 12 } }}>
-    <Typography
-      variant="h2"
-      sx={{
-        fontSize: { xs: "2.2rem", md: "3.2rem" },
-        fontWeight: 800,
-        mb: 3,
-        background: "linear-gradient(135deg, #ffffff 0%, #667eea 100%)",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-        letterSpacing: "-0.5px",
-      }}
-    >
-      Powerful Features
-    </Typography>
-    <Typography
-      variant="h6"
-      sx={{
-        color: alpha("#ffffff", 0.75),
-        maxWidth: 700,
-        mx: "auto",
-        fontWeight: 400,
-        lineHeight: 1.7,
-        fontSize: { xs: "1rem", md: "1.15rem" },
-      }}
-    >
-      Everything you need to build, scale, and manage your organization's
-      productivity — all in one beautifully designed platform.
-    </Typography>
-  </Box>
-
-  {/* 🚀 Features Grid */}
-  <Grid
-    container
-    spacing={{ xs: 4, md: 6 }}
-    justifyContent="center"
-    alignItems="stretch"
-  >
-    {features.map((feature, index) => (
-      <Grid
-        item
-        xs={12}   // 1 per row mobile
-        sm={6}    // 2 per row tablet
-        md={4}    // 3 per row desktop
-        key={index}
-        sx={{ display: "flex", justifyContent: "center" }}
-      >
-        <Zoom in timeout={700 + index * 200}>
-          <GlassCard
+      <Container maxWidth="lg" sx={{ py: { xs: 10, md: 14 } }}>
+        {/* 🌟 Section Header */}
+        <Box sx={{ textAlign: "center", mb: { xs: 8, md: 12 } }}>
+          <Typography
+            variant="h2"
             sx={{
-              flex: 1,
-              maxWidth: 360,   // ✅ reduced width
-              display: "flex",
-              flexDirection: "column",
-              borderRadius: 4,
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-              transition: "all 0.4s ease",
-              "&:hover": {
-                transform: "translateY(-10px)",
-                boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
-              },
+              fontSize: { xs: "2.2rem", md: "3.2rem" },
+              fontWeight: 800,
+              mb: 3,
+              background: "linear-gradient(135deg, #ffffff 0%, #667eea 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              letterSpacing: "-0.5px",
             }}
           >
-            <CardContent
-              sx={{
-                p: { xs: 4, md: 5 },
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-              }}
+            Powerful Features
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              color: alpha("#ffffff", 0.75),
+              maxWidth: 700,
+              mx: "auto",
+              fontWeight: 400,
+              lineHeight: 1.7,
+              fontSize: { xs: "1rem", md: "1.15rem" },
+            }}
+          >
+            Everything you need to build, scale, and manage your organization's
+            productivity — all in one beautifully designed platform.
+          </Typography>
+        </Box>
+
+        {/* 🚀 Features Grid */}
+        <Grid
+          container
+          spacing={{ xs: 4, md: 6 }}
+          justifyContent="center"
+          alignItems="stretch"
+        >
+          {features.map((feature, index) => (
+            <Grid
+              item
+              xs={12} // 1 per row mobile
+              sm={6} // 2 per row tablet
+              md={4} // 3 per row desktop
+              key={index}
+              sx={{ display: "flex", justifyContent: "center" }}
             >
-              {/* Icon */}
-              <Box
-                sx={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 3,
-                  background: feature.gradient,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mb: 4,
-                  color: "white",
-                  fontSize: 42,
-                  transition: "all 0.3s ease",
-                  "&:hover": { transform: "scale(1.1) rotate(6deg)" },
-                }}
-              >
-                {feature.icon}
-              </Box>
+              <Zoom in timeout={700 + index * 200}>
+                <GlassCard
+                  sx={{
+                    flex: 1,
+                    maxWidth: 360, // ✅ reduced width
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: 4,
+                    border: "1px solid rgba(255, 255, 255, 0.15)",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+                    transition: "all 0.4s ease",
+                    "&:hover": {
+                      transform: "translateY(-10px)",
+                      boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
+                    },
+                  }}
+                >
+                  <CardContent
+                    sx={{
+                      p: { xs: 4, md: 5 },
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    {/* Icon */}
+                    <Box
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 3,
+                        background: feature.gradient,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        mb: 4,
+                        color: "white",
+                        fontSize: 42,
+                        transition: "all 0.3s ease",
+                        "&:hover": { transform: "scale(1.1) rotate(6deg)" },
+                      }}
+                    >
+                      {feature.icon}
+                    </Box>
 
-              {/* Title */}
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 700,
-                  mb: 2,
-                  color: "white",
-                  fontSize: { xs: "1.3rem", md: "1.6rem" },
-                }}
-              >
-                {feature.title}
-              </Typography>
+                    {/* Title */}
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 2,
+                        color: "white",
+                        fontSize: { xs: "1.3rem", md: "1.6rem" },
+                      }}
+                    >
+                      {feature.title}
+                    </Typography>
 
-              {/* Description */}
-              <Typography
-                variant="body1"
-                sx={{
-                  color: alpha("#ffffff", 0.85),
-                  lineHeight: 1.7,
-                  fontSize: "0.95rem",
-                  flexGrow: 1, // ✅ pushes button to bottom
-                }}
-              >
-                {feature.description}
-              </Typography>
+                    {/* Description */}
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: alpha("#ffffff", 0.85),
+                        lineHeight: 1.7,
+                        fontSize: "0.95rem",
+                        flexGrow: 1, // ✅ pushes button to bottom
+                      }}
+                    >
+                      {feature.description}
+                    </Typography>
 
-              {/* CTA */}
-              <Button
-                variant="text"
-                sx={{
-                  mt: 3,
-                  alignSelf: "flex-start",
-                  color: "#667eea",
-                  fontWeight: 600,
-                  fontSize: "0.95rem",
-                  textTransform: "none",
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                Learn More →
-              </Button>
-            </CardContent>
-          </GlassCard>
-        </Zoom>
-      </Grid>
-    ))}
-  </Grid>
-</Container>
+                    {/* CTA */}
+                    <Button
+                      variant="text"
+                      sx={{
+                        mt: 3,
+                        alignSelf: "flex-start",
+                        color: "#667eea",
+                        fontWeight: 600,
+                        fontSize: "0.95rem",
+                        textTransform: "none",
+                        "&:hover": { textDecoration: "underline" },
+                      }}
+                    >
+                      Learn More →
+                    </Button>
+                  </CardContent>
+                </GlassCard>
+              </Zoom>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
 
       {/* ⭐ Testimonials Section */}
       <Box sx={{ py: { xs: 8, md: 12 }, background: alpha("#ffffff", 0.03) }}>
@@ -794,10 +839,10 @@ const LandingPage = () => {
       </Box>
 
       {/* Pricing Section */}
-      <Container maxWidth="lg" sx={{ py: 12 }}>
+      <Container maxWidth="lg" sx={{ py: 14 }}>
         <Box sx={{ textAlign: "center", mb: 8 }}>
           <Typography
-            variant="h2"
+            variant="h1"
             sx={{
               fontSize: { xs: "2.5rem", md: "4rem" },
               fontWeight: 900,
