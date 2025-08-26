@@ -57,7 +57,6 @@ const CommonDashboard = () => {
     navigate("/settings"); // system-wide settings page
   };
 
-
   if (user.role === "superAdmin") {
     return (
        <div>
