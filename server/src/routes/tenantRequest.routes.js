@@ -3,6 +3,7 @@ import {
   createTenantRequest,
   reviewTenantRequest,
   listReviewedTenantRequests,
+  getTenantRequestById
 } from "../controllers/tenantRequest.controller.js";
 const router = express.Router();
 
@@ -10,9 +11,12 @@ const router = express.Router();
 router.post("/", createTenantRequest);
 
 // Super admin reviews request
-router.put("/:requestId/review", reviewTenantRequest);
+router.put("/review-request", reviewTenantRequest);
 
 // Super admin lists requests
 router.get("/", listReviewedTenantRequests);
+
+// Get request by ID
+router.get("/:id", getTenantRequestById);
 
 export default router;

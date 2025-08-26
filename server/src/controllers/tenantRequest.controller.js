@@ -6,6 +6,8 @@ import UserRole from "../models/userRole.model.js";
 import AuditLog from "../models/auditLog.model.js";
 import { sequelize } from "../models/index.js";
 import nodemailer from "nodemailer";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 export const listReviewedTenantRequests = async (req, res) => {
   try {
@@ -133,11 +135,12 @@ export const createTenantRequest = async (req, res) => {
 export const reviewTenantRequest = async (req, res) => {
   const t = await sequelize.transaction();
   try {
-    const { requestId } = req.params;
-    const { action } = req.body; // "approved" | "rejected"
-    const reviewerId = req.user.id; // from JWT
+    const { requestId, action, reviewerId } = req.body; 
+    // requestId = tenant_request id
+    // action = "approved" | "rejected"
+    // reviewerId = super admin's user id
 
-    // Find request
+    // 1. Find request
     const request = await TenantRequest.findByPk(requestId, { transaction: t });
     if (!request) {
       await t.rollback();
@@ -149,56 +152,102 @@ export const reviewTenantRequest = async (req, res) => {
       return res.status(400).json({ message: "Request already reviewed" });
     }
 
-    // Update request status
+    // 2. Update request status
     request.status = action;
     request.reviewed_by = reviewerId;
     request.reviewed_at = new Date();
     await request.save({ transaction: t });
 
     if (action === "approved") {
-      // Create new tenant
+      // Create tenant
       const tenant = await Tenant.create(
-        { name: `Tenant-${request.user_id}` },
+        { name: request.tenant_name },
         { transaction: t }
       );
 
-      // Assign tenant_id to user
+      // Generate random password
+      const plainPassword = crypto.randomBytes(8).toString("hex");
+      const passwordHash = await bcrypt.hash(plainPassword, 10);
+
+      // Update user with tenant_id + password
       await User.update(
-        { tenant_id: tenant.id },
+        { tenant_id: tenant.id, password_hash: passwordHash },
         { where: { id: request.user_id }, transaction: t }
       );
 
-      // Assign "tenant_admin" role
-      const tenantAdminRole = await Role.findOne({
-        where: { name: "tenantAdmin" },
+      // 🔑 Remove all old roles first
+      await UserRole.destroy({
+        where: { user_id: request.user_id },
         transaction: t,
       });
-      if (!tenantAdminRole) {
-        await t.rollback();
-        return res.status(500).json({ message: "Role 'tenantAdmin' not found" });
-      }
 
+      // ✅ Assign ONLY tenant_admin role (role_id = 2)
       await UserRole.create(
-        { user_id: request.user_id, role_id: tenantAdminRole.id },
+        { user_id: request.user_id, role_id: 2 },
         { transaction: t }
       );
+
+      // Send approval email
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: "suryadurgesh18@gmail.com",
+          pass: "rrezrvaceqjrrjnd",
+        },
+      });
+
+      console.log("Generated Password:", plainPassword);
+
+      const mailOptions = {
+        from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+        to: request.email,
+        subject: "Your Tenant Admin Account Approved",
+        html: `
+          <h2>Welcome to Multi-Tenant App</h2>
+          <p>Your tenant request has been <b>approved</b>.</p>
+          <p><b>Tenant:</b> ${request.tenant_name}</p>
+          <p><b>Email:</b> ${request.email}</p>
+          <p><b>Password:</b> ${plainPassword}</p>
+          <p>You can now login as <b>Tenant Admin</b>.</p>
+        `,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+      } catch (err) {
+        await t.rollback();
+        return res
+          .status(500)
+          .json({ message: "Failed to send email", error: err.message });
+      }
 
       // Audit log
       await AuditLog.create(
         {
           actor_user_id: reviewerId,
           action: "tenant_request_approved",
-          description: `Super admin ${reviewerId} approved tenant request for user ${request.user_id}. Tenant ${tenant.id} created.`,
+          entity_type: "TenantRequest",
+          entity_id: request.id,
+          details: {
+            tenant_id: tenant.id,
+            user_id: request.user_id,
+            email: request.email,
+          },
         },
         { transaction: t }
       );
-    } else if (action === "rejected") {
+    }
+    if (action === "rejected") {
       // Audit log
       await AuditLog.create(
         {
           actor_user_id: reviewerId,
           action: "tenant_request_rejected",
-          description: `Super admin ${reviewerId} rejected tenant request for user ${request.user_id}.`,
+          entity_type: "TenantRequest",
+          entity_id: request.id,
+          details: { user_id: request.user_id, email: request.email },
         },
         { transaction: t }
       );
@@ -215,6 +264,30 @@ export const reviewTenantRequest = async (req, res) => {
       .json({ message: "Error reviewing request", error: error.message });
   }
 };
+
+export const getTenantRequestById = async (req, res) => {
+  try {
+    const { id } = req.params; // request id comes from URL
+
+    const request = await TenantRequest.findByPk(id);
+
+    if (!request) {
+      return res.status(404).json({ message: "Tenant request not found" });
+    }
+
+    return res.status(200).json({
+      message: "Tenant request fetched successfully",
+      data: request,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error fetching tenant request",
+      error: error.message,
+    });
+  }
+};
+
+
 
 
 
