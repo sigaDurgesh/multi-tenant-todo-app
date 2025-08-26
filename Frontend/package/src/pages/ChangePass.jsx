@@ -1,5 +1,5 @@
-import React, { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Grid,
   Box,
@@ -10,38 +10,43 @@ import {
   Alert,
   Stack,
 } from "@mui/material";
-import { authApi } from "../../services/api";
-import { AuthContext } from "../../context/AuthContext";
+import { authApi } from "../services/api";
 
-const Login = () => {
-  const { login } = useContext(AuthContext);
+const ChangePassword = () => {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
 
-  const handleLogin = async (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMessage(null);
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const { token, user } = await authApi.login({ email, password });
-      localStorage.setItem("token", token);
-      const role = Array.isArray(user.roles) ? user.roles[0] : user.role;
-      login({ ...user, token, role });
+      const token = localStorage.getItem("token"); // get auth token
+      if (!token) throw new Error("Unauthorized");
+      const data = await authApi.changePassword(newPassword, token);
+      // Ensure your authApi uses token in headers
 
-      // Navigate based on role
-      if (role === "superAdmin" || role === "tenantAdmin") {
-        navigate("/dashboard");
-      } else {
-        navigate("/user/todos");
-      }
+      setMessage(data.message || "Password updated successfully");
+      setNewPassword("");
+      setConfirmPassword("");
+
+      // Navigate back to login page after success
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || "Failed to update password");
     } finally {
       setLoading(false);
     }
@@ -62,7 +67,7 @@ const Login = () => {
         <Grid item xs={12} sm={8} md={5} lg={4}>
           <Card sx={{ p: 4, borderRadius: 3, boxShadow: 6 }}>
             <Typography variant="h4" textAlign="center" mb={3}>
-              Welcome Back
+              Change Password
             </Typography>
 
             {message && (
@@ -76,22 +81,22 @@ const Login = () => {
               </Alert>
             )}
 
-            <Box component="form" onSubmit={handleLogin}>
+            <Box component="form" onSubmit={handleChangePassword}>
               <TextField
                 fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                label="New Password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
                 sx={{ mb: 2 }}
                 required
               />
               <TextField
                 fullWidth
-                label="Password"
+                label="Confirm Password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 sx={{ mb: 3 }}
                 required
               />
@@ -101,31 +106,21 @@ const Login = () => {
                 variant="contained"
                 disabled={loading}
               >
-                {loading ? "Logging in..." : "Login"}
+                {loading ? "Updating..." : "Change Password"}
               </Button>
 
               <Stack
                 direction="row"
-                justifyContent="space-between"
-                alignItems="center"
+                justifyContent="center"
                 mt={2}
               >
                 <Typography
                   variant="body2"
                   color="primary"
                   sx={{ cursor: "pointer" }}
-                  onClick={() => navigate("/change-pass")}
+                  onClick={() => navigate("/login")}
                 >
-                  Change Password
-                </Typography>
-                <Typography
-                  variant="body2"
-                  component={Link}
-                  to="/register"
-                  color="primary"
-                  sx={{ textDecoration: "none" }}
-                >
-                  Create an Account
+                  Back to Login
                 </Typography>
               </Stack>
             </Box>
@@ -136,4 +131,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ChangePassword;

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   Box,
   Container,
@@ -11,18 +11,16 @@ import {
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BusinessIcon from "@mui/icons-material/Business";
 import EmailIcon from "@mui/icons-material/Email";
-
-// ✅ Example AuthContext (adjust path as per your project)
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 const BecomeTenant = () => {
-  const { user } = useContext(AuthContext); // { id, email, name, roles, ... }
   const [tenantName, setTenantName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const { user, tenantRequestId, setTenantRequestId } = useContext(AuthContext);
   const navigate = useNavigate();
   const handleSubmit = async () => {
     if (!tenantName.trim()) {
@@ -42,18 +40,23 @@ const BecomeTenant = () => {
     try {
       const res = await fetch("http://localhost:5000/tenant-requests", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      const result = await res.json();
+
       if (res.ok) {
+        if (result?.data?.id) {
+          setTenantRequestId(result.data.id);
+        }
         setSubmitted(true);
-        // navigate("/user/todos"); 
+        // ✅ Navigate after 2 seconds
+        setTimeout(() => {
+          navigate("/");
+        }, 2000);
       } else {
-        const errData = await res.json();
-        setError(errData.message || "Something went wrong");
+        setError(result.message || "Something went wrong");
       }
     } catch (err) {
       console.error("Error submitting tenant request:", err);
@@ -89,7 +92,6 @@ const BecomeTenant = () => {
                 Tenant Request
               </Typography>
 
-              {/* Tenant Name */}
               <TextField
                 fullWidth
                 label="Tenant Name"
@@ -99,12 +101,11 @@ const BecomeTenant = () => {
                 error={!!error}
                 helperText={error}
                 InputProps={{
-                  startAdornment: <BusinessIcon sx={{ mr: 1, color: "#5e35b1" }} />,
+                  startAdornment: ( <BusinessIcon sx={{ mr: 1, color: "#5e35b1" }} /> ),
                 }}
                 sx={{ mb: 3 }}
               />
 
-              {/* Email (readonly from auth) */}
               <TextField
                 fullWidth
                 label="Email"
@@ -116,7 +117,6 @@ const BecomeTenant = () => {
                 sx={{ mb: 3 }}
               />
 
-              {/* Submit */}
               <Button
                 variant="contained"
                 onClick={handleSubmit}
@@ -134,19 +134,18 @@ const BecomeTenant = () => {
               </Button>
             </>
           ) : (
-            <div>
-              <Box>
+            <Box>
               <CheckCircleIcon sx={{ fontSize: 80, color: "limegreen", mb: 3 }} />
               <Typography variant="h5" sx={{ fontWeight: 700, color: "#1a237e" }}>
                 Tenant Request Submitted!
-            
               </Typography>
               <Typography sx={{ mt: 2, color: "#333" }}>
                 Thank you {user.name}, we’ll review your request and get back to you soon.
               </Typography>
+              <Typography sx={{ mt: 1, color: "gray" }}>
+                Redirecting to homepage...
+              </Typography>
             </Box>
-            </div>
-            
           )}
         </Paper>
       </Container>

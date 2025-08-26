@@ -16,15 +16,15 @@ import CustomTextField from "../../../components/forms/theme-elements/CustomText
 
 // ✅ Validation Schema
 const validationSchema = Yup.object({
-   email: Yup.string()
-  .email("Invalid email format")
-  .required("Email is required"),
+  email: Yup.string()
+    .email("Invalid email format")
+    .required("Email is required"),
   password: Yup.string()
     .min(6, "Password must be at least 6 characters")
     .required("Password is required"),
 });
 
-const AuthLogin = ({ title, subtitle, subtext , onSubmit}) => {
+const AuthLogin = ({ title, subtitle, subtext, onSubmit }) => {
   const formik = useFormik({
     initialValues: { email: "", password: "", remember: true },
     validationSchema,
@@ -46,27 +46,27 @@ const AuthLogin = ({ title, subtitle, subtext , onSubmit}) => {
 
       <Box component="form" noValidate onSubmit={formik.handleSubmit}>
         <Stack>
-          {/* Username */}
+          {/* Email */}
           <Box>
             <Typography
               variant="subtitle1"
               fontWeight={600}
               component="label"
-              htmlFor="username"
+              htmlFor="email"
               mb="5px"
             >
               Email
             </Typography>
             <CustomTextField
-              id="username"
+              id="email"
               name="email"
               variant="outlined"
               fullWidth
-              value={formik.values.username}
+              value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.username && Boolean(formik.errors.username)}
-              helperText={formik.touched.username && formik.errors.username}
+              error={formik.touched.email && Boolean(formik.errors.email)}
+              helperText={formik.touched.email && formik.errors.email}
             />
           </Box>
 
@@ -114,7 +114,7 @@ const AuthLogin = ({ title, subtitle, subtext , onSubmit}) => {
                 label="Remember this device"
               />
             </FormGroup>
-            <Typography
+            {/* <Typography
               component={Link}
               to="/forgot-password"
               fontWeight="500"
@@ -124,7 +124,7 @@ const AuthLogin = ({ title, subtitle, subtext , onSubmit}) => {
               }}
             >
               Forgot Password?
-            </Typography>
+            </Typography> */}
           </Stack>
         </Stack>
 
@@ -145,7 +145,6 @@ const AuthLogin = ({ title, subtitle, subtext , onSubmit}) => {
 
       {subtitle}
     </>
-
   );
 };
 
