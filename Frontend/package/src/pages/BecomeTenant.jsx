@@ -14,6 +14,7 @@ import EmailIcon from "@mui/icons-material/Email";
 
 // ✅ Example AuthContext (adjust path as per your project)
 import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router";
 
 const BecomeTenant = () => {
   const { user } = useContext(AuthContext); // { id, email, name, roles, ... }
@@ -22,6 +23,7 @@ const BecomeTenant = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const navigate = useNavigate();
   const handleSubmit = async () => {
     if (!tenantName.trim()) {
       setError("Tenant name is required");
@@ -48,6 +50,7 @@ const BecomeTenant = () => {
 
       if (res.ok) {
         setSubmitted(true);
+        // navigate("/user/todos"); 
       } else {
         const errData = await res.json();
         setError(errData.message || "Something went wrong");
@@ -131,15 +134,19 @@ const BecomeTenant = () => {
               </Button>
             </>
           ) : (
-            <Box>
+            <div>
+              <Box>
               <CheckCircleIcon sx={{ fontSize: 80, color: "limegreen", mb: 3 }} />
               <Typography variant="h5" sx={{ fontWeight: 700, color: "#1a237e" }}>
                 Tenant Request Submitted!
+            
               </Typography>
               <Typography sx={{ mt: 2, color: "#333" }}>
                 Thank you {user.name}, we’ll review your request and get back to you soon.
               </Typography>
             </Box>
+            </div>
+            
           )}
         </Paper>
       </Container>

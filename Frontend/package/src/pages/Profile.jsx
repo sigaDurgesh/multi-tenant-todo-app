@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { AuthContext } from "../context/AuthContext";
 
-const Profile = () => {
+const Profile = ({name}) => {
   const { user } = useContext(AuthContext);
 
   // For dialog/form state
