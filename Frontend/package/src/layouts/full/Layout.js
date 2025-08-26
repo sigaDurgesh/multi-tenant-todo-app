@@ -141,8 +141,8 @@ const Layout = () => {
               <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
                 <MenuItem disabled>Role: {user.role}</MenuItem>
                 <MenuItem onClick={() => navigate("/profile")}>Profile</MenuItem>
-                <MenuItem onClick={() => navigate("/settings")}>
-                  Settings
+                <MenuItem onClick={() => navigate("/change-pass")}>
+                  Change password
                 </MenuItem>
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </Menu>

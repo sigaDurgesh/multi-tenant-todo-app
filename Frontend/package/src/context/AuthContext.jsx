@@ -1,12 +1,26 @@
+// src/context/AuthContext.js
 import React, { createContext, useState, useEffect } from "react";
+import { tenantApi } from "../services/tenantAdminAPI";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Load from localStorage on startup
+  // --- STATE ---
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("user");
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const savedUser = localStorage.getItem("user");
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [tenantRequestId, setTenantRequestId] = useState(() => {
+    try {
+      return localStorage.getItem("tenantRequestId") || null;
+    } catch {
+      return null;
+    }
   });
 
   const [tenantRequestsCount, setTenantRequestsCount] = useState(0);
@@ -14,55 +28,68 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
+      if (user.token) localStorage.setItem("token", user.token);
     } else {
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
     }
   }, [user]);
-
+  
   // Fetch tenant requests count
+  useEffect(() => {
+    if (tenantRequestId) {
+      localStorage.setItem("tenantRequestId", tenantRequestId);
+    } else {
+      localStorage.removeItem("tenantRequestId");
+    }
+  }, [tenantRequestId]);
+
+  // --- FETCH TENANT REQUEST COUNT ---
   const fetchTenantRequestsCount = async () => {
     try {
-      const res = await fetch("http://localhost:5000/tenant-requests");
-      const data = await res.json();
-      if (data && data.data) {
+      const data = await tenantApi.list();
+      if (Array.isArray(data?.data)) {
         setTenantRequestsCount(data.data.length);
+      } else {
+        setTenantRequestsCount(0);
       }
     } catch (err) {
-      console.error("Failed to fetch tenant requests count", err);
+      console.error("❌ Failed to fetch tenant requests count", err);
     }
   };
 
   useEffect(() => {
     fetchTenantRequestsCount();
-
-    // optional: keep refreshing every 30 seconds
-    const interval = setInterval(fetchTenantRequestsCount, 30000);
+    const interval = setInterval(fetchTenantRequestsCount, 30000); // auto-refresh every 30s
     return () => clearInterval(interval);
   }, []);
 
-  // Real login (backend provides token + user info)
+  // --- AUTH FUNCTIONS ---
   const login = (userData) => {
-    const role = Array.isArray(userData.roles)
-      ? userData.roles[0]
-      : userData.role;
+    const role = Array.isArray(userData.roles) ? userData.roles[0] : userData.role;
     const newUser = { ...userData, role };
     setUser(newUser);
   };
 
   const logout = () => {
     setUser(null);
+    setTenantRequestId(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("tenantRequestId");
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        tenantRequestId,
+        setTenantRequestId,
+        tenantRequestsCount,
+        fetchTenantRequestsCount,
         login,
         logout,
         setUser,
-        tenantRequestsCount,   // ✅ expose count globally
-        fetchTenantRequestsCount, // ✅ also expose refetch
       }}
     >
       {children}

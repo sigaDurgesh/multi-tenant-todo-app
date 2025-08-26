@@ -25,6 +25,7 @@ import BecomeTenant from "./pages/BecomeTenant";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
+import ChangePassword from "./pages/ChangePass";
 
 function AppRoutes() {
   const { user } = useContext(AuthContext);
@@ -35,6 +36,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login2 />} />
       <Route path="/register" element={<Register2 />} />
       <Route path="/" element={<LandingPage />} />
+      <Route path="/change-pass" element={<ChangePassword />} />
 
       {/* Only logged-in users with role=user can see BecomeTenant */}
       <Route
