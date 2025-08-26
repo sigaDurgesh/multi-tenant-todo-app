@@ -1,12 +1,13 @@
 import express from "express"
-
+import { authenticateJWT } from "../utlis/authenticateJWT .js"
 const app = express.Router()
 
 // Import authentication controllers
-import { signup, login } from "../controllers/authController.js"
+import { signup, login , changePassword } from "../controllers/auth.Controller.js"
 // Import middleware for authentication
 
 app.post("/signup", signup)
 app.post("/login", login)
+app.patch("/change-password", authenticateJWT, changePassword)
 
 export default app
