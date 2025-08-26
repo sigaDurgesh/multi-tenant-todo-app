@@ -5,6 +5,7 @@ import Role from "../models/role.model.js";
 import UserRole from "../models/userRole.model.js";
 import AuditLog from "../models/auditLog.model.js";
 import { sequelize } from "../models/index.js";
+import generateSecurePassword from "../utlis/genarateSecurePassword.js";  
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -165,8 +166,7 @@ export const reviewTenantRequest = async (req, res) => {
         { transaction: t }
       );
 
-      // Generate random password
-      const plainPassword = crypto.randomBytes(8).toString("hex");
+      const plainPassword = generateSecurePassword(12);
       const passwordHash = await bcrypt.hash(plainPassword, 10);
 
       // Update user with tenant_id + password
