@@ -3,6 +3,7 @@ import Tenant from "../models/tenant.model.js";
 import User from "../models/user.model.js";
 import UserRole from "../models/userRole.model.js";
 import AuditLog from "../models/auditLog.model.js";
+import Role from "../models/role.model.js";
 import { sequelize } from "../models/index.js";
 import generateSecurePassword from "../../middlewares/genarateSecurePassword.js";
 import bcrypt from "bcrypt";
@@ -286,6 +287,54 @@ export const getTenantRequestById = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error fetching tenant request",
+      error: error.message,
+    });
+  }
+};
+
+// ------------------ REGISTER USER UNDER TENANT ------------------
+export const registerUserUnderTenant = async (req, res) => {
+  try {
+    const { tenantName, email, password } = req.body;
+
+    // 1. Find tenant
+    const tenant = await Tenant.findOne({ where: { name: tenantName, is_deleted: false } });
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found. Contact your tenant admin." });
+    }
+
+    // 2. Check if email already exists
+    const existing = await User.findOne({ where: { email, is_deleted: false } });
+    if (existing) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    // 3. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 4. Create user under tenant
+    const user = await User.create({
+      tenant_id: tenant.id,
+      email,
+      password_hash: hashedPassword,
+    });
+
+    // 5. Assign "user" role
+    const role = await Role.findOne({ where: { name: "user" } });
+    if (!role) {
+      return res.status(400).json({ message: "Role 'user' not found in system" });
+    }
+    await UserRole.create({ user_id: user.id, role_id: role.id });
+
+    // 6. Respond
+    return res.status(201).json({
+      message: "User registered successfully under tenant",
+      user: { id: user.id, email: user.email, tenant: tenant.name, role: "user" },
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error registering user",
       error: error.message,
     });
   }
