@@ -5,8 +5,9 @@ import UserRole from "../models/userRole.model.js";
 import AuditLog from "../models/auditLog.model.js";
 import Role from "../models/role.model.js";
 import { sequelize } from "../models/index.js";
-import generateSecurePassword from "../../middlewares/genarateSecurePassword.js";
+import generateSecurePassword from "../middlewares/genarateSecurePassword.js";
 import bcrypt from "bcrypt";
+import { Op } from "sequelize";
 
 import transporter from "../config/nodemailer.js";
 import { generateEmailTemplate } from "../utlis/emailTemplate.js";
@@ -76,69 +77,51 @@ export const listReviewedTenantRequests = async (req, res) => {
 
 
 // ------------------ CREATE REQUEST ------------------
+
 export const createTenantRequest = async (req, res) => {
   try {
-    const { user_id, tenant_name, email } = req.body;
+    const { tenantName, email, password } = req.body;
 
-    // Check for duplicates
-    const existing = await TenantRequest.findOne({
-      where: { user_id, status: "pending" },
-    });
-    if (existing) {
-      return res
-        .status(400)
-        .json({ message: "You already have a pending request" });
-    }
-
+    // 1. Check for duplicate tenant request
     const existingTenant = await TenantRequest.findOne({
-      where: { tenant_name, status: "pending" },
+      where: { tenant_name: tenantName, status: "pending" },
     });
+    console.log("Existing tenant request:", existingTenant);
     if (existingTenant) {
-      return res
-        .status(400)
-        .json({ message: "This tenant name already has a pending request" });
+      return res.status(400).json({ message: "This tenant name already has a pending request" });
     }
 
-    // Create request
-    const request = await TenantRequest.create({ user_id, tenant_name, email });
+    // 2. Create a new user (hash password before saving)
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      email,
+      password_hash: hashedPassword,
+      // tenant_id will be assigned once tenant is approved
+    });
 
+    // 3. Create the tenant request (linking user_id)
+    const request = await TenantRequest.create({
+      user_id: user.id,
+      tenant_name: tenantName,
+      email,
+      status: "pending"
+    });
+
+    // 4. Audit log
     await AuditLog.create({
-      actor_user_id: user_id,
+      actor_user_id: user.id,
       action: "CREATE_TENANT_REQUEST",
       entity_type: "TenantRequest",
       entity_id: request.id,
-      details: { tenant_name, email, status: request.status },
+      details: { tenant_name: tenantName, email, status: request.status },
     });
 
-    // Send email notification
-    const mailOptions = {
-      from: `"Tenant Request System" <${process.env.EMAIL_USER}>`,
-      to: 'suryadurgesh18@gmail.com',
-      subject: "New Tenant Request Submitted",
-      html: generateEmailTemplate({
-        title: "New Tenant Request",
-        subTitle: "A new tenant request has been submitted.",
-        body: `
-          <p><b>Tenant Name:</b> ${tenant_name}</p>
-          <p><b>Email:</b> ${email}</p>
-          <p><b>User ID:</b> ${user_id}</p>
-          <p><b>Status:</b> ${request.status}</p>
-          <p><b>Request ID:</b> ${request.id}</p>
-        `,
-        footer: "This is an automated message from Tenant Request System.",
-      }),
-    };
-
-    await transporter.sendMail(mailOptions);
-
     return res.status(201).json({
-      message: "Tenant request submitted successfully (email sent)",
+      message: "Tenant request submitted successfully",
       data: request,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error creating request", error: error.message });
+    return res.status(500).json({ message: "Error creating request", error: error.message });
   }
 };
 
@@ -189,7 +172,7 @@ export const reviewTenantRequest = async (req, res) => {
         { user_id: request.user_id, role_id: 2 },
         { transaction: t }
       );
-
+console.log("Password", plainPassword);
       // Send approval email
       const mailOptions = {
         from: `"Tenant System" <${process.env.EMAIL_USER}>`,
@@ -295,7 +278,7 @@ export const getTenantRequestById = async (req, res) => {
 // ------------------ REGISTER USER UNDER TENANT ------------------
 export const registerUserUnderTenant = async (req, res) => {
   try {
-    const { tenantName, email, password } = req.body;
+    const { tenantName, email, password, name } = req.body;
 
     // 1. Find tenant
     const tenant = await Tenant.findOne({ where: { name: tenantName, is_deleted: false } });
@@ -311,12 +294,15 @@ export const registerUserUnderTenant = async (req, res) => {
 
     // 3. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("tenant", tenant.id);
 
-    // 4. Create user under tenant
+    // 4. Create user under tenant (storing tenant_id explicitly)
     const user = await User.create({
       tenant_id: tenant.id,
       email,
       password_hash: hashedPassword,
+      name,
+      is_deleted: false,
     });
 
     // 5. Assign "user" role
@@ -329,7 +315,14 @@ export const registerUserUnderTenant = async (req, res) => {
     // 6. Respond
     return res.status(201).json({
       message: "User registered successfully under tenant",
-      user: { id: user.id, email: user.email, tenant: tenant.name, role: "user" },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        tenant_id: tenant.id,
+        tenant: tenant.name,
+        role: "user",
+      },
     });
 
   } catch (error) {
@@ -339,3 +332,50 @@ export const registerUserUnderTenant = async (req, res) => {
     });
   }
 };
+
+
+export const getUsersByTenant = async (req, res) => {
+  try {
+    const { tenantId } = req.params;
+
+    // 1. Validate tenant
+    const tenant = await Tenant.findOne({
+      where: { id: tenantId, is_deleted: false }
+    });
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found" });
+    }
+
+    // 2. Fetch users excluding tenantAdmin
+    const users = await User.findAll({
+      where: { tenant_id: tenant.id, is_deleted: false },
+      attributes: ["id", "email"],
+      include: [
+        {
+          model: Role,
+          as: "Roles", // must match your association
+          attributes: ["id", "name"],
+          through: { attributes: [] },
+          where: {
+            name: { [Op.ne]: "tenantAdmin" } // 👈 exclude tenantAdmin
+          },
+          required: true // ensures users without Roles are excluded
+        }
+      ],
+      order: [["id", "DESC"]]
+    });
+
+    return res.status(200).json({
+      message: "Users fetched successfully",
+      tenant: { id: tenant.id, name: tenant.name },
+      users
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error fetching users for tenant",
+      error: error.message
+    });
+  }
+};
+
+
