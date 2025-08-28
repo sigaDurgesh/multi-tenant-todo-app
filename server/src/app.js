@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import sequelize from './db.js';
+import sequelize from './config/db.js';
 import cors from 'cors';
 import tenantRequestRoutes from './routes/tenantRequest.routes.js';
 import authRouter from "./routes/auth.Routes.js";
