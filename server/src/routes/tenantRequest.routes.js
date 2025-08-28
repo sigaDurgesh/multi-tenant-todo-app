@@ -4,7 +4,7 @@ import {
   reviewTenantRequest,
   listReviewedTenantRequests,
   getTenantRequestById
-} from "../controllers/tenantRequest.controller.js";
+} from "../controllers/tenant.controller.js";
 const router = express.Router();
 
 // Normal user creates request

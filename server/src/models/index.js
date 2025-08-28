@@ -1,4 +1,4 @@
-import sequelize from "../db.js";
+import sequelize from "../config/db.js";
 
 import Tenant from "./tenant.model.js";
 import User from "./user.model.js";
