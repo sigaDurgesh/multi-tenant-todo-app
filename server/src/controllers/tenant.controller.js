@@ -390,4 +390,90 @@ export const getUsersByTenant = async (req, res) => {
   }
 };
 
+export const createTenantWithAdmin = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { tenantName, email } = req.body;
+
+    // 1. Check duplicate tenant
+    const existingTenant = await Tenant.findOne({
+      where: { name: tenantName, is_deleted: false },
+    });
+    if (existingTenant) {
+      await t.rollback();
+      return res.status(400).json({ message: "Tenant name already exists" });
+    }
+
+    // 2. Generate secure password
+    const plainPassword = generateSecurePassword(12);
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
+
+    // 3. Create Tenant
+    const tenant = await Tenant.create(
+      { name: tenantName },
+      { transaction: t }
+    );
+
+    // 4. Create User (tenant admin)
+    const user = await User.create(
+      { tenant_id: tenant.id, email, password_hash: passwordHash },
+      { transaction: t }
+    );
+
+    // 5. Assign tenantAdmin role
+    await UserRole.create(
+      { user_id: user.id, role_id: 2 }, // tenantAdmin
+      { transaction: t }
+    );
+
+    // 6. Store entry in tenant_requests with status "approved"
+    const tenantRequest = await TenantRequest.create(
+      {
+        user_id: user.id,
+        tenant_name: tenantName,
+        email,
+        status: "approved",
+        reviewed_by: user.id, // optional: or super admin ID
+        reviewed_at: new Date(),
+      },
+      { transaction: t }
+    );
+
+    // 7. Send email with password
+    const mailOptions = {
+      from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Your Tenant has been Created 🎉",
+      html: generateEmailTemplate({
+        title: "Tenant Created Successfully",
+        subTitle: "Your tenant has been set up and approved.",
+        body: `
+          <p><b>Tenant:</b> ${tenantName}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Password:</b> ${plainPassword}</p>
+          <p><strong><em>Please change your password after first login.</em></strong></p>
+        `,
+        footer: "This is an automated message from Tenant System.",
+      }),
+    };
+    await transporter.sendMail(mailOptions);
+
+    // 8. Commit transaction
+    await t.commit();
+
+    return res.status(201).json({
+      message: "Tenant created successfully",
+      tenant,
+      user,
+      tenantRequest,
+    });
+  } catch (error) {
+    await t.rollback();
+    return res.status(500).json({
+      message: "Error creating tenant",
+      error: error.message,
+    });
+  }
+};
+
 
