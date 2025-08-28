@@ -7,6 +7,7 @@ import {
   Button,
   Alert,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { useFormik } from "formik";
@@ -15,11 +16,10 @@ import { AuthContext } from "../../context/AuthContext";
 import { authApi } from "../../services/api";
 import CustomTextField from "../../components/forms/theme-elements/CustomTextField";
 
-// Base validation schema (email + password)
-const baseValidationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email format")
-    .required("Email is required"),
+// Validation Schema
+const validationSchema = Yup.object({
+  tenantName: Yup.string(),
+  email: Yup.string().email("Invalid email").required("Email is required"),
   password: Yup.string()
     .min(6, "Password must be at least 6 characters")
     .required("Password is required"),
@@ -32,53 +32,42 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
 
-  const [tenantId, setTenantId] = useState(() => {
-    try {
-      return localStorage.getItem("tenantId") || null;
-    } catch {
-      return null;
-    }
-  });
-
   const formik = useFormik({
-    initialValues: { tenantName: "", email: "", password: "" },
-    validationSchema: baseValidationSchema,
+    initialValues: {
+      tenantName: "",
+      email: "",
+      password: "",
+    },
+    validationSchema: validationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       setError(null);
       setMessage(null);
 
       try {
-        const { token, user } = await authApi.login(values); // Backend returns role
+        const { token, user } = await authApi.login(values);
 
-        // Determine role
         const role = Array.isArray(user.roles) ? user.roles[0] : user.role;
 
-        // ✅ Conditional validation
-        if (!values.tenantName && role !== "superAdmin") {
-          // tenantName empty and not superAdmin → block login
+        // Require tenantName for tenantAdmin
+        if (!values.tenantName && role === "tenantAdmin") {
           setError("Please enter tenant name");
           setSubmitting(false);
           return;
         }
 
-        // ✅ Save token
+        // Save token & context
         localStorage.setItem("token", token);
-
-        // ✅ Login context
         login({ ...user, token, role });
 
-        // ✅ Store tenantId if tenantAdmin
+        // Save tenantId if tenantAdmin
         if (role === "tenantAdmin") {
-          setTenantId(user.tenant_id);
           localStorage.setItem("tenantId", user.tenant_id);
         }
 
         setMessage("Login successful!");
 
-        // ✅ Navigate based on role
+        // Redirect based on role
         if (role === "superAdmin" || role === "tenantAdmin") {
-          setTenantId(user.tenant_id); // store in context
-          localStorage.setItem("tenantId", user.tenant_id); // persist
           navigate("/dashboard");
         } else {
           navigate("/user/todos");
@@ -140,6 +129,13 @@ const Login = () => {
                   value={formik.values.tenantName}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.tenantName &&
+                    Boolean(formik.errors.tenantName)
+                  }
+                  helperText={
+                    formik.touched.tenantName && formik.errors.tenantName
+                  }
                 />
               </Box>
 
@@ -189,35 +185,59 @@ const Login = () => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={
-                    formik.touched.password && Boolean(formik.errors.password)
+                    formik.touched.password &&
+                    Boolean(formik.errors.password)
                   }
                   helperText={formik.touched.password && formik.errors.password}
                 />
               </Box>
 
-              {/* Submit */}
-              <Button
-                color="primary"
-                variant="contained"
-                size="large"
-                fullWidth
-                type="submit"
-                disabled={!formik.isValid || formik.isSubmitting}
-              >
-                {formik.isSubmitting ? "Logging in..." : "Login"}
-              </Button>
+              {/* Submit & Back Buttons */}
+              <Stack direction="row" spacing={2} justifyContent="space-between">
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  fullWidth
+                  onClick={() => navigate(
+                    '/'
+                  )}
+                  sx={{ py: 1.5, fontWeight: 600 }}
+                >
+                  Back
+                </Button>
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  disabled={!formik.isValid || formik.isSubmitting}
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 600,
+                    background:
+                      "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  }}
+                >
+                  {formik.isSubmitting ? (
+                    <CircularProgress size={24} sx={{ color: "white" }} />
+                  ) : (
+                    "Login"
+                  )}
+                </Button>
+              </Stack>
 
               {/* Links */}
               <Stack
                 direction="row"
                 justifyContent="space-between"
                 alignItems="center"
-                mt={2}
+                mt={3}
               >
                 <Typography
                   variant="body2"
                   color="primary"
-                  sx={{ cursor: "pointer" }}
+                  sx={{ cursor: "pointer", textDecoration: "underline" }}
                   onClick={() => navigate("/change-pass")}
                 >
                   Change Password
