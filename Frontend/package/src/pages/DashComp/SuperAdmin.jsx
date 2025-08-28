@@ -67,16 +67,13 @@ import {
   NoteAddRounded,
 } from "@mui/icons-material";
 import { AuthContext } from "../../context/AuthContext";
+import { TenantRequestContext } from "../../context/TenantRequestContext";
 
 const SuperAdminDashboard = ({ navigate }) => {
   // Mock user context
   const user = { name: "John Admin", id: 1 };
 
-  const { tenantRequestsCount } = useContext(AuthContext);
-  console.log("total count from superadmin dash", tenantRequestsCount);
-
-
-  // State management
+   const {totalPending, totalApproved , totalRejected , totalActive,totalCount} = useContext(TenantRequestContext)
   const [tenants, setTenants] = useState([]);
   const [filteredTenants, setFilteredTenants] = useState([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
@@ -93,7 +90,7 @@ const SuperAdminDashboard = ({ navigate }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await tenantApi.list(); // ✅ call real API
+      const res = await tenantApi.list(); 
       if (Array.isArray(res.data)) {
         setTenants(res.data);
       } else {
@@ -269,7 +266,7 @@ const SuperAdminDashboard = ({ navigate }) => {
               >
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {stats.total}
+                    {totalCount}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Total Tenants
@@ -282,48 +279,76 @@ const SuperAdminDashboard = ({ navigate }) => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={2.4}>
-  <Card
-    sx={{
-      borderRadius: 3,
-      boxShadow: 3,
-      background: "linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)",
-      color: "white",
-    }}
-  >
-    <CardContent>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Icon with badge */}
-        <Badge
-          badgeContent={stats.pending}
-          color="error"
-          overlap="circular"
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        >
-          <PendingIcon sx={{ fontSize: 40, opacity: 0.9 }} />
-        </Badge>
-        
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: 3,
+              background: "linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)",
+              color: "white",
+            }}
+          >
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                {/* Icon with badge */}
+                <Badge
+                  badgeContent={stats.pending}
+                  color="error"
+                  overlap="circular"
+                  anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                >
+                  <PendingIcon sx={{ fontSize: 40, opacity: 0.9 }} />
+                </Badge>
 
-        {/* Stat Text */}
-        <Box sx={{ textAlign: "right" }}>
-          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-            {tenantRequestsCount}
+                {/* Stat Text */}
+                <Box sx={{ textAlign: "right" }}>
+                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+                    {totalPending}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Pending Requests
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-          </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.9 }}>
-            Pending Requests
-          </Typography>
-        </Box>
-      </Box>
-    </CardContent>
-  </Card>
-</Grid>
-
+        <Grid item xs={12} sm={6} md={2.4}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: 3,
+              background: "linear-gradient(135deg, #f44336 0%, #e57373 100%)",
+              color: "white",
+            }}
+          >
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+                    {totalRejected}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Rejected
+                  </Typography>
+                </Box>
+                <CancelIcon sx={{ fontSize: 40, opacity: 0.8 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
         <Grid item xs={12} sm={6} md={2.4}>
           <Card
@@ -356,36 +381,7 @@ const SuperAdminDashboard = ({ navigate }) => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #f44336 0%, #e57373 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {stats.rejected}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Rejected
-                  </Typography>
-                </Box>
-                <CancelIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        
 
         <Grid item xs={12} sm={6} md={2.4}>
           <Card
