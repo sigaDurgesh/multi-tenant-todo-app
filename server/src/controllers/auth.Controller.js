@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import User from "../models/user.model.js";
 import Role from "../models/role.model.js";
+import Tenant from "../models/tenant.model.js";
 
 export const signup = async (req, res) => {
   try {
@@ -35,16 +36,23 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { tenantName, email, password } = req.body;
 
     // find user with their roles
     const user = await User.findOne({
-      where: { email },
-      include: {
-        model: Role,
-        through: { attributes: [] },
-        attributes: ["name"], // only return role name
-      },
+      where: { email, is_deleted: false },
+      include: [
+        {
+          model: Role,
+          through: { attributes: [] },
+          attributes: ["name"], // only return role name
+        },
+        {
+          model: Tenant,
+          attributes: ["id", "name"],
+          required: false, // allow null for super_admin
+        },
+      ],
     });
 
     if (!user) {
@@ -57,14 +65,27 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    let roles = user.Roles.map(r => r.name);
+let roles = (user.Roles || []).map(r => r.name);
 
-    // If user has no roles, assign 'user' role
-    if (roles.length === 0) {
-      const defaultRole = await Role.findOne({ where: { name: "user" } });
-      if (defaultRole) {
-        await user.addRole(defaultRole);
-        roles = ["user"];
+// If user has no roles, assign 'user' role
+if (roles.length === 0 || (!roles.includes("superAdmin") && !roles.includes("tenantAdmin"))) {
+  roles = ["user"];
+}
+    if (roles.includes("superAdmin")) {
+      if (tenantName) {
+        return res.status(400).json({ message: "Super Admin should not log in with a tenant" });
+      }
+    } else if (roles.includes("tenantAdmin") || roles.includes("user")) {
+      if (!tenantName) {
+        return res.status(400).json({ message: "Tenant name is required" });
+      }
+      const tenant = await Tenant.findOne({ where: { name: tenantName, is_deleted: false } });
+      if (!tenant) {
+        return res.status(400).json({ message: "Invalid tenant" });
+      }
+
+      if (user.tenant_id !== tenant.id) {
+        return res.status(403).json({ message: "User does not belong to this tenant" });
       }
     }
 
@@ -82,6 +103,7 @@ export const login = async (req, res) => {
         email: user.email,
         name: user.name || "User",
         tenant_id: user.tenant_id,
+        tenant_name: user.Tenant ? user.Tenant.name : null, // 👈 Added tenant name
         roles,
       },
     });
