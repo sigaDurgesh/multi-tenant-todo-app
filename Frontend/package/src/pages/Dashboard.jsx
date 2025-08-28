@@ -4,8 +4,8 @@ import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Typography } from "@mui/material";
 import SuperAdminDashboard from "./DashComp/SuperAdmin";
-import TenantAdminDashboard from "./DashComp/TenantAdmin";
 import UserDashboard from "./DashComp/UserDash";
+import TenantAdminDashboard from "./DashComp/TenantAdmin";
 
 const CommonDashboard = () => {
   const { user } = useContext(AuthContext);

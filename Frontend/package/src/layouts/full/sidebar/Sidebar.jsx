@@ -24,25 +24,36 @@ import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
 import PersonIcon from "@mui/icons-material/Person";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
+import TenantRequestContext from "../../../context/TenantRequestContext";
 
 const Sidebar = ({ total, pending, approved, rejected }) => {
   const { user } = useContext(AuthContext);
-  const { tenantRequestsCount } = useContext(AuthContext);
+  const {
+    totalPending,
+    totalApproved,
+    totalRejected,
+    totalActive,
+    totalCount,
+  } = useContext(TenantRequestContext);
 
   const menuItems = {
     superAdmin: [
       { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
       { text: "Tenants", icon: <ApartmentIcon />, path: "/superAdmin/tenants" },
-      { text: "Create Tenant", icon: <AddBusinessIcon />, path: "/superAdmin/create" },
+      {
+        text: "Create Tenant",
+        icon: <AddBusinessIcon />,
+        path: "/superAdmin/create",
+      },
       {
         text: "Tenant Requests",
-        icon:(
-      <Badge badgeContent={tenantRequestsCount} color="error">
-        <NoteAddIcon />
-      </Badge>
-    ),
+        icon: (
+          <Badge badgeContent={totalCount} color="error">
+            <NoteAddIcon />
+          </Badge>
+        ),
         path: "superAdmin/tenantrequest",
-        total:{total}
+        total: { total },
       },
       { text: "Profile", icon: <PersonIcon />, path: "/profile" },
     ],
@@ -55,7 +66,7 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
       { text: "Add Todos", icon: <NoteAddIcon />, path: "/user/addtodos" },
       { text: "My Todos", icon: <ListAltIcon />, path: "/user/todos" },
       { text: "Profile", icon: <PersonIcon />, path: "/profile" },
-      { text: "Become a Tenant", icon: <PersonIcon />, path: "/" },
+      // { text: "Become a Tenant", icon: <PersonIcon />, path: "/becometenant" },
     ],
     guest: [
       { text: "Login", icon: <LoginIcon />, path: "/login" },
@@ -88,11 +99,14 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
         }}
       >
         <Avatar sx={{ bgcolor: "secondary.main", mb: 1 }}>
-          {user?.name ? user.name[0].toUpperCase() : "?"}
+          {user?.tenant_name ? user.tenant_name[0].toUpperCase() : "?"}
         </Avatar>
         <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-          {user?.name || "Guest"}
+          {user?.role === "superAdmin"
+            ? user?.name || "SuperAdmin"
+            : user?.tenant_name || "Guest"}
         </Typography>
+
         <Typography variant="body2" sx={{ opacity: 0.8 }}>
           {user?.role || "guest"}
         </Typography>

@@ -386,48 +386,6 @@ const LandingPage = () => {
               {!user ? (
                 // If not logged in → show Login
                 <div>
-                  <Button
-                  size="large"
-                  variant="contained"
-                  sx={{
-                    borderRadius: "50px",
-                    px: 4,
-                    py: 1.5,
-                    fontSize: "1.1rem",
-                    fontWeight: "bold",
-                    background:
-                      "linear-gradient(135deg, #d3e910a9 0%, #43c8cfff 100%)",
-                  }}
-                  onClick={() => navigate("/register")}
-                >
-                  SignIn
-                </Button>
-                  
-                <Button
-                  size="large"
-                  variant="contained"
-                  sx={{
-                    borderRadius: "50px",
-                    px: 4,
-                    py: 1.5,
-                    fontSize: "1.1rem",
-                    fontWeight: "bold",
-                    background:
-                      "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                  }}
-                  onClick={() => navigate("/login")}
-                >
-                  Login
-                </Button>
-                </div>
-              ) : user.role === "user" ? (
-                // If logged in as normal user → show Become Tenant
-                <Stack
-                  direction={{ xs: "column", sm: "row" }} // column on mobile, row on desktop
-                  spacing={3}
-                  justifyContent="center"
-                  alignItems="center"
-                >
                   {/* ✅ Become a Tenant */}
                   <Button
                     size="large"
@@ -454,6 +412,48 @@ const LandingPage = () => {
                     Become a Tenant
                   </Button>
 
+                  <Button
+                    size="large"
+                    variant="contained"
+                    sx={{
+                      borderRadius: "50px",
+                      px: 4,
+                      py: 1.5,
+                      fontSize: "1.1rem",
+                      fontWeight: "bold",
+                      background:
+                        "linear-gradient(135deg, #d3e910a9 0%, #43c8cfff 100%)",
+                    }}
+                    onClick={() => navigate("/register-under-tenant")}
+                  >
+                    Register Under Tenant
+                  </Button>
+
+                  <Button
+                    size="large"
+                    variant="contained"
+                    sx={{
+                      borderRadius: "50px",
+                      px: 4,
+                      py: 1.5,
+                      fontSize: "1.1rem",
+                      fontWeight: "bold",
+                      background:
+                        "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                    }}
+                    onClick={() => navigate("/login")}
+                  >
+                    Login
+                  </Button>
+                </div>
+              ) : user.role === "user" ? (
+                // If logged in as normal user → show Become Tenant
+                <Stack
+                  direction={{ xs: "column", sm: "row" }} // column on mobile, row on desktop
+                  spacing={3}
+                  justifyContent="center"
+                  alignItems="center"
+                >
                   {/* ✅ Go to Workspace */}
                   <Button
                     size="large"
@@ -482,30 +482,32 @@ const LandingPage = () => {
                 </Stack>
               ) : (
                 // If already a tenant / admin → show Dashboard
-                <Button
-                  size="large"
-                  sx={{
-                    background:
-                      "linear-gradient(135deg, #38ef7d 0%, #11998e 100%)",
-                    color: "white",
-                    borderRadius: "50px",
-                    px: 4,
-                    py: 1.5,
-                    fontSize: "1.1rem",
-                    fontWeight: "bold",
-                    textTransform: "none",
-                    minWidth: 200,
-                    boxShadow: "0 8px 32px rgba(17, 153, 142, 0.3)",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      transform: "translateY(-4px) scale(1.02)",
-                      boxShadow: "0 12px 40px rgba(17, 153, 142, 0.4)",
-                    },
-                  }}
-                  onClick={() => navigate("/dashboard")}
-                >
-                  Go to Dashboard
-                </Button>
+                <div>
+                  <Button
+                    size="large"
+                    sx={{
+                      background:
+                        "linear-gradient(135deg, #38ef7d 0%, #11998e 100%)",
+                      color: "white",
+                      borderRadius: "50px",
+                      px: 4,
+                      py: 1.5,
+                      fontSize: "1.1rem",
+                      fontWeight: "bold",
+                      textTransform: "none",
+                      minWidth: 200,
+                      boxShadow: "0 8px 32px rgba(17, 153, 142, 0.3)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-4px) scale(1.02)",
+                        boxShadow: "0 12px 40px rgba(17, 153, 142, 0.4)",
+                      },
+                    }}
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    Go to Dashboard
+                  </Button>
+                </div>
               )}
             </Stack>
           </Box>

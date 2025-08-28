@@ -23,6 +23,7 @@ async function apiRequest(endpoint, method = "GET", body = null, headers = {}) {
 export const tenantApi = {
   list: () => apiRequest("/tenant-requests", "GET"),
   getById: (id) => apiRequest(`/tenant-requests/${id}`, "GET"),
+  getUsers: (id) => apiRequest(`/tenant-requests/users/${id}`, "GET"), // 👈 new
   updateStatus: (requestId, action, reviewerId) =>
     apiRequest(`/tenant-requests/review-request`, "PUT", {
       requestId,

@@ -4,10 +4,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import PageContainer from "src/components/container/PageContainer";
-import CustomTextField from "../../components/forms/theme-elements/CustomTextField"; // ✅ updated import
+import CustomTextField from "../../components/forms/theme-elements/CustomTextField";
 import { AuthContext } from "../../context/AuthContext";
 
-const Register = () => {
+const RegisterUnderTenant = () => {
   const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -16,11 +16,9 @@ const Register = () => {
 
   // ✅ Formik + Yup validation
   const formik = useFormik({
-    initialValues: { name: "", email: "", password: "" },
+    initialValues: { tenantName: "", email: "", password: "" },
     validationSchema: Yup.object({
-      name: Yup.string()
-        .min(3, "Name must be at least 3 characters")
-        .required("Name is required"),
+      tenantName: Yup.string().required("Tenant Name is required"),
       email: Yup.string()
         .email("Invalid email format")
         .required("Email is required"),
@@ -34,11 +32,14 @@ const Register = () => {
       setError(null);
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5000/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
-        });
+        const response = await fetch(
+          "http://localhost:5000/tenant-requests/register-user",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(values),
+          }
+        );
 
         if (!response.ok) {
           const err = await response.json();
@@ -51,8 +52,9 @@ const Register = () => {
 
         // Set user in context
         setUser({
-          name: data.username || values.name,
-          role: data.role || "user",
+          name: data.username || values.email,
+          role: data.role || "tenantUser",
+          tenantName: values.tenantName,
         });
 
         navigate("/login");
@@ -66,7 +68,7 @@ const Register = () => {
   });
 
   return (
-    <PageContainer title="Register" description="Create an account page">
+    <PageContainer title="Register Under Tenant" description="Tenant user registration">
       <Box
         sx={{
           minHeight: "100vh",
@@ -95,7 +97,7 @@ const Register = () => {
                 textAlign="center"
                 mb={2}
               >
-                Create Account
+                Register Under Tenant
               </Typography>
 
               {error && (
@@ -104,19 +106,19 @@ const Register = () => {
                 </Typography>
               )}
 
-              {/* ✅ Registration Form */}
+              {/* ✅ Form */}
               <Box component="form" noValidate onSubmit={formik.handleSubmit}>
                 <Stack spacing={2} mb={3}>
-                  {/* Name */}
+                  {/* Tenant Name */}
                   <CustomTextField
-                    id="name"
-                    name="name"
-                    label="Name"
-                    value={formik.values.name}
+                    id="tenantName"
+                    name="tenantName"
+                    label="Tenant Name"
+                    value={formik.values.tenantName}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    error={formik.touched.name && Boolean(formik.errors.name)}
-                    helperText={formik.touched.name && formik.errors.name}
+                    error={formik.touched.tenantName && Boolean(formik.errors.tenantName)}
+                    helperText={formik.touched.tenantName && formik.errors.tenantName}
                   />
 
                   {/* Email */}
@@ -141,9 +143,7 @@ const Register = () => {
                     value={formik.values.password}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    error={
-                      formik.touched.password && Boolean(formik.errors.password)
-                    }
+                    error={formik.touched.password && Boolean(formik.errors.password)}
                     helperText={formik.touched.password && formik.errors.password}
                   />
                 </Stack>
@@ -183,4 +183,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default RegisterUnderTenant;

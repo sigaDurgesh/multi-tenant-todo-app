@@ -1,4 +1,3 @@
-
 import "./App.css";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -8,6 +7,7 @@ import { useContext } from "react";
 
 // Layout
 import Layout from "./layouts/full/Layout";
+
 // Pages
 import TenantList from "./pages/superAdmin/TenantList";
 import TenantRequest from "./pages/superAdmin/TenantRequest";
@@ -17,15 +17,19 @@ import TodosList from "./pages/user/TodosList";
 import CreateTodo from "./pages/user/CreateTodo";
 import CommonDashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
-import Login2 from "./views/authentication/Login";
-import Register2 from "./views/authentication/Register";
+import Login from "./views/authentication/Login";
+import Register from "./views/authentication/Register";
 import Forbidden from "./pages/Forbbiden";
 import LandingPage from "./pages/LandingPage";
 import BecomeTenant from "./pages/BecomeTenant";
+import ChangePassword from "./pages/ChangePass";
+import RegisterUnderTenant from "./views/authentication/RegisterUnderTenant";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
-import ChangePassword from "./pages/ChangePass";
+
+// Context
+import { TenantRequestProvider } from "./context/TenantRequestContext";
 
 function AppRoutes() {
   const { user } = useContext(AuthContext);
@@ -33,39 +37,26 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/login" element={<Login2 />} />
-      <Route path="/register" element={<Register2 />} />
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/change-pass" element={<ChangePassword />} />
+      <Route path="/register-under-tenant" element={<RegisterUnderTenant />} />
+      <Route path="/" element={<LandingPage />} />
 
-      {/* Only logged-in users with role=user can see BecomeTenant */}
+      {/* Role-Based Redirects */}
       <Route
-        path="/becometenant"
-        element={
-          <PrivateRoute allowedRoles={["user"]}>
-            <BecomeTenant />
-          </PrivateRoute>
-        }
-      />
-
-      {/* Root → Redirect by role */}
-      <Route
-        path="/"
+        path="/redirect"
         element={
           <PrivateRoute>
-            {user?.role === "superAdmin" && (
-              <Navigate to="/dashboard" replace />
-            )}
-            {user?.role === "tenantAdmin" && (
-              <Navigate to="/dashboard" replace />
-            )}
+            {user?.role === "superAdmin" && <Navigate to="/dashboard" replace />}
+            {user?.role === "tenantAdmin" && <Navigate to="/dashboard" replace />}
             {user?.role === "user" && <Navigate to="/user/todos" replace />}
-            {!user?.role && <Navigate to="/landingpage" replace />}
+            {!user?.role && <Navigate to="/" replace />}
           </PrivateRoute>
         }
       />
 
-      {/* Authenticated Routes with Layout */}
+      {/* Authenticated Routes */}
       <Route
         path="/"
         element={
@@ -74,7 +65,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       >
-        {/* Common Dashboard */}
+        {/* Common */}
         <Route
           path="dashboard"
           element={
@@ -92,14 +83,13 @@ function AppRoutes() {
           }
         />
 
-        {/* Super Admin Routes */}
+        {/* Super Admin */}
         <Route
           path="superAdmin/tenants"
           element={
             <PrivateRoute allowedRoles={["superAdmin"]}>
               <TenantList />
             </PrivateRoute>
-            // /superAdmin/tenants/create
           }
         />
         <Route
@@ -129,25 +119,40 @@ function AppRoutes() {
           }
         />
 
-
         {/* User */}
-        <Route path="user/addtodos" element={
+        <Route
+          path="user/addtodos"
+          element={
             <PrivateRoute allowedRoles={["user", "tenantAdmin"]}>
               <CreateTodo />
             </PrivateRoute>
-          } />
-        <Route path="user/todos" element={
+          }
+        />
+        <Route
+          path="user/todos"
+          element={
             <PrivateRoute allowedRoles={["user", "tenantAdmin"]}>
               <TodosList />
             </PrivateRoute>
-          } />
+          }
+        />
 
-       {/* 404 */}
+        {/* Become Tenant (only logged-in users) */}
+        <Route
+          path="becometenant"
+          element={
+            <PrivateRoute allowedRoles={["user"]}>
+              <BecomeTenant />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Forbidden */}
         <Route path="/403" element={<Forbidden />} />
       </Route>
 
       {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/landingpage" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
@@ -159,9 +164,11 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <TenantRequestProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TenantRequestProvider>
       </AuthProvider>
     </ThemeProvider>
   );

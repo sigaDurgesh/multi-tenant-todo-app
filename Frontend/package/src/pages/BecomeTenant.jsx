@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import {
   Box,
   Container,
@@ -11,20 +11,24 @@ import {
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BusinessIcon from "@mui/icons-material/Business";
 import EmailIcon from "@mui/icons-material/Email";
-import { AuthContext } from "../context/AuthContext";
+import LockIcon from "@mui/icons-material/Lock";
+import { TenantRequestContext } from "../context/TenantRequestContext";
 import { useNavigate } from "react-router-dom";
 
 const BecomeTenant = () => {
   const [tenantName, setTenantName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const { user, tenantRequestId, setTenantRequestId } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { setTenantRequestId } = useContext(TenantRequestContext);
+
   const handleSubmit = async () => {
-    if (!tenantName.trim()) {
-      setError("Tenant name is required");
+    if (!tenantName.trim() || !email.trim() || !password.trim()) {
+      setError("All fields are required");
       return;
     }
 
@@ -32,11 +36,10 @@ const BecomeTenant = () => {
     setError("");
 
     const payload = {
-      user_id: user.id,
-      tenant_name: tenantName,
-      email: user.email,
+      tenantName: tenantName,
+      email: email,
+      password: password,
     };
-
     try {
       const res = await fetch("http://localhost:5000/tenant-requests", {
         method: "POST",
@@ -46,12 +49,11 @@ const BecomeTenant = () => {
 
       const result = await res.json();
 
-      if (res.ok) {
-        if (result?.data?.id) {
-          setTenantRequestId(result.data.id);
-        }
+      if (res.ok && result?.data?.id) {
+        setTenantRequestId(result.data.id); // store in context & localStorage
         setSubmitted(true);
-        // ✅ Navigate after 2 seconds
+
+        // Redirect after 2 seconds
         setTimeout(() => {
           navigate("/");
         }, 2000);
@@ -88,7 +90,10 @@ const BecomeTenant = () => {
         >
           {!submitted ? (
             <>
-              <Typography variant="h4" sx={{ fontWeight: 800, mb: 3, color: "#1a237e" }}>
+              <Typography
+                variant="h4"
+                sx={{ fontWeight: 800, mb: 3, color: "#1a237e" }}
+              >
                 Tenant Request
               </Typography>
 
@@ -98,10 +103,10 @@ const BecomeTenant = () => {
                 variant="outlined"
                 value={tenantName}
                 onChange={(e) => setTenantName(e.target.value)}
-                error={!!error}
-                helperText={error}
+                error={!!error && !tenantName.trim()}
+                helperText={!!error && !tenantName.trim() ? error : ""}
                 InputProps={{
-                  startAdornment: ( <BusinessIcon sx={{ mr: 1, color: "#5e35b1" }} /> ),
+                  startAdornment: <BusinessIcon sx={{ mr: 1, color: "#5e35b1" }} />,
                 }}
                 sx={{ mb: 3 }}
               />
@@ -109,10 +114,28 @@ const BecomeTenant = () => {
               <TextField
                 fullWidth
                 label="Email"
-                value={user.email}
+                variant="outlined"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={!!error && !email.trim()}
+                helperText={!!error && !email.trim() ? error : ""}
                 InputProps={{
-                  readOnly: true,
                   startAdornment: <EmailIcon sx={{ mr: 1, color: "#5e35b1" }} />,
+                }}
+                sx={{ mb: 3 }}
+              />
+
+              <TextField
+                fullWidth
+                label="Password"
+                variant="outlined"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={!!error && !password.trim()}
+                helperText={!!error && !password.trim() ? error : ""}
+                InputProps={{
+                  startAdornment: <LockIcon sx={{ mr: 1, color: "#5e35b1" }} />,
                 }}
                 sx={{ mb: 3 }}
               />
@@ -140,7 +163,7 @@ const BecomeTenant = () => {
                 Tenant Request Submitted!
               </Typography>
               <Typography sx={{ mt: 2, color: "#333" }}>
-                Thank you {user.name}, we’ll review your request and get back to you soon.
+                Thank you, we’ll review your request and get back to you soon.
               </Typography>
               <Typography sx={{ mt: 1, color: "gray" }}>
                 Redirecting to homepage...

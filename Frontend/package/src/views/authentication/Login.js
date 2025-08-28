@@ -1,51 +1,95 @@
-import React, { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useContext, useState } from "react";
 import {
   Grid,
   Box,
   Card,
   Typography,
-  TextField,
   Button,
   Alert,
   Stack,
 } from "@mui/material";
-import { authApi } from "../../services/api";
+import { useNavigate, Link } from "react-router-dom";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { AuthContext } from "../../context/AuthContext";
+import { authApi } from "../../services/api";
+import CustomTextField from "../../components/forms/theme-elements/CustomTextField";
+
+// Base validation schema (email + password)
+const baseValidationSchema = Yup.object({
+  email: Yup.string()
+    .email("Invalid email format")
+    .required("Email is required"),
+  password: Yup.string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+});
 
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
+  const [tenantId, setTenantId] = useState(() => {
     try {
-      const { token, user } = await authApi.login({ email, password });
-      localStorage.setItem("token", token);
-      const role = Array.isArray(user.roles) ? user.roles[0] : user.role;
-      login({ ...user, token, role });
-
-      // Navigate based on role
-      if (role === "superAdmin" || role === "tenantAdmin") {
-        navigate("/dashboard");
-      } else {
-        navigate("/user/todos");
-      }
-    } catch (err) {
-      setError(err.message || "Login failed");
-    } finally {
-      setLoading(false);
+      return localStorage.getItem("tenantId") || null;
+    } catch {
+      return null;
     }
-  };
+  });
+
+  const formik = useFormik({
+    initialValues: { tenantName: "", email: "", password: "" },
+    validationSchema: baseValidationSchema,
+    onSubmit: async (values, { setSubmitting }) => {
+      setError(null);
+      setMessage(null);
+
+      try {
+        const { token, user } = await authApi.login(values); // Backend returns role
+
+        // Determine role
+        const role = Array.isArray(user.roles) ? user.roles[0] : user.role;
+
+        // ✅ Conditional validation
+        if (!values.tenantName && role !== "superAdmin") {
+          // tenantName empty and not superAdmin → block login
+          setError("Please enter tenant name");
+          setSubmitting(false);
+          return;
+        }
+
+        // ✅ Save token
+        localStorage.setItem("token", token);
+
+        // ✅ Login context
+        login({ ...user, token, role });
+
+        // ✅ Store tenantId if tenantAdmin
+        if (role === "tenantAdmin") {
+          setTenantId(user.tenant_id);
+          localStorage.setItem("tenantId", user.tenant_id);
+        }
+
+        setMessage("Login successful!");
+
+        // ✅ Navigate based on role
+        if (role === "superAdmin" || role === "tenantAdmin") {
+          setTenantId(user.tenant_id); // store in context
+          localStorage.setItem("tenantId", user.tenant_id); // persist
+          navigate("/dashboard");
+        } else {
+          navigate("/user/todos");
+        }
+      } catch (err) {
+        setError(err.message || "Login failed");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
 
   return (
     <Box
@@ -76,34 +120,94 @@ const Login = () => {
               </Alert>
             )}
 
-            <Box component="form" onSubmit={handleLogin}>
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                sx={{ mb: 2 }}
-                required
-              />
-              <TextField
-                fullWidth
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                sx={{ mb: 3 }}
-                required
-              />
+            <Box component="form" noValidate onSubmit={formik.handleSubmit}>
+              {/* Tenant Name */}
+              <Box mb={2}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  component="label"
+                  htmlFor="tenantName"
+                  mb="5px"
+                >
+                  Tenant Name
+                </Typography>
+                <CustomTextField
+                  id="tenantName"
+                  name="tenantName"
+                  variant="outlined"
+                  fullWidth
+                  value={formik.values.tenantName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                />
+              </Box>
+
+              {/* Email */}
+              <Box mb={2}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  component="label"
+                  htmlFor="email"
+                  mb="5px"
+                >
+                  Email
+                </Typography>
+                <CustomTextField
+                  id="email"
+                  name="email"
+                  type="email"
+                  variant="outlined"
+                  fullWidth
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.email && Boolean(formik.errors.email)}
+                  helperText={formik.touched.email && formik.errors.email}
+                />
+              </Box>
+
+              {/* Password */}
+              <Box mb={3}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  component="label"
+                  htmlFor="password"
+                  mb="5px"
+                >
+                  Password
+                </Typography>
+                <CustomTextField
+                  id="password"
+                  name="password"
+                  type="password"
+                  variant="outlined"
+                  fullWidth
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.password && Boolean(formik.errors.password)
+                  }
+                  helperText={formik.touched.password && formik.errors.password}
+                />
+              </Box>
+
+              {/* Submit */}
               <Button
-                type="submit"
-                fullWidth
+                color="primary"
                 variant="contained"
-                disabled={loading}
+                size="large"
+                fullWidth
+                type="submit"
+                disabled={!formik.isValid || formik.isSubmitting}
               >
-                {loading ? "Logging in..." : "Login"}
+                {formik.isSubmitting ? "Logging in..." : "Login"}
               </Button>
 
+              {/* Links */}
               <Stack
                 direction="row"
                 justifyContent="space-between"
