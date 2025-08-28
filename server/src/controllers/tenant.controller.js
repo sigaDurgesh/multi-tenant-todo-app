@@ -86,7 +86,6 @@ export const createTenantRequest = async (req, res) => {
     const existingTenant = await TenantRequest.findOne({
       where: { tenant_name: tenantName, status: "pending" },
     });
-    console.log("Existing tenant request:", existingTenant);
     if (existingTenant) {
       return res.status(400).json({ message: "This tenant name already has a pending request" });
     }
@@ -130,70 +129,75 @@ export const reviewTenantRequest = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     const { requestId, action, reviewerId } = req.body;
-
     const request = await TenantRequest.findByPk(requestId, { transaction: t });
     if (!request) {
       await t.rollback();
       return res.status(404).json({ message: "Request not found" });
     }
-
     if (request.status !== "pending") {
       await t.rollback();
       return res.status(400).json({ message: "Request already reviewed" });
     }
-
     // Update request
     request.status = action;
     request.reviewed_by = reviewerId;
     request.reviewed_at = new Date();
     await request.save({ transaction: t });
-
     if (action === "approved") {
       const tenant = await Tenant.create(
         { name: request.tenant_name },
         { transaction: t }
       );
-
-      const plainPassword = generateSecurePassword(12);
-      const passwordHash = await bcrypt.hash(plainPassword, 10);
-
-      await User.update(
+      // Fetch user
+      const user = await User.findByPk(request.user_id, { transaction: t });
+      if (!user) {
+        await t.rollback();
+        return res.status(404).json({ message: "User not found" });
+      }
+      let plainPassword = null;
+      let passwordHash = user.password_hash;
+      // Only generate password if user doesn't already have one
+      if (!user.password_hash) {
+        plainPassword = generateSecurePassword(12);
+        passwordHash = await bcrypt.hash(plainPassword, 10);
+      }
+      await user.update(
         { tenant_id: tenant.id, password_hash: passwordHash },
-        { where: { id: request.user_id }, transaction: t }
+        { transaction: t }
       );
-
       // Replace roles
       await UserRole.destroy({
         where: { user_id: request.user_id },
         transaction: t,
       });
-
       await UserRole.create(
-        { user_id: request.user_id, role_id: 2 },
+        { user_id: request.user_id, role_id: 2 }, // tenant admin role
         { transaction: t }
       );
-console.log("Password", plainPassword);
       // Send approval email
       const mailOptions = {
         from: `"Tenant System" <${process.env.EMAIL_USER}>`,
         to: request.email,
         subject: "Your Tenant Admin Account Approved",
         html: generateEmailTemplate({
-          title: "Welcome to Multi-Tenant App 🎉",
+          title: "Welcome to Multi-Tenant App :tada:",
           subTitle: "Your tenant request has been approved.",
           body: `
             <p><b>Tenant:</b> ${request.tenant_name}</p>
             <p><b>Email:</b> ${request.email}</p>
-            <p><b>Password:</b> ${plainPassword}</p>
-            <p>You can now login as <b>Tenant Admin</b>.</p>
-            <p><strong><em>Make sure to change your password.</em></strong></p>
+            ${
+              plainPassword
+                ? `<p><b>Password:</b> ${plainPassword}</p>
+                   <p><strong><em>Make sure to change your password.</em></strong></p>`
+                : `<p>You can log in using your existing password.</p>`
+            }
           `,
           footer:
             "If you did not make this request, please contact support immediately.",
         }),
       };
       await transporter.sendMail(mailOptions);
-
+      
       await AuditLog.create(
         {
           actor_user_id: reviewerId,
@@ -240,7 +244,6 @@ console.log("Password", plainPassword);
       };
       await transporter.sendMail(mailOptions);
     }
-
     await t.commit();
     return res
       .status(200)
@@ -252,6 +255,16 @@ console.log("Password", plainPassword);
       .json({ message: "Error reviewing request", error: error.message });
   }
 };
+
+
+
+
+
+
+
+
+
+
 
 // ------------------ GET REQUEST BY ID ------------------
 export const getTenantRequestById = async (req, res) => {
@@ -294,7 +307,6 @@ export const registerUserUnderTenant = async (req, res) => {
 
     // 3. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("tenant", tenant.id);
 
     // 4. Create user under tenant (storing tenant_id explicitly)
     const user = await User.create({
