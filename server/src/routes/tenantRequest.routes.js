@@ -4,7 +4,8 @@ import {
   reviewTenantRequest,
   listReviewedTenantRequests,
   getTenantRequestById,
-  registerUserUnderTenant
+  registerUserUnderTenant,
+  getUsersByTenant
 } from "../controllers/tenant.controller.js";
 const router = express.Router();
 
@@ -22,5 +23,8 @@ router.get("/:id", getTenantRequestById);
 
 // Register user under tenant after approval
 router.post("/register-user", registerUserUnderTenant);
+
+// Get users by tenant
+router.get("/users/:tenantId", getUsersByTenant);
 
 export default router;
