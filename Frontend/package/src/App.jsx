@@ -42,6 +42,7 @@ function AppRoutes() {
       <Route path="/change-pass" element={<ChangePassword />} />
       <Route path="/register-under-tenant" element={<RegisterUnderTenant />} />
       <Route path="/" element={<LandingPage />} />
+      <Route path="/becometenant" element={<BecomeTenant />} />
 
       {/* Role-Based Redirects */}
       <Route
@@ -137,15 +138,6 @@ function AppRoutes() {
           }
         />
 
-        {/* Become Tenant (only logged-in users) */}
-        <Route
-          path="becometenant"
-          element={
-            <PrivateRoute allowedRoles={["user"]}>
-              <BecomeTenant />
-            </PrivateRoute>
-          }
-        />
 
         {/* Forbidden */}
         <Route path="/403" element={<Forbidden />} />
