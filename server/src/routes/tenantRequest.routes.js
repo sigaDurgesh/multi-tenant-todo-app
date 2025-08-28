@@ -5,7 +5,8 @@ import {
   listReviewedTenantRequests,
   getTenantRequestById,
   registerUserUnderTenant,
-  getUsersByTenant
+  getUsersByTenant,
+  createTenantWithAdmin
 } from "../controllers/tenant.controller.js";
 const router = express.Router();
 
@@ -26,5 +27,8 @@ router.post("/register-user", registerUserUnderTenant);
 
 // Get users by tenant
 router.get("/users/:tenantId", getUsersByTenant);
+
+// Super admin creates tenant directly
+router.post("/create-tenant", createTenantWithAdmin);
 
 export default router;
