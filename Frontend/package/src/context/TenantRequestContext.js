@@ -10,7 +10,9 @@ export const TenantRequestContext = createContext();
 // Provider Component
 // ----------------------------
 export const TenantRequestProvider = ({ children }) => {
+  // ----------------------------
   // Persisted State (localStorage)
+  // ----------------------------
   const [tenantRequestId, setTenantRequestId] = useState(
     () => localStorage.getItem("tenantRequestId") || null
   );
@@ -18,15 +20,21 @@ export const TenantRequestProvider = ({ children }) => {
     () => localStorage.getItem("tenantId") || null
   );
 
+  // ----------------------------
   // Tenant Info
+  // ----------------------------
   const [tenantDetails, setTenantDetails] = useState(null);
 
+  // ----------------------------
   // Tenant Users
+  // ----------------------------
   const [tenantUsers, setTenantUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [errorUsers, setErrorUsers] = useState(null);
 
+  // ----------------------------
   // Tenant Requests
+  // ----------------------------
   const [requestCounts, setRequestCounts] = useState({
     totalPending: 0,
     totalApproved: 0,
@@ -37,24 +45,30 @@ export const TenantRequestProvider = ({ children }) => {
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [errorRequests, setErrorRequests] = useState(null);
 
+  // ----------------------------
   // Tenant User Stats
+  // ----------------------------
   const [userStats, setUserStats] = useState({
     totalUsers: 0,
-    byRole: {},
-    byStatus: {},
+    byRole: {},    // { admin: 2, user: 10 }
+    byStatus: {},  // { Active: 8, Inactive: 4 }
   });
 
+  // ----------------------------
   // Persist tenantRequestId & tenantId to localStorage
+  // ----------------------------
   useEffect(() => {
     if (tenantRequestId) localStorage.setItem("tenantRequestId", tenantRequestId);
-    
+    else localStorage.removeItem("tenantRequestId");
   }, [tenantRequestId]);
 
   useEffect(() => {
     if (tenantId) localStorage.setItem("tenantId", tenantId);
   }, [tenantId]);
 
+  // ----------------------------
   // Fetch Tenant Requests Count
+  // ----------------------------
   const fetchTenantRequestsCount = async () => {
     setLoadingRequests(true);
     setErrorRequests(null);
@@ -78,7 +92,9 @@ export const TenantRequestProvider = ({ children }) => {
     }
   };
 
+  // ----------------------------
   // Fetch Tenant Details
+  // ----------------------------
   const fetchTenantDetails = async (id) => {
     if (!id) return;
     try {
@@ -92,7 +108,9 @@ export const TenantRequestProvider = ({ children }) => {
     }
   };
 
+  // ----------------------------
   // Fetch Tenant Users
+  // ----------------------------
   const fetchTenantUsers = async (id) => {
     if (!id) return;
     setLoadingUsers(true);
@@ -115,8 +133,8 @@ export const TenantRequestProvider = ({ children }) => {
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {});
-
       setUserStats({ totalUsers, byRole, byStatus });
+
     } catch (err) {
       console.error("Failed to fetch tenant users:", err);
       setTenantUsers([]);
@@ -127,46 +145,53 @@ export const TenantRequestProvider = ({ children }) => {
     }
   };
 
-  // Auto-fetch users whenever tenantId changes (automatic)
+  // ----------------------------
+  // Auto-fetch tenant users and details whenever tenantId changes
+  // ----------------------------
   useEffect(() => {
     if (tenantId) {
       fetchTenantUsers(tenantId);
-      fetchTenantDetails(tenantId); // optional: fetch tenant details too
+      fetchTenantDetails(tenantId);
     }
   }, [tenantId]);
 
+  // ----------------------------
   // Auto-refresh request counts every 40 seconds
+  // ----------------------------
   useEffect(() => {
     fetchTenantRequestsCount();
     const interval = setInterval(fetchTenantRequestsCount, 40000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-  if (tenantId) {
-    fetchTenantUsers(tenantId);
-    fetchTenantDetails(tenantId);
-  }
-}, [tenantId]);
-
-
+  // ----------------------------
   // Context value
+  // ----------------------------
   return (
     <TenantRequestContext.Provider
       value={{
+        // IDs
         tenantRequestId,
         setTenantRequestId,
         tenantId,
         setTenantId,
+
+        // Tenant Info
         tenantDetails,
+        fetchTenantDetails,
+
+        // Tenant Users
         tenantUsers,
+        fetchTenantUsers,
         loadingUsers,
         errorUsers,
-        fetchTenantUsers,
-        fetchTenantDetails,
+
+        // Tenant Requests
         requestCounts,
         loadingRequests,
         errorRequests,
+
+        // Stats
         userStats,
       }}
     >

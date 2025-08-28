@@ -73,7 +73,7 @@ const SuperAdminDashboard = ({ navigate }) => {
   // Mock user context
   const user = { name: "John Admin", id: 1 };
 
-   const {totalPending, totalApproved , totalRejected , totalActive,totalCount} = useContext(TenantRequestContext)
+   const {totalPending, totalApproved , totalRejected , totalActive,totalCount,requestCounts} = useContext(TenantRequestContext)
   const [tenants, setTenants] = useState([]);
   const [filteredTenants, setFilteredTenants] = useState([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
@@ -266,7 +266,7 @@ const SuperAdminDashboard = ({ navigate }) => {
               >
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {totalCount}
+                    {requestCounts.totalCount}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Total Tenants
@@ -308,7 +308,7 @@ const SuperAdminDashboard = ({ navigate }) => {
                 {/* Stat Text */}
                 <Box sx={{ textAlign: "right" }}>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {totalPending}
+                    {requestCounts.totalPending}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Pending Requests
@@ -338,7 +338,7 @@ const SuperAdminDashboard = ({ navigate }) => {
               >
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {totalRejected}
+                    {requestCounts.totalRejected}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
                     Rejected

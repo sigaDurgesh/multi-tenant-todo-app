@@ -9,6 +9,7 @@ import {
   Button,
   Alert,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import { authApi } from "../services/api";
 
@@ -20,6 +21,16 @@ const ChangePassword = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+
+  // -----------------------------
+  // Validate password strength
+  // -----------------------------
+  const validatePassword = (password) => {
+    if (password.length < 6) {
+      return "Password must be at least 6 characters";
+    }
+    return null;
+  };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -33,18 +44,26 @@ const ChangePassword = () => {
       return;
     }
 
-    try {
-      const token = localStorage.getItem("token"); // get auth token
-      if (!token) throw new Error("Unauthorized");
-      const data = await authApi.changePassword(newPassword, token);
-      // Ensure your authApi uses token in headers
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
+      setLoading(false);
+      return;
+    }
 
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Unauthorized");
+
+      const data = await authApi.changePassword(newPassword, token);
       setMessage(data.message || "Password updated successfully");
+
+      // Clear fields
       setNewPassword("");
       setConfirmPassword("");
 
-      // Navigate back to login page after success
-      setTimeout(() => navigate("/login"), 1500);
+      // Redirect after 2 seconds
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(err.message || "Failed to update password");
     } finally {
@@ -70,11 +89,14 @@ const ChangePassword = () => {
               Change Password
             </Typography>
 
+            {/* Success Message */}
             {message && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 {message}
               </Alert>
             )}
+
+            {/* Error Message */}
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
@@ -82,6 +104,7 @@ const ChangePassword = () => {
             )}
 
             <Box component="form" onSubmit={handleChangePassword}>
+              {/* New Password */}
               <TextField
                 fullWidth
                 label="New Password"
@@ -91,6 +114,8 @@ const ChangePassword = () => {
                 sx={{ mb: 2 }}
                 required
               />
+
+              {/* Confirm Password */}
               <TextField
                 fullWidth
                 label="Confirm Password"
@@ -100,24 +125,29 @@ const ChangePassword = () => {
                 sx={{ mb: 3 }}
                 required
               />
+
+              {/* Submit Button */}
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 disabled={loading}
+                sx={{
+                  py: 1.5,
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                }}
               >
-                {loading ? "Updating..." : "Change Password"}
+                {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Change Password"}
               </Button>
 
-              <Stack
-                direction="row"
-                justifyContent="center"
-                mt={2}
-              >
+              {/* Back to Login */}
+              <Stack direction="row" justifyContent="center" mt={3}>
                 <Typography
                   variant="body2"
                   color="primary"
-                  sx={{ cursor: "pointer" }}
+                  sx={{ cursor: "pointer", textDecoration: "underline" }}
                   onClick={() => navigate("/login")}
                 >
                   Back to Login

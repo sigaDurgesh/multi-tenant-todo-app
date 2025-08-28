@@ -33,8 +33,10 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
     totalApproved,
     totalRejected,
     totalActive,
-    totalCount,
+    requestCounts,
   } = useContext(TenantRequestContext);
+
+  console.log("total count form sidebar",requestCounts.totalCount)
 
   const menuItems = {
     superAdmin: [
@@ -48,7 +50,7 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
       {
         text: "Tenant Requests",
         icon: (
-          <Badge badgeContent={totalCount} color="error">
+          <Badge badgeContent={requestCounts.totalCount} color="error">
             <NoteAddIcon />
           </Badge>
         ),

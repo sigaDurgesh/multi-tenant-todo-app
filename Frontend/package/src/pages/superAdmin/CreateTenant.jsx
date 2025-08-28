@@ -16,27 +16,15 @@ import axios from "axios";
 export const CreateTenant = () => {
   const [tenantName, setTenantName] = useState("");
   const [tenantEmail, setTenantEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", type: "success" });
 
-  // simple random password generator
-  const generatePassword = (length = 10) => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
-    let pwd = "";
-    for (let i = 0; i < length; i++) {
-      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return pwd;
-  };
+  
 
-  const handleGeneratePassword = () => {
-    const newPwd = generatePassword();
-    setPassword(newPwd);
-  };
+ 
 
   const handleSubmit = async () => {
-    if (!tenantName || !tenantEmail || !password) {
+    if (!tenantName || !tenantEmail) {
       setSnackbar({ open: true, message: "Please fill in all required fields", type: "error" });
       return;
     }
@@ -46,7 +34,6 @@ export const CreateTenant = () => {
       const res = await axios.post("/create-tenant-admin", {
         name: tenantName,
         email: tenantEmail,
-        password: password, // send generated password too
       });
 
       if (res.status === 201 || res.status === 200) {
@@ -57,7 +44,6 @@ export const CreateTenant = () => {
         });
         setTenantName("");
         setTenantEmail("");
-        setPassword("");
       }
     } catch (err) {
       setSnackbar({
@@ -105,25 +91,6 @@ export const CreateTenant = () => {
               />
             </Grid>
 
-            {/* Auto generated password field */}
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Generated Password"
-                type="text"
-                variant="outlined"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <Button
-                variant="outlined"
-                sx={{ mt: 1, borderRadius: 2 }}
-                onClick={handleGeneratePassword}
-              >
-                Generate Password
-              </Button>
-            </Grid>
 
             {/* Buttons */}
             <Grid item xs={12} sx={{ textAlign: "right", mt: 2 }}>
