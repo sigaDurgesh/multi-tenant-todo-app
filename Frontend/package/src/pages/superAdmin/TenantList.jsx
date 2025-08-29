@@ -122,12 +122,12 @@ const TenantList = () => {
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>Tenant Name</TableCell>
-                  <TableCell>Admin Email</TableCell>
-                  <TableCell>Total Users</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                <TableRow style={{backgroundColor: '#f5f5f5'}}>
+                  <TableCell style={{fontSize:"14px",fontWeight: 'bold'}} >Tenant Name</TableCell>
+                  <TableCell style={{fontSize:"14px",fontWeight: 'bold'}}>Admin Email</TableCell>
+                  <TableCell style={{fontSize:"14px",fontWeight: 'bold'}}>Total Users</TableCell>
+                  <TableCell style={{fontSize:"14px",fontWeight: 'bold'}}>Status</TableCell>
+                  <TableCell align="right" style={{fontSize:"14px",fontWeight: 'bold'}}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
