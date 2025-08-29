@@ -37,7 +37,6 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { tenantName, email, password } = req.body;
-    console.log("Login attempt:", { tenantName, email, password });
     // find user with their roles
     const user = await User.findOne({
       where: { email, is_deleted: false },
@@ -55,7 +54,6 @@ export const login = async (req, res) => {
       ],
     });
 
-    console.log("User found:", user ? user.toJSON() : null);
 
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
@@ -67,10 +65,8 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    console.log("Password match:", isMatch);
 
 let roles = (user.Roles || []).map(r => r.name);
-console.log("User roles:", roles);
 
 // If user has no roles, assign 'user' role
 if (roles.length === 0 || (!roles.includes("superAdmin") && !roles.includes("tenantAdmin"))) {
