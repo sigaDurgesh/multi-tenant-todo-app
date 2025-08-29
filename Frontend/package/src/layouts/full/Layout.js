@@ -40,10 +40,14 @@ const Layout = () => {
   const handleMenuClose = () => setAnchorEl(null);
 
   // Logout
-  const handleLogout = () => {
-    setUser(null);
-    navigate("/login");
-  };
+const handleLogout = () => {
+  setUser(null);
+  sessionStorage.clear();
+  localStorage.removeItem("tenantId");
+  localStorage.removeItem("tenantRequestId");
+  navigate("/login");
+};
+
 
   // Notifications dropdown
   const [notifAnchor, setNotifAnchor] = useState(null);

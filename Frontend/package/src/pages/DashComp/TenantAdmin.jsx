@@ -6,7 +6,6 @@ import {
   CardContent,
   Typography,
   Divider,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -16,8 +15,8 @@ import {
   Paper,
   Avatar,
   Chip,
-  Tooltip,
   CircularProgress,
+  Button,
 } from "@mui/material";
 import {
   PersonAdd as PersonAddIcon,
@@ -41,14 +40,22 @@ const TenantAdminDashboard = () => {
     errorUsers,
   } = useContext(TenantRequestContext);
 
-  // ✅ Fetch tenant users when tenantId changes
-  useEffect(() => {
-    if (tenantId) fetchTenantUsers(tenantId);
-  }, [tenantId]);
+  // ✅ Fetch tenant users immediately on mount and whenever tenantId changes
+   // ✅ Only run when tenantId changes
+ useEffect(() => {
+  // Only reload once per session
+  if (!sessionStorage.getItem("dashboardReloaded")) {
+    const tenantIdFromStorage = localStorage.getItem("tenantId");
+    if (tenantIdFromStorage) {
+      sessionStorage.setItem("dashboardReloaded", "true");
+      window.location.reload();
+    }
+  }
+}, []);
 
-  // ----------------------------
-  // Helper functions
-  // ----------------------------
+
+
+
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "pending":
@@ -77,10 +84,6 @@ const TenantAdminDashboard = () => {
     }
   };
 
-  // ----------------------------
-  // Dummy Recent Requests
-  // (replace with API if available)
-  // ----------------------------
   const recentRequests = tenantUsers.slice(0, 5).map((user, index) => ({
     id: index + 1,
     name: user.name || user.email.split("@")[0],
@@ -98,7 +101,7 @@ const TenantAdminDashboard = () => {
         Welcome back! Here’s an overview of your tenant.
       </Typography>
 
-      {/* ---------------- Loading / Error States ---------------- */}
+      {/* Loading/Error */}
       {loadingUsers && (
         <Grid container justifyContent="center" sx={{ mt: 3 }}>
           <CircularProgress />
@@ -110,13 +113,13 @@ const TenantAdminDashboard = () => {
         </Typography>
       )}
 
-      {/* ---------------- Summary Stats ---------------- */}
+      {/* Summary Stats */}
       {!loadingUsers && !errorUsers && (
         <Grid container spacing={3} sx={{ mt: 2 }}>
           {[
             {
               title: "Total Users",
-              value: userStats.totalUsers,
+              value: userStats.totalUsers || 0,
               color: "primary",
               desc: "All users in this tenant",
             },
@@ -150,7 +153,7 @@ const TenantAdminDashboard = () => {
         </Grid>
       )}
 
-      {/* ---------------- Quick Actions ---------------- */}
+      {/* Quick Actions */}
       <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
@@ -159,38 +162,22 @@ const TenantAdminDashboard = () => {
           <Divider sx={{ mb: 2 }} />
           <Grid container spacing={2}>
             <Grid item>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<PersonAddIcon />}
-              >
+              <Button variant="contained" color="primary" startIcon={<PersonAddIcon />}>
                 Add User
               </Button>
             </Grid>
             <Grid item>
-              <Button
-                variant="outlined"
-                color="secondary"
-                startIcon={<GroupIcon />}
-              >
+              <Button variant="outlined" color="secondary" startIcon={<GroupIcon />}>
                 Manage Users
               </Button>
             </Grid>
             <Grid item>
-              <Button
-                variant="outlined"
-                color="success"
-                startIcon={<AssessmentIcon />}
-              >
+              <Button variant="outlined" color="success" startIcon={<AssessmentIcon />}>
                 View Reports
               </Button>
             </Grid>
             <Grid item>
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<SettingsIcon />}
-              >
+              <Button variant="outlined" color="warning" startIcon={<SettingsIcon />}>
                 Tenant Settings
               </Button>
             </Grid>
@@ -198,7 +185,7 @@ const TenantAdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* ---------------- Recent Tenant Requests ---------------- */}
+      {/* Recent Requests */}
       {!loadingUsers && !errorUsers && (
         <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 3 }}>
           <CardContent>
@@ -214,7 +201,6 @@ const TenantAdminDashboard = () => {
                     <TableCell>Email</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Created</TableCell>
-                    <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -238,22 +224,6 @@ const TenantAdminDashboard = () => {
                         />
                       </TableCell>
                       <TableCell>{request.created_at}</TableCell>
-                      <TableCell>
-                        {request.status.toLowerCase() === "pending" && (
-                          <>
-                            <Tooltip title="Approve">
-                              <Button size="small" color="success">
-                                Approve
-                              </Button>
-                            </Tooltip>
-                            <Tooltip title="Reject">
-                              <Button size="small" color="error">
-                                Reject
-                              </Button>
-                            </Tooltip>
-                          </>
-                        )}
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

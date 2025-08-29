@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 import {
   Grid,
   Box,
@@ -7,7 +8,6 @@ import {
   Typography,
   TextField,
   Button,
-  Alert,
   Stack,
   CircularProgress,
 } from "@mui/material";
@@ -19,34 +19,25 @@ const ChangePassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
 
-  // -----------------------------
-  // Validate password strength
-  // -----------------------------
   const validatePassword = (password) => {
-    if (password.length < 6) {
-      return "Password must be at least 6 characters";
-    }
+    if (password.length < 6) return "Password must be at least 6 characters";
     return null;
   };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setMessage(null);
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      toast.error("Passwords do not match", { style: { fontSize: "18px" } });
       setLoading(false);
       return;
     }
 
     const passwordError = validatePassword(newPassword);
     if (passwordError) {
-      setError(passwordError);
+      toast.error(passwordError, { style: { fontSize: "18px" } });
       setLoading(false);
       return;
     }
@@ -56,16 +47,23 @@ const ChangePassword = () => {
       if (!token) throw new Error("Unauthorized");
 
       const data = await authApi.changePassword(newPassword, token);
-      setMessage(data.message || "Password updated successfully");
 
-      // Clear fields
-      setNewPassword("");
-      setConfirmPassword("");
+      // Clear sensitive data
+      localStorage.clear();
+      sessionStorage.clear();
 
-      // Redirect after 2 seconds
+      // Show success toast with bigger font
+      toast.success(data.message || "Password updated successfully", {
+        style: { fontSize: "15px", fontWeight: "bold" },
+        duration: 2000,
+      });
+
+      // Navigate immediately
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-      setError(err.message || "Failed to update password");
+      toast.error(err.message || "Failed to update password", {
+        style: { fontSize: "18px" },
+      });
     } finally {
       setLoading(false);
     }
@@ -82,6 +80,7 @@ const ChangePassword = () => {
         p: 2,
       }}
     >
+      <Toaster position="top-center" reverseOrder={false} />
       <Grid container justifyContent="center">
         <Grid item xs={12} sm={8} md={5} lg={4}>
           <Card sx={{ p: 4, borderRadius: 3, boxShadow: 6 }}>
@@ -89,22 +88,7 @@ const ChangePassword = () => {
               Change Password
             </Typography>
 
-            {/* Success Message */}
-            {message && (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                {message}
-              </Alert>
-            )}
-
-            {/* Error Message */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-
             <Box component="form" onSubmit={handleChangePassword}>
-              {/* New Password */}
               <TextField
                 fullWidth
                 label="New Password"
@@ -114,8 +98,6 @@ const ChangePassword = () => {
                 sx={{ mb: 2 }}
                 required
               />
-
-              {/* Confirm Password */}
               <TextField
                 fullWidth
                 label="Confirm Password"
@@ -125,8 +107,6 @@ const ChangePassword = () => {
                 sx={{ mb: 3 }}
                 required
               />
-
-              {/* Submit Button */}
               <Button
                 type="submit"
                 fullWidth
@@ -142,7 +122,6 @@ const ChangePassword = () => {
                 {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Change Password"}
               </Button>
 
-              {/* Back to Login */}
               <Stack direction="row" justifyContent="center" mt={3}>
                 <Typography
                   variant="body2"

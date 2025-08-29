@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Typography,
   Card,
@@ -15,10 +15,21 @@ import {
   IconButton,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Snackbar,
+  Alert,
+  Stack,
+  MenuItem,
+  FormHelperText,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { TenantRequestContext } from "../../context/TenantRequestContext";
+import { tenantApi } from "../../services/tenantAdminAPI"; // 👈 import api
 
 const UsersList = () => {
   const {
@@ -31,14 +42,65 @@ const UsersList = () => {
     errorUsers,
   } = useContext(TenantRequestContext);
 
-  // ✅ Fetch tenant users on page load / tenantId change
+  const [open, setOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newTenantId, setNewTenantId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [snack, setSnack] = useState({ open: false, type: "", msg: "" });
+
   useEffect(() => {
-    if (tenantId) fetchTenantUsers(tenantId);
+    if (tenantId) {
+      fetchTenantUsers(tenantId);
+      setNewTenantId(tenantId); // auto-fill tenantId
+    }
   }, [tenantId]);
 
-  // ----------------------------
-  // Render Loading
-  // ----------------------------
+  const validate = () => {
+    let temp = {};
+    if (!newTenantId.trim()) temp.tenantId = "Tenant ID is required";
+    if (!newEmail.trim()) temp.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(newEmail)) temp.email = "Enter a valid email";
+    setErrors(temp);
+    return Object.keys(temp).length === 0;
+  };
+
+  const handleAddUser = async () => {
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      const result = await tenantApi.addTenantUser(newTenantId, newEmail);
+
+      setSnack({
+        open: true,
+        type: "success",
+        msg: result.message || "User invited successfully",
+      });
+
+      setNewEmail("");
+      setOpen(false);
+      fetchTenantUsers(newTenantId); // refresh list
+    } catch (err) {
+      console.error("Add user error:", err);
+
+      // Handle duplicate user error specifically
+      if (err.message?.toLowerCase().includes("exists")) {
+        setErrors({ email: "This user already exists in tenant. Try another email." });
+      }
+
+      setSnack({
+        open: true,
+        type: "error",
+        msg: err.message || "Failed to add user",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseSnack = () => setSnack({ open: false, type: "", msg: "" });
+
   if (loadingUsers) {
     return (
       <Grid container justifyContent="center" sx={{ mt: 5 }}>
@@ -47,9 +109,6 @@ const UsersList = () => {
     );
   }
 
-  // ----------------------------
-  // Render Error
-  // ----------------------------
   if (errorUsers) {
     return (
       <Typography color="error" textAlign="center" sx={{ mt: 5 }}>
@@ -60,7 +119,6 @@ const UsersList = () => {
 
   return (
     <div>
-      {/* Header */}
       <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h5">
           Users Management {tenantDetails ? `- ${tenantDetails.name}` : ""}
@@ -68,26 +126,23 @@ const UsersList = () => {
             ({userStats.totalUsers || 0} users)
           </Typography>
         </Typography>
-        <Button variant="contained" color="primary">
-          Add New User
+        <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+          Invite New User
         </Button>
       </Grid>
 
-      {/* Card Wrapper */}
       <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
             Tenant Users
           </Typography>
 
-          {/* Users Table */}
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>User Name</TableCell>
                   <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
@@ -98,7 +153,6 @@ const UsersList = () => {
                     <TableRow key={user.id}>
                       <TableCell>{user.name || user.email.split("@")[0]}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.Roles?.[0]?.name || "User"}</TableCell>
                       <TableCell>
                         <Chip
                           label={user.status || "Active"}
@@ -128,6 +182,61 @@ const UsersList = () => {
           </TableContainer>
         </CardContent>
       </Card>
+
+      {/* Add User Modal */}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Invite New User</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              label="Tenant ID"
+              fullWidth
+              value={newTenantId}
+              onChange={(e) => setNewTenantId(e.target.value)}
+              error={!!errors.tenantId}
+              helperText={errors.tenantId}
+              disabled={!!tenantId}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              error={!!errors.email}
+              helperText={errors.email}
+            />
+            
+            <FormHelperText>Select the role for this user in tenant</FormHelperText>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddUser}
+            disabled={loading}
+            sx={{ minWidth: 120 }}
+          >
+            {loading ? <CircularProgress size={22} color="inherit" /> : "Invite"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={handleCloseSnack}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnack}
+          severity={snack.type === "success" ? "success" : "error"}
+          sx={{ width: "100%" }}
+        >
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
