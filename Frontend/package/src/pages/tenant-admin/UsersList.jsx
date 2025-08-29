@@ -127,7 +127,7 @@ const UsersList = () => {
           </Typography>
         </Typography>
         <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
-          Invite New User
+          Add New User
         </Button>
       </Grid>
 
@@ -218,7 +218,7 @@ const UsersList = () => {
             disabled={loading}
             sx={{ minWidth: 120 }}
           >
-            {loading ? <CircularProgress size={22} color="inherit" /> : "Invite"}
+            {loading ? <CircularProgress size={22} color="inherit" /> : "Add User"}
           </Button>
         </DialogActions>
       </Dialog>

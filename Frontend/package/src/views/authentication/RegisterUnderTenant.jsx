@@ -5,10 +5,10 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import PageContainer from "src/components/container/PageContainer";
 import CustomTextField from "../../components/forms/theme-elements/CustomTextField";
-import { AuthContext } from "../../context/AuthContext";
+// import { AuthContext } from "../../context/AuthContext";
 
 const RegisterUnderTenant = () => {
-  const { setUser } = useContext(AuthContext);
+  // const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [error, setError] = useState(null);
@@ -51,11 +51,11 @@ const RegisterUnderTenant = () => {
         }
 
         // ✅ Success: set user context
-        setUser({
-          name: data.username || values.email,
-          role: data.role || "tenantUser",
-          tenantName: values.tenantName,
-        });
+        // setUser({
+        //   name: data.username || values.email,
+        //   role: data.role || "tenantUser",
+        //   tenantName: values.tenantName,
+        // });
 
         setSuccess("Registration successful! Redirecting to login...");
         setTimeout(() => navigate("/login"), 2000);
@@ -147,7 +147,7 @@ const RegisterUnderTenant = () => {
                     disabled={!formik.isValid || formik.isSubmitting || loading}
                     sx={{ py: 1.5, fontWeight: 600, background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}
                   >
-                    {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Sign Up"}
+                    {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Register"}
                   </Button>
                 </Stack>
               </Box>
@@ -163,7 +163,7 @@ const RegisterUnderTenant = () => {
                   color="primary"
                   sx={{ textDecoration: "none", fontWeight: 500 }}
                 >
-                  Sign In
+                  Login
                 </Typography>
               </Stack>
             </Card>

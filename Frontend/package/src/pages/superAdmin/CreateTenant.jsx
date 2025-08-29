@@ -11,11 +11,14 @@ import {
 } from "@mui/material";
 import toast, { Toaster } from "react-hot-toast";
 import { superAdmin } from "../../services/superAdminAPI";
+import { useNavigate } from "react-router";
 
 export const CreateTenant = () => {
   const [tenantName, setTenantName] = useState("");
   const [tenantEmail, setTenantEmail] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     if (!tenantName || !tenantEmail) {
@@ -74,7 +77,7 @@ export const CreateTenant = () => {
       <Card sx={{ width: "100%", maxWidth: 600, borderRadius: 3, boxShadow: 4 }}>
         <CardContent>
           <Typography variant="h5" gutterBottom fontWeight="bold">
-            Create Tenant Admin
+            Create a Tenant 
           </Typography>
           <Divider sx={{ mb: 3 }} />
           <Grid container spacing={2}>
@@ -106,6 +109,7 @@ export const CreateTenant = () => {
                 onClick={() => {
                   setTenantName("");
                   setTenantEmail("");
+                  navigate("/dashboard");
                 }}
               >
                 Cancel

@@ -297,7 +297,6 @@ const TenantRequest = () => {
     ) : detail ? (
       <Stack spacing={1.5}>
         {Object.entries({
-          ID: detail.id,
           "Tenant Name": detail.tenant_name,
           Email: detail.email || detail.requester?.email || "N/A",
           Status: detail.status,
