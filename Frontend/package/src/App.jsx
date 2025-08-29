@@ -30,6 +30,7 @@ import PrivateRoute from "./routes/PrivateRoute";
 
 // Context
 import { TenantRequestProvider } from "./context/TenantRequestContext";
+import CreateUser from "./pages/tenant-admin/CreateUser";
 
 function AppRoutes() {
   const { user } = useContext(AuthContext);
@@ -38,7 +39,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* <Route path="/register" element={<Register />} /> */}
       <Route path="/change-pass" element={<ChangePassword />} />
       <Route path="/register-under-tenant" element={<RegisterUnderTenant />} />
       <Route path="/" element={<LandingPage />} />
@@ -116,6 +117,15 @@ function AppRoutes() {
           element={
             <PrivateRoute allowedRoles={["tenantAdmin"]}>
               <UsersList />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="tenant-admin/createuser"
+          element={
+            <PrivateRoute allowedRoles={["tenantAdmin"]}>
+              <CreateUser />
             </PrivateRoute>
           }
         />

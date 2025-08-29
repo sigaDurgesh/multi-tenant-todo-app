@@ -71,7 +71,7 @@ import { TenantRequestContext } from "../../context/TenantRequestContext";
 
 const SuperAdminDashboard = ({ navigate }) => {
   // Mock user context
-  const user = { name: "John Admin", id: 1 };
+    const { user } = useContext(AuthContext);
 
    const {totalPending, totalApproved , totalRejected , totalActive,totalCount,requestCounts} = useContext(TenantRequestContext)
   const [tenants, setTenants] = useState([]);
@@ -266,10 +266,10 @@ const SuperAdminDashboard = ({ navigate }) => {
               >
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {requestCounts.totalCount}
+                    {requestCounts.totalApproved}
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Total Tenants
+                    Total Approved
                   </Typography>
                 </Box>
                 <BusinessIcon sx={{ fontSize: 40, opacity: 0.8 }} />

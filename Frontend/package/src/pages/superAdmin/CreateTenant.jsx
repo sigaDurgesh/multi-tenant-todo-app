@@ -8,49 +8,61 @@ import {
   Button,
   Grid,
   Divider,
-  Snackbar,
-  Alert,
 } from "@mui/material";
-import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
+import { superAdmin } from "../../services/superAdminAPI";
 
 export const CreateTenant = () => {
   const [tenantName, setTenantName] = useState("");
   const [tenantEmail, setTenantEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", type: "success" });
-
-  
-
- 
 
   const handleSubmit = async () => {
     if (!tenantName || !tenantEmail) {
-      setSnackbar({ open: true, message: "Please fill in all required fields", type: "error" });
+      toast.error("Please fill in all required fields", {
+        duration: 4000,
+        style: { fontSize: "16px" },
+      });
       return;
     }
 
     try {
       setLoading(true);
-      const res = await axios.post("/create-tenant-admin", {
-        name: tenantName,
-        email: tenantEmail,
-      });
 
-      if (res.status === 201 || res.status === 200) {
-        setSnackbar({
-          open: true,
-          message: "Tenant admin created successfully! Credentials sent via email.",
-          type: "success",
+      const res = await superAdmin.createTenant({ tenantName, email: tenantEmail });
+      const data = res?.data ?? res;
+      // Treat as success if message exists and doesn't contain "failed" or "error"
+      const success =
+        typeof data.message === "string" &&
+        !/fail|error/i.test(data.message);
+
+      const message =
+        typeof data.message === "string"
+          ? data.message
+          : success
+          ? "Tenant admin created successfully!"
+          : "Failed to create tenant admin";
+
+      if (success) {
+        toast.success(message, {
+          duration: 4000,
+          style: { fontSize: "18px", fontWeight: "bold" },
         });
+
+        // Clear form fields
         setTenantName("");
         setTenantEmail("");
+      } else {
+        throw new Error(message);
       }
     } catch (err) {
-      setSnackbar({
-        open: true,
-        message: err.response?.data?.message || "Failed to create tenant admin",
-        type: "error",
-      });
+      toast.error(
+        err?.response?.data?.message || err.message || "Failed to create tenant admin",
+        {
+          duration: 4000,
+          style: { fontSize: "16px", fontWeight: "bold" },
+        }
+      );
     } finally {
       setLoading(false);
     }
@@ -58,41 +70,35 @@ export const CreateTenant = () => {
 
   return (
     <Box sx={{ display: "flex", justifyContent: "center", mt: 6, px: 2 }}>
+      <Toaster position="top-center" reverseOrder={false} />
       <Card sx={{ width: "100%", maxWidth: 600, borderRadius: 3, boxShadow: 4 }}>
         <CardContent>
-          {/* Header */}
           <Typography variant="h5" gutterBottom fontWeight="bold">
             Create Tenant Admin
           </Typography>
           <Divider sx={{ mb: 3 }} />
-
-          {/* Form */}
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Tenant Name"
                 variant="outlined"
-                required
                 value={tenantName}
                 onChange={(e) => setTenantName(e.target.value)}
+                required
               />
             </Grid>
-
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Tenant Email"
                 type="email"
                 variant="outlined"
-                required
                 value={tenantEmail}
                 onChange={(e) => setTenantEmail(e.target.value)}
+                required
               />
             </Grid>
-
-
-            {/* Buttons */}
             <Grid item xs={12} sx={{ textAlign: "right", mt: 2 }}>
               <Button
                 variant="outlined"
@@ -100,7 +106,6 @@ export const CreateTenant = () => {
                 onClick={() => {
                   setTenantName("");
                   setTenantEmail("");
-                  setPassword("");
                 }}
               >
                 Cancel
@@ -117,16 +122,6 @@ export const CreateTenant = () => {
           </Grid>
         </CardContent>
       </Card>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.type}>{snackbar.message}</Alert>
-      </Snackbar>
     </Box>
   );
 };

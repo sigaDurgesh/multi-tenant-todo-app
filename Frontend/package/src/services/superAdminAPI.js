@@ -24,6 +24,7 @@ async function apiRequest(endpoint, method = "GET", body = null, headers = {}) {
 export const superAdmin = {
   // List all tenant requests
   list: () => apiRequest("/tenant-requests", "GET"),
+  createTenant: (tenantData) => apiRequest("/tenant-requests/create-tenant", "POST", tenantData),
   // Get details of a single tenant request by ID
   getById: (id) => apiRequest(`/tenant-requests/${id}`, "GET"),
   // Approve or reject a tenant request

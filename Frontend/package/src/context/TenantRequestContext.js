@@ -1,17 +1,11 @@
 import React, { createContext, useState, useEffect } from "react";
 import { tenantApi } from "../services/tenantAdminAPI";
 
-// ----------------------------
-// Context Definition
-// ----------------------------
 export const TenantRequestContext = createContext();
 
-// ----------------------------
-// Provider Component
-// ----------------------------
 export const TenantRequestProvider = ({ children }) => {
   // ----------------------------
-  // Persisted State (localStorage)
+  // Persisted State
   // ----------------------------
   const [tenantRequestId, setTenantRequestId] = useState(
     () => localStorage.getItem("tenantRequestId") || null
@@ -50,12 +44,12 @@ export const TenantRequestProvider = ({ children }) => {
   // ----------------------------
   const [userStats, setUserStats] = useState({
     totalUsers: 0,
-    byRole: {},    // { admin: 2, user: 10 }
-    byStatus: {},  // { Active: 8, Inactive: 4 }
+    byRole: {},
+    byStatus: {},
   });
 
   // ----------------------------
-  // Persist tenantRequestId & tenantId to localStorage
+  // Sync state to localStorage
   // ----------------------------
   useEffect(() => {
     if (tenantRequestId) localStorage.setItem("tenantRequestId", tenantRequestId);
@@ -64,7 +58,24 @@ export const TenantRequestProvider = ({ children }) => {
 
   useEffect(() => {
     if (tenantId) localStorage.setItem("tenantId", tenantId);
+    else localStorage.removeItem("tenantId");
   }, [tenantId]);
+
+  // ----------------------------
+  // Listen to localStorage changes from other tabs or navigation
+  // ----------------------------
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      if (event.key === "tenantId") {
+        setTenantId(event.newValue);
+      }
+      if (event.key === "tenantRequestId") {
+        setTenantRequestId(event.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   // ----------------------------
   // Fetch Tenant Requests Count
@@ -76,13 +87,13 @@ export const TenantRequestProvider = ({ children }) => {
       const response = await tenantApi.list();
       const requests = response?.data || [];
 
-      const totalPending = requests.filter(r => r.status === "pending").length;
-      const totalApproved = requests.filter(r => r.status === "approved").length;
-      const totalRejected = requests.filter(r => r.status === "rejected").length;
-      const totalActive = requests.filter(r => r.status === "active").length;
-      const totalCount = requests.length;
-
-      setRequestCounts({ totalPending, totalApproved, totalRejected, totalActive, totalCount });
+      setRequestCounts({
+        totalPending: requests.filter(r => r.status === "pending").length,
+        totalApproved: requests.filter(r => r.status === "approved").length,
+        totalRejected: requests.filter(r => r.status === "rejected").length,
+        totalActive: requests.filter(r => r.status === "active").length,
+        totalCount: requests.length,
+      });
     } catch (err) {
       console.error("Failed to fetch tenant requests count:", err);
       setRequestCounts({ totalPending: 0, totalApproved: 0, totalRejected: 0, totalActive: 0, totalCount: 0 });
@@ -98,9 +109,9 @@ export const TenantRequestProvider = ({ children }) => {
   const fetchTenantDetails = async (id) => {
     if (!id) return;
     try {
-      const data = await tenantApi.getById(id);
+      const data = await tenantApi.getUsers(id);
       setTenantDetails(data?.tenant || null);
-      setTenantId(data?.tenant?.id || null);
+      setTenantId(data?.tenant?.id || id); // keep state in sync
     } catch (err) {
       console.error("Failed to fetch tenant details:", err);
       setTenantDetails(null);
@@ -115,7 +126,6 @@ export const TenantRequestProvider = ({ children }) => {
     if (!id) return;
     setLoadingUsers(true);
     setErrorUsers(null);
-
     try {
       const data = await tenantApi.getUsers(id);
       const users = data?.users || [];
@@ -134,7 +144,6 @@ export const TenantRequestProvider = ({ children }) => {
         return acc;
       }, {});
       setUserStats({ totalUsers, byRole, byStatus });
-
     } catch (err) {
       console.error("Failed to fetch tenant users:", err);
       setTenantUsers([]);
@@ -146,7 +155,7 @@ export const TenantRequestProvider = ({ children }) => {
   };
 
   // ----------------------------
-  // Auto-fetch tenant users and details whenever tenantId changes
+  // Auto-fetch tenant users & details whenever tenantId changes
   // ----------------------------
   useEffect(() => {
     if (tenantId) {
@@ -156,7 +165,7 @@ export const TenantRequestProvider = ({ children }) => {
   }, [tenantId]);
 
   // ----------------------------
-  // Auto-refresh request counts every 40 seconds
+  // Auto-refresh tenant requests every 40s
   // ----------------------------
   useEffect(() => {
     fetchTenantRequestsCount();
@@ -170,28 +179,19 @@ export const TenantRequestProvider = ({ children }) => {
   return (
     <TenantRequestContext.Provider
       value={{
-        // IDs
         tenantRequestId,
         setTenantRequestId,
         tenantId,
         setTenantId,
-
-        // Tenant Info
         tenantDetails,
         fetchTenantDetails,
-
-        // Tenant Users
         tenantUsers,
         fetchTenantUsers,
         loadingUsers,
         errorUsers,
-
-        // Tenant Requests
         requestCounts,
         loadingRequests,
         errorRequests,
-
-        // Stats
         userStats,
       }}
     >

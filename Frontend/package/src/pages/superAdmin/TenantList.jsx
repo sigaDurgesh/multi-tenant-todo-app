@@ -25,6 +25,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import RestoreIcon from "@mui/icons-material/Restore";
+import { useNavigate } from "react-router";
 
 const TenantList = () => {
   // Example tenant data (replace with API later)
@@ -58,6 +59,8 @@ const TenantList = () => {
   const [tenants, setTenants] = useState(initialTenants);
   const [success, setSuccess] = useState("");
   const [selectedTenant, setSelectedTenant] = useState(null);
+
+  const navigate = useNavigate();
 
   // Toggle block/unblock
   const handleToggleStatus = (id) => {
@@ -99,9 +102,13 @@ const TenantList = () => {
       {/* Header */}
       <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
         <Typography variant="h5">Tenant Management</Typography>
-        <Button variant="contained" color="primary">
-          Create New Tenant
-        </Button>
+        <Button
+  variant="contained"
+  color="primary"
+  onClick={() => navigate("/superAdmin/create")} // ✅ navigate on click
+>
+  Create New Tenant
+</Button>
       </Grid>
 
       {/* Card Wrapper */}

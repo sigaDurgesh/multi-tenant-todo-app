@@ -34,9 +34,8 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
     totalRejected,
     totalActive,
     requestCounts,
+    userStats,
   } = useContext(TenantRequestContext);
-
-  console.log("total count form sidebar",requestCounts.totalCount)
 
   const menuItems = {
     superAdmin: [
@@ -50,7 +49,7 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
       {
         text: "Tenant Requests",
         icon: (
-          <Badge badgeContent={requestCounts.totalCount} color="error">
+          <Badge badgeContent={requestCounts.totalPending} color="error">
             <NoteAddIcon />
           </Badge>
         ),
@@ -61,7 +60,15 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
     ],
     tenantAdmin: [
       { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
-      { text: "Users", icon: <PeopleIcon />, path: "/tenant-admin/users" },
+      {
+        text: "Users",
+        icon: (
+          <Badge badgeContent={userStats.totalUsers} color="error">
+            <NoteAddIcon />
+          </Badge>
+        ),
+        path: "/tenant-admin/users",
+      },
       { text: "Profile", icon: <PersonIcon />, path: "/profile" },
     ],
     user: [
@@ -132,3 +139,4 @@ const Sidebar = ({ total, pending, approved, rejected }) => {
 };
 
 export default Sidebar;
+
