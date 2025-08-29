@@ -476,4 +476,106 @@ export const createTenantWithAdmin = async (req, res) => {
   }
 };
 
+export const addUserUnderTenant = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { tenantId, email, roleId } = req.body; 
+    // roleId optional; if not provided default = user role (id=3 for example)
+
+    // 1. Validate tenant
+    const tenant = await Tenant.findByPk(tenantId, { transaction: t });
+    if (!tenant || tenant.is_deleted) {
+      await t.rollback();
+      return res.status(404).json({ message: "Tenant not found" });
+    }
+
+    // 2. Check if user already exists under tenant
+    let user = await User.findOne({
+      where: { email, tenant_id: tenant.id, is_deleted: false },
+      include: [{ model: Role, as: "Roles" }],
+      transaction: t,
+    });
+
+    if (user) {
+      // User already exists → just send info email
+      const mailOptions = {
+        from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: `Already Registered with ${tenant.name}`,
+        html: generateEmailTemplate({
+          title: "You are already registered",
+          subTitle: `Hello, you are already a user of tenant <b>${tenant.name}</b>.`,
+          body: `
+            <p><b>Tenant:</b> ${tenant.name}</p>
+            <p><b>Email:</b> ${email}</p>
+            <p>No further action is required. You can continue using your existing account.</p>
+          `,
+          footer: "This is an automated message from Tenant System.",
+        }),
+      };
+      await transporter.sendMail(mailOptions);
+
+      await t.commit();
+      return res.status(200).json({
+        message: "User already exists under tenant. Info email sent.",
+        user,
+      });
+    }
+
+    // 3. If user does not exist → create with auto password
+    const plainPassword = generateSecurePassword(12);
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
+
+    user = await User.create(
+      {
+        tenant_id: tenant.id,
+        email,
+        password_hash: passwordHash,
+      },
+      { transaction: t }
+    );
+
+    const assignedRoleId = roleId || 3; // default user role
+    await UserRole.create(
+      { user_id: user.id, role_id: assignedRoleId },
+      { transaction: t }
+    );
+
+    // 4. Send welcome email for new user
+    const mailOptions = {
+      from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Welcome to ${tenant.name}! 🎉`,
+      html: generateEmailTemplate({
+        title: "Welcome to the Tenant System",
+        subTitle: "Your account has been created successfully.",
+        body: `
+          <p><b>Tenant:</b> ${tenant.name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Password:</b> ${plainPassword}</p>
+          <br/>
+          <p><strong><em>Please change your password after your first login.</em></strong></p>
+          <p><strong><em>Don't forget your tenant name – it's required for login.</em></strong></p>
+        `,
+        footer: "This is an automated message from Tenant System.",
+      }),
+    };
+    await transporter.sendMail(mailOptions);
+
+    await t.commit();
+
+    return res.status(201).json({
+      message: "New user created successfully under tenant",
+      user,
+    });
+  } catch (error) {
+    await t.rollback();
+    return res.status(500).json({
+      message: "Error adding user under tenant",
+      error: error.message,
+    });
+  }
+};
+
+
 
