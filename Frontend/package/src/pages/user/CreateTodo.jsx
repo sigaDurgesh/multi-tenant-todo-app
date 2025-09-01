@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Typography,
   TextField,
@@ -6,209 +6,93 @@ import {
   Grid,
   Card,
   CardContent,
-  MenuItem,
   Snackbar,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Box,
 } from "@mui/material";
-
-const priorities = ["Low", "Medium", "High"];
-const statuses = ["Pending", "In Progress", "Completed"];
+import { TodosContext } from "../../context/TodoContext";
 
 const CreateTodo = () => {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    priority: "Medium",
-    status: "Pending",
-    dueDate: "",
-  });
-
-  const [openDialog, setOpenDialog] = useState(false);
+  const { addTodo } = useContext(TodosContext);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // handle input change
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // submit form
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    // simple validation
-    if (!formData.title || !formData.dueDate) {
-      alert("Please fill all required fields");
+  const handleSubmit = () => {
+    if (!title.trim()) {
+      alert("Title is required!");
       return;
     }
 
-    // Open confirmation dialog
-    setOpenDialog(true);
-  };
-
-  // confirm save
-  const handleConfirm = () => {
-    setOpenDialog(false);
-
-    // ✅ Get existing todos from localStorage
-    const storedTodos = localStorage.getItem("todo");
-    let todosArray = storedTodos ? JSON.parse(storedTodos) : [];
-
-    // ✅ Append new todo
-    const newTodo = {
-      ...formData,
-      id: Date.now(), // unique ID
-    };
-    todosArray.push(newTodo);
-
-    // ✅ Save back to localStorage
-    localStorage.setItem("todo", JSON.stringify(todosArray));
-
-    console.log("Todo Created:", newTodo);
-
+    addTodo({ title, description });
+    setTitle("");
+    setDescription("");
     setSuccess(true);
-
-    // Reset form
-    setFormData({
-      title: "",
-      description: "",
-      priority: "Medium",
-      status: "Pending",
-      dueDate: "",
-    });
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Page Header */}
-      <Typography variant="h4" gutterBottom fontWeight="bold">
+      {/* Header */}
+      <Typography variant="h4" fontWeight="bold" gutterBottom>
         Create New Todo
       </Typography>
-      <Typography variant="body1" color="textSecondary" gutterBottom>
-        Add your task with details, set priority, and track progress.
+      <Typography variant="body1" color="text.secondary" gutterBottom>
+        Add your task with details and keep track of progress.
       </Typography>
 
       {/* Form Card */}
       <Card sx={{ mt: 3, borderRadius: 3, boxShadow: 4 }}>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              {/* Title */}
-              <Grid item xs={12}>
-                <TextField
-                  label="Title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  fullWidth
-                  required
-                />
-              </Grid>
-
-              {/* Description */}
-              <Grid item xs={12}>
-                <TextField
-                  label="Description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  multiline
-                  rows={3}
-                  fullWidth
-                />
-              </Grid>
-
-              {/* Priority */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  select
-                  label="Priority"
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  fullWidth
-                >
-                  {priorities.map((p) => (
-                    <MenuItem key={p} value={p}>
-                      {p}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              {/* Status */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  select
-                  label="Status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  fullWidth
-                >
-                  {statuses.map((s) => (
-                    <MenuItem key={s} value={s}>
-                      {s}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              {/* Due Date */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Due Date"
-                  name="dueDate"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={handleChange}
-                  fullWidth
-                  InputLabelProps={{ shrink: true }}
-                  required
-                />
-              </Grid>
-
-              {/* Submit Button */}
-              <Grid item xs={12}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                  sx={{ borderRadius: 2, px: 4 }}
-                >
-                  Save Todo
-                </Button>
-              </Grid>
+          <Grid container spacing={2}>
+            {/* Title */}
+            <Grid item xs={12}>
+              <TextField
+                label="Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                fullWidth
+                required
+                placeholder="Enter todo title"
+              />
             </Grid>
-          </form>
+
+            {/* Description */}
+            <Grid item xs={12}>
+              <TextField
+                label="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Enter description (optional)"
+              />
+            </Grid>
+
+            {/* Submit Button */}
+            <Grid item xs={12} sx={{ textAlign: "right" }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleSubmit}
+                sx={{
+                  borderRadius: 3,
+                  px: 4,
+                  py: 1.5,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  fontWeight: "bold",
+                  textTransform: "none",
+                  "&:hover": {
+                    transform: "scale(1.02)",
+                  },
+                }}
+              >
+                Add Todo
+              </Button>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Confirm Todo</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to create this todo?
-          </Typography>
-          <Typography variant="subtitle2" sx={{ mt: 2 }}>
-            <strong>Title:</strong> {formData.title}
-          </Typography>
-          <Typography variant="subtitle2">
-            <strong>Due Date:</strong> {formData.dueDate}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleConfirm} variant="contained" color="primary">
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Success Snackbar */}
       <Snackbar
@@ -217,8 +101,12 @@ const CreateTodo = () => {
         onClose={() => setSuccess(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity="success" sx={{ width: "100%" }}>
-          ✅ Todo created successfully!
+        <Alert
+          severity="success"
+          sx={{ width: "100%" }}
+          onClose={() => setSuccess(false)}
+        >
+          ✅ Todo added successfully!
         </Alert>
       </Snackbar>
     </Box>

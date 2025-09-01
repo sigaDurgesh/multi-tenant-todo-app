@@ -1,9 +1,13 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { tenantApi } from "../services/tenantAdminAPI";
+import { AuthContext } from "./AuthContext";
 
 export const TenantRequestContext = createContext();
 
 export const TenantRequestProvider = ({ children }) => {
+
+    const { user } = useContext(AuthContext);  // ✅ get logged-in user
+
   // ----------------------------
   // Persisted State
   // ----------------------------
@@ -167,11 +171,14 @@ export const TenantRequestProvider = ({ children }) => {
   // ----------------------------
   // Auto-refresh tenant requests every 40s
   // ----------------------------
-  useEffect(() => {
-    fetchTenantRequestsCount();
-    const interval = setInterval(fetchTenantRequestsCount, 40000);
+ useEffect(() => {
+    if (!user || user.role !== "superAdmin") return; // ✅ block non-superAdmins
+
+    fetchTenantRequestsCount(); // initial call
+    const interval = setInterval(fetchTenantRequestsCount, 50000);
+
     return () => clearInterval(interval);
-  }, []);
+  }, [user]); // rerun if user changes
 
   // ----------------------------
   // Context value

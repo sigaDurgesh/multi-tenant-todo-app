@@ -31,6 +31,7 @@ import PrivateRoute from "./routes/PrivateRoute";
 // Context
 import { TenantRequestProvider } from "./context/TenantRequestContext";
 import CreateUser from "./pages/tenant-admin/CreateUser";
+import { TodosProvider } from "./context/TodoContext";
 
 function AppRoutes() {
   const { user } = useContext(AuthContext);
@@ -167,9 +168,11 @@ function App() {
       <CssBaseline />
       <AuthProvider>
         <TenantRequestProvider>
+          <TodosProvider>
           <BrowserRouter>
             <AppRoutes />
           </BrowserRouter>
+          </TodosProvider>
         </TenantRequestProvider>
       </AuthProvider>
     </ThemeProvider>

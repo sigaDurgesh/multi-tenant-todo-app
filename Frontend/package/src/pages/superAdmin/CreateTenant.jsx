@@ -8,6 +8,7 @@ import {
   Button,
   Grid,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import toast, { Toaster } from "react-hot-toast";
 import { superAdmin } from "../../services/superAdminAPI";
@@ -32,9 +33,12 @@ export const CreateTenant = () => {
     try {
       setLoading(true);
 
-      const res = await superAdmin.createTenant({ tenantName, email: tenantEmail });
+      const res = await superAdmin.createTenant({
+        tenantName,
+        email: tenantEmail,
+      });
       const data = res?.data ?? res;
-      // Treat as success if message exists and doesn't contain "failed" or "error"
+
       const success =
         typeof data.message === "string" &&
         !/fail|error/i.test(data.message);
@@ -52,7 +56,6 @@ export const CreateTenant = () => {
           style: { fontSize: "18px", fontWeight: "bold" },
         });
 
-        // Clear form fields
         setTenantName("");
         setTenantEmail("");
       } else {
@@ -60,7 +63,9 @@ export const CreateTenant = () => {
       }
     } catch (err) {
       toast.error(
-        err?.response?.data?.message || err.message || "Failed to create tenant admin",
+        err?.response?.data?.message ||
+          err.message ||
+          "Failed to create tenant admin",
         {
           duration: 4000,
           style: { fontSize: "16px", fontWeight: "bold" },
@@ -72,40 +77,87 @@ export const CreateTenant = () => {
   };
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", mt: 6, px: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        mt: 8,
+        px: 2,
+      }}
+    >
       <Toaster position="top-center" reverseOrder={false} />
-      <Card sx={{ width: "100%", maxWidth: 600, borderRadius: 3, boxShadow: 4 }}>
-        <CardContent>
-          <Typography variant="h5" gutterBottom fontWeight="bold">
-            Create a Tenant 
+      <Card
+        sx={{
+          width: "100%",
+          maxWidth: 600,
+          borderRadius: 4,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.08)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "#fff",
+            py: 3,
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="h5" fontWeight="bold">
+            Create a New Tenant
           </Typography>
-          <Divider sx={{ mb: 3 }} />
-          <Grid container spacing={2}>
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            Set up a new organization in just a few clicks
+          </Typography>
+        </Box>
+
+        <CardContent sx={{ p: 4 }}>
+          <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Tenant Name"
+                placeholder="e.g. Acme Corp"
                 variant="outlined"
                 value={tenantName}
                 onChange={(e) => setTenantName(e.target.value)}
                 required
+                InputProps={{ sx: { borderRadius: 2 } }}
+                helperText="This will be the organization’s display name"
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Tenant Email"
+                label="Tenant Admin Email"
                 type="email"
+                placeholder="e.g. admin@acme.com"
                 variant="outlined"
                 value={tenantEmail}
                 onChange={(e) => setTenantEmail(e.target.value)}
                 required
+                InputProps={{ sx: { borderRadius: 2 } }}
+                helperText="Primary email for the tenant admin"
               />
             </Grid>
-            <Grid item xs={12} sx={{ textAlign: "right", mt: 2 }}>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+            </Grid>
+
+            <Grid
+              item
+              xs={12}
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 2,
+              }}
+            >
               <Button
                 variant="outlined"
-                sx={{ mr: 2, borderRadius: 2 }}
+                sx={{ borderRadius: 2 }}
                 onClick={() => {
                   setTenantName("");
                   setTenantEmail("");
@@ -116,11 +168,20 @@ export const CreateTenant = () => {
               </Button>
               <Button
                 variant="contained"
-                sx={{ borderRadius: 2 }}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                }}
                 onClick={handleSubmit}
                 disabled={loading}
               >
-                {loading ? "Creating..." : "Create Tenant"}
+                {loading ? (
+                  <CircularProgress size={24} sx={{ color: "white" }} />
+                ) : (
+                  "Create Tenant"
+                )}
               </Button>
             </Grid>
           </Grid>
