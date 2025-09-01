@@ -13,6 +13,9 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  console.log("user name", user?.name);
+  console.log("user email", user?.email);
+
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));

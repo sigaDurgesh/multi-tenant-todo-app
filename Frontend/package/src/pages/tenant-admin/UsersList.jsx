@@ -207,7 +207,7 @@ const UsersList = () => {
               helperText={errors.email}
             />
             
-            <FormHelperText>Select the role for this user in tenant</FormHelperText>
+            <FormHelperText>Here,user will be added under the Tenant.</FormHelperText>
           </Stack>
         </DialogContent>
         <DialogActions>

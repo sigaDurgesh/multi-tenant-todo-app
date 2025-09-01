@@ -109,11 +109,11 @@ const handleLogout = () => {
 
             {/* Right side */}
             <Box display="flex" alignItems="center" gap={2}>
-              <IconButton onClick={handleNotifOpen}>
+              {/* <IconButton onClick={handleNotifOpen}>
                 <Badge badgeContent={notifications.length} color="error">
                   <NotificationsIcon />
                 </Badge>
-              </IconButton>
+              </IconButton> */}
               <Menu
                 anchorEl={notifAnchor}
                 open={openNotif}

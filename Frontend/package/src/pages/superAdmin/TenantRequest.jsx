@@ -216,14 +216,14 @@ const TenantRequest = () => {
                     </Button> */}
                   </>
                 )}
-                <Button
+                {/* <Button
                   size="small"
                   color="error"
                   onClick={() => handleDeleteRow(row.id)}
                   disabled={acting}
                 >
                   Delete
-                </Button>
+                </Button> */}
               </>
             )}
             {row.deleted && (
@@ -258,7 +258,7 @@ const TenantRequest = () => {
           <ToggleButton value="pending">Pending</ToggleButton>
           <ToggleButton value="approved">Approved</ToggleButton>
           <ToggleButton value="rejected">Rejected</ToggleButton>
-          <ToggleButton value="deleted">Deleted</ToggleButton>
+          {/* <ToggleButton value="deleted">Deleted</ToggleButton> */}
         </ToggleButtonGroup>
         <TextField
           size="small"
