@@ -879,3 +879,1047 @@ const SuperAdminDashboard = ({ navigate }) => {
 };
 
 export default SuperAdminDashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState, useEffect } from "react";
+// import {
+//   Box,
+//   Card,
+//   CardContent,
+//   Typography,
+//   Tabs,
+//   Tab,
+//   Table,
+//   TableBody,
+//   TableCell,
+//   TableContainer,
+//   TableHead,
+//   TableRow,
+//   Paper,
+//   Chip,
+//   Avatar,
+//   IconButton,
+//   Button,
+//   TextField,
+//   Select,
+//   MenuItem,
+//   FormControl,
+//   InputLabel,
+//   Grid,
+//   AppBar,
+//   Toolbar,
+//   Badge,
+//   Switch,
+//   FormControlLabel,
+//   Alert,
+//   LinearProgress,
+//   Dialog,
+//   DialogTitle,
+//   DialogContent,
+//   DialogActions,
+//   Divider,
+//   List,
+//   ListItem,
+//   ListItemText,
+//   ListItemIcon,
+//   InputAdornment,
+//   ToggleButton,
+//   ToggleButtonGroup,
+//   ThemeProvider,
+//   createTheme,
+//   CssBaseline,
+// } from "@mui/material";
+// import {
+//   BarChart,
+//   Bar,
+//   XAxis,
+//   YAxis,
+//   CartesianGrid,
+//   Tooltip,
+//   Legend,
+//   ResponsiveContainer,
+//   LineChart,
+//   Line,
+//   PieChart,
+//   Pie,
+//   Cell,
+//   AreaChart,
+//   Area,
+// } from "recharts";
+// import {
+//   Users,
+//   Building2,
+//   TrendingUp,
+//   Clock,
+//   CheckCircle,
+//   XCircle,
+//   AlertTriangle,
+//   Eye,
+//   Search,
+//   Filter,
+//   RefreshCw,
+//   Download,
+//   Settings,
+//   Bell,
+//   Calendar,
+//   DollarSign,
+//   Server,
+//   Activity,
+//   Shield,
+//   Globe,
+//   Database,
+//   Zap,
+//   Mail,
+//   Phone,
+//   MapPin,
+//   MoreVertical,
+//   Edit,
+//   Trash2,
+//   Plus,
+//   Star,
+//   ArrowUp,
+//   ArrowDown,
+// } from "lucide-react";
+
+// const SuperAdminDashboard = () => {
+//   // State management
+//   const [activeTab, setActiveTab] = useState(0);
+//   const [tenants, setTenants] = useState([]);
+//   const [selectedTenant, setSelectedTenant] = useState(null);
+//   const [notifications, setNotifications] = useState([]);
+//   const [realTimeData, setRealTimeData] = useState({});
+//   const [filters, setFilters] = useState({
+//     status: "all",
+//     plan: "all",
+//     industry: "all",
+//     dateRange: "30",
+//   });
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [darkMode, setDarkMode] = useState(false);
+
+//   // Create Material-UI theme
+//   const theme = createTheme({
+//     palette: {
+//       mode: darkMode ? "dark" : "light",
+//       primary: {
+//         main: "#1976d2",
+//       },
+//       secondary: {
+//         main: "#dc004e",
+//       },
+//     },
+//     components: {
+//       MuiCard: {
+//         styleOverrides: {
+//           root: {
+//             borderRadius: 12,
+//             boxShadow:
+//               "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+//           },
+//         },
+//       },
+//     },
+//   });
+
+//   // Mock data generator
+//   const generateMockData = () => {
+//     const companies = [
+//       "TechCorp",
+//       "DataFlow Inc",
+//       "CloudSys",
+//       "NextGen Solutions",
+//       "DigitalHub",
+//       "InnovateLabs",
+//       "ScaleUp Co",
+//       "FutureWorks",
+//     ];
+//     const industries = [
+//       "Technology",
+//       "Healthcare",
+//       "Finance",
+//       "Retail",
+//       "Manufacturing",
+//       "Education",
+//       "Government",
+//     ];
+//     const plans = ["Starter", "Professional", "Enterprise", "Custom"];
+//     const statuses = ["pending", "approved", "rejected", "active", "suspended"];
+
+//     return Array.from({ length: 25 }, (_, i) => ({
+//       id: i + 1,
+//       tenant_name: `${
+//         companies[Math.floor(Math.random() * companies.length)]
+//       } ${i + 1}`,
+//       email: `contact${i + 1}@example.com`,
+//       phone: `+1-555-${Math.floor(Math.random() * 900) + 100}-${
+//         Math.floor(Math.random() * 9000) + 1000
+//       }`,
+//       industry: industries[Math.floor(Math.random() * industries.length)],
+//       subscription_plan: plans[Math.floor(Math.random() * plans.length)],
+//       status: statuses[Math.floor(Math.random() * statuses.length)],
+//       company_size: ["1-10", "11-50", "51-200", "201-1000", "1000+"][
+//         Math.floor(Math.random() * 5)
+//       ],
+//       estimated_users: Math.floor(Math.random() * 1000) + 10,
+//       monthly_revenue: Math.floor(Math.random() * 50000) + 1000,
+//       storage_used: Math.floor(Math.random() * 100),
+//       api_calls: Math.floor(Math.random() * 1000000),
+//       created_at: new Date(
+//         Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000
+//       ).toISOString(),
+//       last_active: new Date(
+//         Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
+//       ).toISOString(),
+//       location: ["New York", "San Francisco", "London", "Tokyo", "Sydney"][
+//         Math.floor(Math.random() * 5)
+//       ],
+//       compliance_score: Math.floor(Math.random() * 40) + 60,
+//       support_tickets: Math.floor(Math.random() * 10),
+//       integrations: Math.floor(Math.random() * 8) + 1,
+//     }));
+//   };
+
+//   // Initialize data
+//   useEffect(() => {
+//     const mockTenants = generateMockData();
+//     setTenants(mockTenants);
+
+//     // Generate notifications
+//     setNotifications([
+//       {
+//         id: 1,
+//         type: "warning",
+//         message: "High API usage detected for TechCorp 1",
+//         time: "2 min ago",
+//       },
+//       {
+//         id: 2,
+//         type: "success",
+//         message: "New tenant approved: DataFlow Inc 3",
+//         time: "15 min ago",
+//       },
+//       {
+//         id: 3,
+//         type: "info",
+//         message: "Scheduled maintenance in 2 hours",
+//         time: "1 hour ago",
+//       },
+//       {
+//         id: 4,
+//         type: "error",
+//         message: "Payment failed for CloudSys 2",
+//         time: "3 hours ago",
+//       },
+//     ]);
+
+//     // Real-time updates simulation
+//     const interval = setInterval(() => {
+//       setRealTimeData({
+//         activeUsers: Math.floor(Math.random() * 1000) + 500,
+//         systemLoad: Math.floor(Math.random() * 100),
+//         responseTime: Math.floor(Math.random() * 200) + 50,
+//         uptime: 99.98,
+//         timestamp: new Date().toLocaleTimeString(),
+//       });
+//     }, 3000);
+
+//     return () => clearInterval(interval);
+//   }, []);
+
+//   // Filter tenants
+//   const filteredTenants = tenants.filter((tenant) => {
+//     const matchesSearch =
+//       tenant.tenant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//       tenant.email.toLowerCase().includes(searchTerm.toLowerCase());
+//     const matchesStatus =
+//       filters.status === "all" || tenant.status === filters.status;
+//     const matchesPlan =
+//       filters.plan === "all" || tenant.subscription_plan === filters.plan;
+//     const matchesIndustry =
+//       filters.industry === "all" || tenant.industry === filters.industry;
+
+//     return matchesSearch && matchesStatus && matchesPlan && matchesIndustry;
+//   });
+
+//   // Statistics
+//   const stats = {
+//     total: tenants.length,
+//     pending: tenants.filter((t) => t.status === "pending").length,
+//     approved: tenants.filter((t) => t.status === "approved").length,
+//     active: tenants.filter((t) => t.status === "active").length,
+//     rejected: tenants.filter((t) => t.status === "rejected").length,
+//     suspended: tenants.filter((t) => t.status === "suspended").length,
+//     totalRevenue: tenants.reduce((sum, t) => sum + t.monthly_revenue, 0),
+//     avgUsers: Math.floor(
+//       tenants.reduce((sum, t) => sum + t.estimated_users, 0) / tenants.length
+//     ),
+//     totalApiCalls: tenants.reduce((sum, t) => sum + t.api_calls, 0),
+//   };
+
+//   // Chart data
+//   const monthlyData = [
+//     { month: "Jan", requests: 65, approved: 48, revenue: 125000 },
+//     { month: "Feb", requests: 78, approved: 62, revenue: 145000 },
+//     { month: "Mar", requests: 90, approved: 75, revenue: 168000 },
+//     { month: "Apr", requests: 85, approved: 68, revenue: 155000 },
+//     { month: "May", requests: 95, approved: 82, revenue: 178000 },
+//     { month: "Jun", requests: 88, approved: 71, revenue: 162000 },
+//   ];
+
+//   const industryData = [
+//     { name: "Technology", value: 35, color: "#0088FE" },
+//     { name: "Healthcare", value: 25, color: "#00C49F" },
+//     { name: "Finance", value: 20, color: "#FFBB28" },
+//     { name: "Retail", value: 12, color: "#FF8042" },
+//     { name: "Other", value: 8, color: "#8884d8" },
+//   ];
+
+//   const planDistribution = [
+//     { plan: "Starter", count: 8, revenue: 24000 },
+//     { plan: "Professional", count: 12, revenue: 84000 },
+//     { plan: "Enterprise", count: 5, revenue: 125000 },
+//     { plan: "Custom", count: 3, revenue: 75000 },
+//   ];
+
+//   // Action handlers
+//   const handleStatusUpdate = (tenantId, newStatus) => {
+//     setTenants((prev) =>
+//       prev.map((t) => (t.id === tenantId ? { ...t, status: newStatus } : t))
+//     );
+
+//     // Add notification
+//     const tenant = tenants.find((t) => t.id === tenantId);
+//     setNotifications((prev) => [
+//       {
+//         id: Date.now(),
+//         type: "success",
+//         message: `${tenant.tenant_name} status updated to ${newStatus}`,
+//         time: "Just now",
+//       },
+//       ...prev.slice(0, 9),
+//     ]);
+//   };
+
+//   const exportData = () => {
+//     const dataStr = JSON.stringify(filteredTenants, null, 2);
+//     const dataBlob = new Blob([dataStr], { type: "application/json" });
+//     const url = URL.createObjectURL(dataBlob);
+//     const link = document.createElement("a");
+//     link.href = url;
+//     link.download = "tenant_data.json";
+//     link.click();
+//   };
+
+//   // Get status color
+//   const getStatusColor = (status) => {
+//     switch (status) {
+//       case "active":
+//         return "success";
+//       case "pending":
+//         return "warning";
+//       case "approved":
+//         return "info";
+//       case "suspended":
+//         return "secondary";
+//       case "rejected":
+//         return "error";
+//       default:
+//         return "default";
+//     }
+//   };
+
+//   // Get plan color
+//   const getPlanColor = (plan) => {
+//     switch (plan) {
+//       case "Enterprise":
+//         return "secondary";
+//       case "Professional":
+//         return "primary";
+//       case "Custom":
+//         return "warning";
+//       default:
+//         return "default";
+//     }
+//   };
+
+//   // Components
+//   const StatCard = ({ title, value, icon: Icon, trend, color, subtitle }) => (
+//     <Card sx={{ height: "100%" }}>
+//       <CardContent>
+//         <Box display="flex" alignItems="center" justifyContent="space-between">
+//           <Box>
+//             <Typography variant="body2" color="text.secondary" gutterBottom>
+//               {title}
+//             </Typography>
+//             <Typography variant="h4" component="div" fontWeight="bold">
+//               {value}
+//             </Typography>
+//             {subtitle && (
+//               <Typography variant="caption" color="text.secondary">
+//                 {subtitle}
+//               </Typography>
+//             )}
+//           </Box>
+//           <Avatar sx={{ bgcolor: `${color}.100`, color: `${color}.600` }}>
+//             <Icon size={24} />
+//           </Avatar>
+//         </Box>
+//         {trend && (
+//           <Box display="flex" alignItems="center" mt={2}>
+//             {trend > 0 ? (
+//               <ArrowUp size={16} color="#4caf50" style={{ marginRight: 4 }} />
+//             ) : (
+//               <ArrowDown size={16} color="#f44336" style={{ marginRight: 4 }} />
+//             )}
+//             <Typography
+//               variant="caption"
+//               color={trend > 0 ? "success.main" : "error.main"}
+//             >
+//               {Math.abs(trend)}% vs last month
+//             </Typography>
+//           </Box>
+//         )}
+//       </CardContent>
+//     </Card>
+//   );
+
+//   const NotificationPanel = () => (
+//     <Card>
+//       <CardContent>
+//         <Box
+//           display="flex"
+//           alignItems="center"
+//           justifyContent="space-between"
+//           mb={2}
+//         >
+//           <Typography variant="h6" component="div">
+//             Live Notifications
+//           </Typography>
+//           <Bell size={20} />
+//         </Box>
+//         <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
+//           {notifications.map((notif) => (
+//             <Alert
+//               key={notif.id}
+//               severity={
+//                 notif.type === "warning"
+//                   ? "warning"
+//                   : notif.type === "success"
+//                   ? "success"
+//                   : notif.type === "error"
+//                   ? "error"
+//                   : "info"
+//               }
+//               sx={{ mb: 1 }}
+//             >
+//               <Typography variant="body2" fontWeight="medium">
+//                 {notif.message}
+//               </Typography>
+//               <Typography variant="caption" color="text.secondary">
+//                 {notif.time}
+//               </Typography>
+//             </Alert>
+//           ))}
+//         </Box>
+//       </CardContent>
+//     </Card>
+//   );
+
+//   const SystemHealthPanel = () => (
+//     <Card>
+//       <CardContent>
+//         <Typography variant="h6" gutterBottom>
+//           System Health
+//         </Typography>
+//         <Box mb={3}>
+//           <Box
+//             display="flex"
+//             justifyContent="space-between"
+//             alignItems="center"
+//             mb={1}
+//           >
+//             <Typography variant="body2" color="text.secondary">
+//               CPU Usage
+//             </Typography>
+//             <Typography variant="body2" fontWeight="medium">
+//               {realTimeData.systemLoad || 0}%
+//             </Typography>
+//           </Box>
+//           <LinearProgress
+//             variant="determinate"
+//             value={realTimeData.systemLoad || 0}
+//             sx={{ height: 8, borderRadius: 4 }}
+//           />
+//         </Box>
+
+//         <Grid container spacing={2}>
+//           <Grid item xs={6}>
+//             <Card
+//               sx={{
+//                 bgcolor: "success.50",
+//                 border: "1px solid",
+//                 borderColor: "success.200",
+//               }}
+//             >
+//               <CardContent sx={{ textAlign: "center", py: 2 }}>
+//                 <Server size={24} color="#4caf50" style={{ marginBottom: 8 }} />
+//                 <Typography variant="h5" fontWeight="bold" color="success.main">
+//                   {realTimeData.uptime || 99.98}%
+//                 </Typography>
+//                 <Typography variant="caption" color="success.main">
+//                   Uptime
+//                 </Typography>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//           <Grid item xs={6}>
+//             <Card
+//               sx={{
+//                 bgcolor: "primary.50",
+//                 border: "1px solid",
+//                 borderColor: "primary.200",
+//               }}
+//             >
+//               <CardContent sx={{ textAlign: "center", py: 2 }}>
+//                 <Zap size={24} color="#1976d2" style={{ marginBottom: 8 }} />
+//                 <Typography variant="h5" fontWeight="bold" color="primary.main">
+//                   {realTimeData.responseTime || 125}ms
+//                 </Typography>
+//                 <Typography variant="caption" color="primary.main">
+//                   Response Time
+//                 </Typography>
+//               </CardContent>
+//             </Card>
+//           </Grid>
+//         </Grid>
+//       </CardContent>
+//     </Card>
+//   );
+
+//   // Initialize with mock data
+//   useEffect(() => {
+//     setTenants(generateMockData());
+//   }, []);
+
+//   if (loading) {
+//     return (
+//       <Box
+//         display="flex"
+//         justifyContent="center"
+//         alignItems="center"
+//         minHeight="100vh"
+//       >
+//         <Box sx={{ width: "100px" }}>
+//           <LinearProgress />
+//         </Box>
+//       </Box>
+//     );
+//   }
+
+//   return (
+//     <ThemeProvider theme={theme}>
+//       <CssBaseline />
+//       <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+//         {/* Header */}
+//         <AppBar position="sticky" elevation={1}>
+//           <Toolbar>
+//             <Box
+//               display="flex"
+//               alignItems="center"
+//               justifyContent="space-between"
+//               width="100%"
+//             >
+//               <Box>
+//                 <Typography variant="h5" component="div" fontWeight="bold">
+//                   Super Admin Dashboard
+//                 </Typography>
+//                 <Typography variant="body2" color="rgba(255,255,255,0.7)">
+//                   Comprehensive tenant management and analytics
+//                 </Typography>
+//               </Box>
+//               <Box display="flex" alignItems="center" gap={2}>
+//                 <FormControlLabel
+//                   control={
+//                     <Switch
+//                       checked={darkMode}
+//                       onChange={() => setDarkMode(!darkMode)}
+//                       color="default"
+//                     />
+//                   }
+//                   label={darkMode ? "🌙" : "☀️"}
+//                 />
+//                 <Badge badgeContent={notifications.length} color="error">
+//                   <IconButton color="inherit">
+//                     <Bell size={20} />
+//                   </IconButton>
+//                 </Badge>
+//                 <Box display="flex" alignItems="center" gap={1}>
+//                   <Avatar
+//                     sx={{ width: 32, height: 32, bgcolor: "secondary.main" }}
+//                   >
+//                     SA
+//                   </Avatar>
+//                   <Typography variant="body2">Super Admin</Typography>
+//                 </Box>
+//               </Box>
+//             </Box>
+//           </Toolbar>
+//         </AppBar>
+
+//         {/* Navigation Tabs */}
+//         <Box
+//           sx={{
+//             borderBottom: 1,
+//             borderColor: "divider",
+//             bgcolor: "background.paper",
+//           }}
+//         >
+//           <Tabs
+//             value={activeTab}
+//             onChange={(e, newValue) => setActiveTab(newValue)}
+//             sx={{ px: 3 }}
+//           >
+//             <Tab icon={<Activity size={20} />} label="Overview" />
+//             <Tab icon={<Building2 size={20} />} label="Tenants" />
+//             <Tab icon={<TrendingUp size={20} />} label="Analytics" />
+//             <Tab icon={<Server size={20} />} label="System" />
+//             <Tab icon={<Settings size={20} />} label="Settings" />
+//           </Tabs>
+//         </Box>
+
+//         <Box p={3}>
+//           {/* Overview Tab */}
+//           {activeTab === 0 && (
+//             <Box>
+//               {/* Key Metrics */}
+//               <Grid container spacing={3} mb={3}>
+//                 <Grid item xs={12} sm={6} lg={3}>
+//                   <StatCard
+//                     title="Total Tenants"
+//                     value={stats.total}
+//                     icon={Building2}
+//                     trend={8.2}
+//                     color="primary"
+//                     subtitle={`${stats.active} active`}
+//                   />
+//                 </Grid>
+//                 <Grid item xs={12} sm={6} lg={3}>
+//                   <StatCard
+//                     title="Pending Requests"
+//                     value={stats.pending}
+//                     icon={Clock}
+//                     trend={-15.3}
+//                     color="warning"
+//                     subtitle="Requires attention"
+//                   />
+//                 </Grid>
+//                 <Grid item xs={12} sm={6} lg={3}>
+//                   <StatCard
+//                     title="Monthly Revenue"
+//                     value={`$${(stats.totalRevenue / 1000).toFixed(0)}K`}
+//                     icon={DollarSign}
+//                     trend={12.8}
+//                     color="success"
+//                     subtitle="This month"
+//                   />
+//                 </Grid>
+//                 <Grid item xs={12} sm={6} lg={3}>
+//                   <StatCard
+//                     title="Active Users"
+//                     value={realTimeData.activeUsers || 742}
+//                     icon={Users}
+//                     trend={5.4}
+//                     color="secondary"
+//                     subtitle="Right now"
+//                   />
+//                 </Grid>
+//               </Grid>
+
+//               {/* Charts Row */}
+//               <Grid container spacing={3} mb={3}>
+//                 {/* Monthly Trends */}
+//                 <Grid item xs={12} lg={6}>
+//                   <Card>
+//                     <CardContent>
+//                       <Typography variant="h6" gutterBottom>
+//                         Monthly Trends
+//                       </Typography>
+//                       <ResponsiveContainer width="100%" height={300}>
+//                         <AreaChart data={monthlyData}>
+//                           <CartesianGrid strokeDasharray="3 3" />
+//                           <XAxis dataKey="month" />
+//                           <YAxis />
+//                           <Tooltip />
+//                           <Area
+//                             type="monotone"
+//                             dataKey="requests"
+//                             stackId="1"
+//                             stroke="#8884d8"
+//                             fill="#8884d8"
+//                             fillOpacity={0.6}
+//                           />
+//                           <Area
+//                             type="monotone"
+//                             dataKey="approved"
+//                             stackId="1"
+//                             stroke="#82ca9d"
+//                             fill="#82ca9d"
+//                             fillOpacity={0.6}
+//                           />
+//                         </AreaChart>
+//                       </ResponsiveContainer>
+//                     </CardContent>
+//                   </Card>
+//                 </Grid>
+
+//                 {/* Industry Distribution */}
+//                 <Grid item xs={12} lg={6}>
+//                   <Card>
+//                     <CardContent>
+//                       <Typography variant="h6" gutterBottom>
+//                         Industry Distribution
+//                       </Typography>
+//                       <ResponsiveContainer width="100%" height={300}>
+//                         <PieChart>
+//                           <Pie
+//                             data={industryData}
+//                             cx="50%"
+//                             cy="50%"
+//                             outerRadius={100}
+//                             fill="#8884d8"
+//                             dataKey="value"
+//                             label={({ name, percent }) =>
+//                               `${name} ${(percent * 100).toFixed(0)}%`
+//                             }
+//                           >
+//                             {industryData.map((entry, index) => (
+//                               <Cell key={`cell-${index}`} fill={entry.color} />
+//                             ))}
+//                           </Pie>
+//                           <Tooltip />
+//                         </PieChart>
+//                       </ResponsiveContainer>
+//                     </CardContent>
+//                   </Card>
+//                 </Grid>
+//               </Grid>
+
+//               {/* Bottom Row */}
+//               <Grid container spacing={3}>
+//                 <Grid item xs={12} lg={4}>
+//                   <NotificationPanel />
+//                 </Grid>
+//                 <Grid item xs={12} lg={4}>
+//                   <SystemHealthPanel />
+//                 </Grid>
+
+//                 {/* Quick Actions */}
+//                 <Grid item xs={12} lg={4}>
+//                   <Card>
+//                     <CardContent>
+//                       <Typography variant="h6" gutterBottom>
+//                         Quick Actions
+//                       </Typography>
+//                       <Box display="flex" flexDirection="column" gap={2}>
+//                         <Button
+//                           variant="contained"
+//                           fullWidth
+//                           startIcon={<Plus size={16} />}
+//                           sx={{ py: 1.5 }}
+//                         >
+//                           Add New Tenant
+//                         </Button>
+//                         <Button
+//                           variant="contained"
+//                           color="success"
+//                           fullWidth
+//                           startIcon={<Download size={16} />}
+//                           onClick={exportData}
+//                           sx={{ py: 1.5 }}
+//                         >
+//                           Export Data
+//                         </Button>
+//                         <Button
+//                           variant="contained"
+//                           color="secondary"
+//                           fullWidth
+//                           startIcon={<Settings size={16} />}
+//                           sx={{ py: 1.5 }}
+//                         >
+//                           System Settings
+//                         </Button>
+//                       </Box>
+//                     </CardContent>
+//                   </Card>
+//                 </Grid>
+//               </Grid>
+//             </Box>
+//           )}
+
+//           {/* Tenants Tab */}
+//           {activeTab === 1 && (
+//             <Box>
+//               {/* Filters */}
+//               <Card sx={{ mb: 3 }}>
+//                 <CardContent>
+//                   <Grid container spacing={2}>
+//                     <Grid item xs={12} md={4}>
+//                       <TextField
+//                         fullWidth
+//                         placeholder="Search tenants..."
+//                         value={searchTerm}
+//                         onChange={(e) => setSearchTerm(e.target.value)}
+//                         InputProps={{
+//                           startAdornment: (
+//                             <InputAdornment position="start">
+//                               <Search size={20} />
+//                             </InputAdornment>
+//                           ),
+//                         }}
+//                       />
+//                     </Grid>
+
+//                     <Grid item xs={12} md={2}>
+//                       <FormControl fullWidth>
+//                         <InputLabel>Status</InputLabel>
+//                         <Select
+//                           value={filters.status}
+//                           label="Status"
+//                           onChange={(e) =>
+//                             setFilters({ ...filters, status: e.target.value })
+//                           }
+//                         >
+//                           <MenuItem value="all">All Status</MenuItem>
+//                           <MenuItem value="pending">Pending</MenuItem>
+//                           <MenuItem value="approved">Approved</MenuItem>
+//                           <MenuItem value="active">Active</MenuItem>
+//                           <MenuItem value="suspended">Suspended</MenuItem>
+//                           <MenuItem value="rejected">Rejected</MenuItem>
+//                         </Select>
+//                       </FormControl>
+//                     </Grid>
+
+//                     <Grid item xs={12} md={2}>
+//                       <FormControl fullWidth>
+//                         <InputLabel>Plan</InputLabel>
+//                         <Select
+//                           value={filters.plan}
+//                           label="Plan"
+//                           onChange={(e) =>
+//                             setFilters({ ...filters, plan: e.target.value })
+//                           }
+//                         >
+//                           <MenuItem value="all">All Plans</MenuItem>
+//                           <MenuItem value="Starter">Starter</MenuItem>
+//                           <MenuItem value="Professional">Professional</MenuItem>
+//                           <MenuItem value="Enterprise">Enterprise</MenuItem>
+//                           <MenuItem value="Custom">Custom</MenuItem>
+//                         </Select>
+//                       </FormControl>
+//                     </Grid>
+
+//                     <Grid item xs={12} md={2}>
+//                       <FormControl fullWidth>
+//                         <InputLabel>Industry</InputLabel>
+//                         <Select
+//                           value={filters.industry}
+//                           label="Industry"
+//                           onChange={(e) =>
+//                             setFilters({ ...filters, industry: e.target.value })
+//                           }
+//                         >
+//                           <MenuItem value="all">All Industries</MenuItem>
+//                           <MenuItem value="Technology">Technology</MenuItem>
+//                           <MenuItem value="Healthcare">Healthcare</MenuItem>
+//                           <MenuItem value="Finance">Finance</MenuItem>
+//                           <MenuItem value="Retail">Retail</MenuItem>
+//                           <MenuItem value="Manufacturing">
+//                             Manufacturing
+//                           </MenuItem>
+//                           <MenuItem value="Education">Education</MenuItem>
+//                           <MenuItem value="Government">Government</MenuItem>
+//                         </Select>
+//                       </FormControl>
+//                     </Grid>
+
+//                     <Grid item xs={12} md={2}>
+//                       <Button
+//                         variant="contained"
+//                         fullWidth
+//                         startIcon={<Download size={16} />}
+//                         onClick={exportData}
+//                         sx={{ height: 56 }}
+//                       >
+//                         Export
+//                       </Button>
+//                     </Grid>
+//                   </Grid>
+//                 </CardContent>
+//               </Card>
+
+//               {/* Tenants Table */}
+//               <Card>
+//                 <TableContainer>
+//                   <Table>
+//                     <TableHead>
+//                       <TableRow>
+//                         <TableCell>Company</TableCell>
+//                         <TableCell>Contact</TableCell>
+//                         <TableCell>Plan & Usage</TableCell>
+//                         <TableCell>Status</TableCell>
+//                         <TableCell>Revenue</TableCell>
+//                         <TableCell align="right">Actions</TableCell>
+//                       </TableRow>
+//                     </TableHead>
+
+//                     <TableBody>
+//                       {filteredTenants.map((tenant) => (
+//                         <TableRow key={tenant.id} hover>
+//                           {/* Company */}
+//                           <TableCell>
+//                             <Box display="flex" alignItems="center">
+//                               <Avatar
+//                                 sx={{
+//                                   mr: 2,
+//                                   bgcolor: "primary.main",
+//                                   background:
+//                                     "linear-gradient(45deg, #2196F3 30%, #9C27B0 90%)",
+//                                 }}
+//                               >
+//                                 {tenant.tenant_name?.charAt(0)}
+//                               </Avatar>
+//                               <Box>
+//                                 <Typography
+//                                   variant="subtitle2"
+//                                   fontWeight="medium"
+//                                 >
+//                                   {tenant.tenant_name}
+//                                 </Typography>
+//                                 <Typography
+//                                   variant="caption"
+//                                   color="text.secondary"
+//                                 >
+//                                   {tenant.industry} • {tenant.company_size}
+//                                 </Typography>
+//                               </Box>
+//                             </Box>
+//                           </TableCell>
+
+//                           {/* Contact */}
+//                           <TableCell>
+//                             <Box>
+//                               <Typography variant="body2">
+//                                 {tenant.email}
+//                               </Typography>
+//                               <Typography
+//                                 variant="caption"
+//                                 color="text.secondary"
+//                               >
+//                                 {tenant.phone}
+//                               </Typography>
+//                               <Typography
+//                                 variant="caption"
+//                                 color="text.secondary"
+//                                 display="block"
+//                               >
+//                                 📍 {tenant.location}
+//                               </Typography>
+//                             </Box>
+//                           </TableCell>
+
+//                           {/* Plan & Usage */}
+//                           <TableCell>
+//                             <Box>
+//                               <Chip
+//                                 label={tenant.subscription_plan}
+//                                 color={getPlanColor(tenant.subscription_plan)}
+//                                 size="small"
+//                                 sx={{ mb: 1 }}
+//                               />
+//                               <Typography
+//                                 variant="caption"
+//                                 color="text.secondary"
+//                                 display="block"
+//                               >
+//                                 {tenant.estimated_users} users •{" "}
+//                                 {tenant.storage_used}% storage
+//                               </Typography>
+//                               <Typography
+//                                 variant="caption"
+//                                 color="text.secondary"
+//                                 display="block"
+//                               >
+//                                 {(tenant.api_calls / 1000).toFixed(0)}K API
+//                                 calls
+//                               </Typography>
+//                             </Box>
+//                           </TableCell>
+
+//                           {/* Status */}
+//                           <TableCell>
+//                             <Chip
+//                               label={
+//                                 tenant.status.charAt(0).toUpperCase() +
+//                                 tenant.status.slice(1)
+//                               }
+//                               color={getStatusColor(tenant.status)}
+//                               size="small"
+//                               icon={
+//                                 tenant.status === "active" ? (
+//                                   <CheckCircle size={16} />
+//                                 ) : tenant.status === "pending" ? (
+//                                   <Clock size={16} />
+//                                 ) : tenant.status === "rejected" ? (
+//                                   <XCircle size={16} />
+//                                 ) : null
+//                               }
+//                             />
+//                           </TableCell>
+
+//                           {/* Revenue */}
+//                           <TableCell>
+//                             <Typography variant="body2">
+//                               ${tenant.revenue}
+//                             </Typography>
+//                           </TableCell>
+
+//                           {/* Actions */}
+//                           <TableCell align="right">
+//                             {/* Place your action buttons here */}
+//                             <Button size="small" variant="outlined">
+//                               View
+//                             </Button>
+//                           </TableCell>
+//                         </TableRow>
+//                       ))}
+//                     </TableBody>
+//                   </Table>
+//                 </TableContainer>
+//               </Card>
+//             </Box>
+//           )}
+//         </Box>
+//       </Box>
+//     </ThemeProvider>
+//   );
+// };
+
+// export default SuperAdminDashboard;

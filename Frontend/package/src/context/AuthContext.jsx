@@ -13,8 +13,7 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  console.log("user name", user?.name);
-  console.log("user email", user?.email);
+ 
 
   useEffect(() => {
     if (user) {
@@ -33,10 +32,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-  };
+  const confirmLogout = window.confirm("Are you sure you want to logout?");
+  if (!confirmLogout) {
+    return;
+  }  setUser(null);
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
+};
+
 
   return (
     <AuthContext.Provider

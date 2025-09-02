@@ -1,37 +1,34 @@
-import "./App.css";
+// src/App.jsx
+import React, { useContext } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import { baselightTheme } from "./theme/DefaultColors";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
-import { useContext } from "react";
+import { TenantRequestProvider } from "./context/TenantRequestContext";
+import { TodosProvider } from "./context/TodoContext";
 
-// Layout
 import Layout from "./layouts/full/Layout";
 
-// Pages
 import TenantList from "./pages/superAdmin/TenantList";
 import TenantRequest from "./pages/superAdmin/TenantRequest";
 import { CreateTenant } from "./pages/superAdmin/CreateTenant";
 import UsersList from "./pages/tenant-admin/UsersList";
+import CreateUser from "./pages/tenant-admin/CreateUser";
 import TodosList from "./pages/user/TodosList";
 import CreateTodo from "./pages/user/CreateTodo";
 import CommonDashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
-import Login from "./views/authentication/Login";
-import Register from "./views/authentication/Register";
+import RegisterUnderTenant from "./views/authentication/RegisterUnderTenant";
 import Forbidden from "./pages/Forbbiden";
 import LandingPage from "./pages/LandingPage";
 import BecomeTenant from "./pages/BecomeTenant";
 import ChangePassword from "./pages/ChangePass";
-import RegisterUnderTenant from "./views/authentication/RegisterUnderTenant";
 
-// Routes
 import PrivateRoute from "./routes/PrivateRoute";
-
-// Context
-import { TenantRequestProvider } from "./context/TenantRequestContext";
-import CreateUser from "./pages/tenant-admin/CreateUser";
-import { TodosProvider } from "./context/TodoContext";
+import Login from "./views/authentication/Login";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 function AppRoutes() {
   const { user } = useContext(AuthContext);
@@ -40,13 +37,12 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
-      {/* <Route path="/register" element={<Register />} /> */}
       <Route path="/change-pass" element={<ChangePassword />} />
       <Route path="/register-under-tenant" element={<RegisterUnderTenant />} />
       <Route path="/" element={<LandingPage />} />
       <Route path="/becometenant" element={<BecomeTenant />} />
 
-      {/* Role-Based Redirects */}
+      {/* Role-Based Redirect */}
       <Route
         path="/redirect"
         element={
@@ -59,7 +55,7 @@ function AppRoutes() {
         }
       />
 
-      {/* Authenticated Routes */}
+      {/* Authenticated Layout */}
       <Route
         path="/"
         element={
@@ -68,7 +64,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       >
-        {/* Common */}
+        {/* Common Routes */}
         <Route
           path="dashboard"
           element={
@@ -121,7 +117,6 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
-
         <Route
           path="tenant-admin/createuser"
           element={
@@ -149,29 +144,27 @@ function AppRoutes() {
           }
         />
 
-
         {/* Forbidden */}
         <Route path="/403" element={<Forbidden />} />
       </Route>
-
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
 function App() {
-  const theme = baselightTheme;
-
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={baselightTheme}>
       <CssBaseline />
       <AuthProvider>
         <TenantRequestProvider>
           <TodosProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
+            <BrowserRouter>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+
+              <AppRoutes />
+              </LocalizationProvider>
+            </BrowserRouter>
           </TodosProvider>
         </TenantRequestProvider>
       </AuthProvider>

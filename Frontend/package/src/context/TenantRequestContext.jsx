@@ -1,15 +1,17 @@
+// src/context/TenantRequestContext.jsx
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { tenantApi } from "../services/tenantAdminAPI";
 import { AuthContext } from "./AuthContext";
 
+// ✅ Create TenantRequest Context
 export const TenantRequestContext = createContext();
 
+// ✅ Provider component
 export const TenantRequestProvider = ({ children }) => {
-
-    const { user } = useContext(AuthContext);  // ✅ get logged-in user
+  const { user } = useContext(AuthContext); // Logged-in user
 
   // ----------------------------
-  // Persisted State
+  // Persisted State (localStorage)
   // ----------------------------
   const [tenantRequestId, setTenantRequestId] = useState(
     () => localStorage.getItem("tenantRequestId") || null
@@ -19,13 +21,9 @@ export const TenantRequestProvider = ({ children }) => {
   );
 
   // ----------------------------
-  // Tenant Info
+  // Tenant Info & Users
   // ----------------------------
   const [tenantDetails, setTenantDetails] = useState(null);
-
-  // ----------------------------
-  // Tenant Users
-  // ----------------------------
   const [tenantUsers, setTenantUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [errorUsers, setErrorUsers] = useState(null);
@@ -44,7 +42,7 @@ export const TenantRequestProvider = ({ children }) => {
   const [errorRequests, setErrorRequests] = useState(null);
 
   // ----------------------------
-  // Tenant User Stats
+  // Tenant Users Stats
   // ----------------------------
   const [userStats, setUserStats] = useState({
     totalUsers: 0,
@@ -53,29 +51,27 @@ export const TenantRequestProvider = ({ children }) => {
   });
 
   // ----------------------------
-  // Sync state to localStorage
+  // Sync state with localStorage
   // ----------------------------
   useEffect(() => {
-    if (tenantRequestId) localStorage.setItem("tenantRequestId", tenantRequestId);
-    else localStorage.removeItem("tenantRequestId");
+    tenantRequestId
+      ? localStorage.setItem("tenantRequestId", tenantRequestId)
+      : localStorage.removeItem("tenantRequestId");
   }, [tenantRequestId]);
 
   useEffect(() => {
-    if (tenantId) localStorage.setItem("tenantId", tenantId);
-    else localStorage.removeItem("tenantId");
+    tenantId
+      ? localStorage.setItem("tenantId", tenantId)
+      : localStorage.removeItem("tenantId");
   }, [tenantId]);
 
   // ----------------------------
-  // Listen to localStorage changes from other tabs or navigation
+  // Listen to storage changes from other tabs
   // ----------------------------
   useEffect(() => {
     const handleStorageChange = (event) => {
-      if (event.key === "tenantId") {
-        setTenantId(event.newValue);
-      }
-      if (event.key === "tenantRequestId") {
-        setTenantRequestId(event.newValue);
-      }
+      if (event.key === "tenantId") setTenantId(event.newValue);
+      if (event.key === "tenantRequestId") setTenantRequestId(event.newValue);
     };
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
@@ -92,15 +88,21 @@ export const TenantRequestProvider = ({ children }) => {
       const requests = response?.data || [];
 
       setRequestCounts({
-        totalPending: requests.filter(r => r.status === "pending").length,
-        totalApproved: requests.filter(r => r.status === "approved").length,
-        totalRejected: requests.filter(r => r.status === "rejected").length,
-        totalActive: requests.filter(r => r.status === "active").length,
+        totalPending: requests.filter((r) => r.status === "pending").length,
+        totalApproved: requests.filter((r) => r.status === "approved").length,
+        totalRejected: requests.filter((r) => r.status === "rejected").length,
+        totalActive: requests.filter((r) => r.status === "active").length,
         totalCount: requests.length,
       });
     } catch (err) {
       console.error("Failed to fetch tenant requests count:", err);
-      setRequestCounts({ totalPending: 0, totalApproved: 0, totalRejected: 0, totalActive: 0, totalCount: 0 });
+      setRequestCounts({
+        totalPending: 0,
+        totalApproved: 0,
+        totalRejected: 0,
+        totalActive: 0,
+        totalCount: 0,
+      });
       setErrorRequests(err.message || "Failed to load requests");
     } finally {
       setLoadingRequests(false);
@@ -115,7 +117,7 @@ export const TenantRequestProvider = ({ children }) => {
     try {
       const data = await tenantApi.getUsers(id);
       setTenantDetails(data?.tenant || null);
-      setTenantId(data?.tenant?.id || id); // keep state in sync
+      setTenantId(data?.tenant?.id || id);
     } catch (err) {
       console.error("Failed to fetch tenant details:", err);
       setTenantDetails(null);
@@ -137,13 +139,13 @@ export const TenantRequestProvider = ({ children }) => {
 
       // Compute stats
       const totalUsers = users.length;
-      const byRole = users.reduce((acc, user) => {
-        const role = user.Roles?.[0]?.name || "Unknown";
+      const byRole = users.reduce((acc, u) => {
+        const role = u.Roles?.[0]?.name || "Unknown";
         acc[role] = (acc[role] || 0) + 1;
         return acc;
       }, {});
-      const byStatus = users.reduce((acc, user) => {
-        const status = user.status || "Unknown";
+      const byStatus = users.reduce((acc, u) => {
+        const status = u.status || "Unknown";
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {});
@@ -159,7 +161,7 @@ export const TenantRequestProvider = ({ children }) => {
   };
 
   // ----------------------------
-  // Auto-fetch tenant users & details whenever tenantId changes
+  // Auto-fetch when tenantId changes
   // ----------------------------
   useEffect(() => {
     if (tenantId) {
@@ -169,19 +171,17 @@ export const TenantRequestProvider = ({ children }) => {
   }, [tenantId]);
 
   // ----------------------------
-  // Auto-refresh tenant requests every 40s
+  // Auto-refresh tenant requests for superAdmin
   // ----------------------------
- useEffect(() => {
-    if (!user || user.role !== "superAdmin") return; // ✅ block non-superAdmins
-
-    fetchTenantRequestsCount(); // initial call
+  useEffect(() => {
+    if (!user || user.role !== "superAdmin") return;
+    fetchTenantRequestsCount();
     const interval = setInterval(fetchTenantRequestsCount, 50000);
-
     return () => clearInterval(interval);
-  }, [user]); // rerun if user changes
+  }, [user]);
 
   // ----------------------------
-  // Context value
+  // Context Value
   // ----------------------------
   return (
     <TenantRequestContext.Provider

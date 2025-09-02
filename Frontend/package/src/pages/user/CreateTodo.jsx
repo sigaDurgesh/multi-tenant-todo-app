@@ -3,12 +3,12 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
   Card,
   CardContent,
   Snackbar,
   Alert,
   Box,
+  Stack,
 } from "@mui/material";
 import { TodosContext } from "../../context/TodoContext";
 
@@ -20,6 +20,7 @@ const CreateTodo = () => {
 
   const handleSubmit = () => {
     if (!title.trim()) {
+      setSuccess(false);
       alert("Title is required!");
       return;
     }
@@ -31,7 +32,7 @@ const CreateTodo = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 4, maxWidth: 600, mx: "auto" }}>
       {/* Header */}
       <Typography variant="h4" fontWeight="bold" gutterBottom>
         Create New Todo
@@ -41,56 +42,55 @@ const CreateTodo = () => {
       </Typography>
 
       {/* Form Card */}
-      <Card sx={{ mt: 3, borderRadius: 3, boxShadow: 4 }}>
+      <Card sx={{ mt: 3, borderRadius: 3, boxShadow: 6 }}>
         <CardContent>
-          <Grid container spacing={2}>
+          <Stack spacing={3}>
             {/* Title */}
-            <Grid item xs={12}>
-              <TextField
-                label="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                fullWidth
-                required
-                placeholder="Enter todo title"
-              />
-            </Grid>
+            <TextField
+              label="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              fullWidth
+              required
+              placeholder="Enter todo title"
+              size="medium"
+            />
 
             {/* Description */}
-            <Grid item xs={12}>
-              <TextField
-                label="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                fullWidth
-                multiline
-                rows={3}
-                placeholder="Enter description (optional)"
-              />
-            </Grid>
+            <TextField
+              label="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              fullWidth
+              multiline
+              rows={4} // slightly taller than before, but proportional
+              placeholder="Enter description (optional)"
+            />
 
             {/* Submit Button */}
-            <Grid item xs={12} sx={{ textAlign: "right" }}>
+            <Box sx={{ textAlign: "right" }}>
               <Button
                 variant="contained"
                 size="large"
                 onClick={handleSubmit}
                 sx={{
                   borderRadius: 3,
-                  px: 4,
+                  px: 5,
                   py: 1.5,
                   background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                   fontWeight: "bold",
                   textTransform: "none",
+                  boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
+                  transition: "transform 0.2s",
                   "&:hover": {
-                    transform: "scale(1.02)",
+                    transform: "scale(1.03)",
                   },
                 }}
               >
                 Add Todo
               </Button>
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </CardContent>
       </Card>
 

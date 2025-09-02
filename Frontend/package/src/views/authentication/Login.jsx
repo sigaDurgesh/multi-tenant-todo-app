@@ -237,7 +237,7 @@ const Login = () => {
                   alignItems="center"
                   gap={2}
                 >
-                  <Typography
+                  {/* <Typography
                     variant="body2"
                     color="primary"
                     fontSize={14}
@@ -245,7 +245,7 @@ const Login = () => {
                     onClick={() => navigate("/change-pass")}
                   >
                     Change Password
-                  </Typography>
+                  </Typography> */}
                   <Typography
                     variant="body2"
                     color="primary"
