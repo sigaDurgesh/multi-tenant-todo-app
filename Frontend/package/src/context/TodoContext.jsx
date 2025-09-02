@@ -12,22 +12,37 @@ export const TodosProvider = ({ children }) => {
   const API_URL = "http://localhost:5000/api/todos"; // your backend URL
 
   const fetchTodos = async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const res = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${user.token}` },
-      });
-      const data = await res.json();
-      setTodos(data); // data should be array of todos
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!user?.token) {
+    console.warn("No user or token available, skipping fetchTodos");
+    setTodos([]); // optional: reset todos
+    return;
+  }
 
-  const addTodo = async (todo) => {
+  console.log(user?.token)
+
+  setLoading(true);
+  try {
+    const res = await fetch(API_URL, {
+      headers: { Authorization: `Bearer ${user.token}` },
+    });
+    if (!res.ok) {
+      console.error("Fetch todos failed:", res.status);
+      return;
+    }
+
+    const data = await res.json();
+    setTodos(Array.isArray(data) ? data : []); // ensure todos is always an array
+  } catch (err) {
+    console.error("Error fetching todos:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const addTodo = async (todo) => {
+  if (!user?.token) return;
+
+  try {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: {
@@ -36,9 +51,18 @@ export const TodosProvider = ({ children }) => {
       },
       body: JSON.stringify(todo),
     });
+
     const data = await res.json();
-    setTodos((prev) => [...prev, data.todo]); // use data.todo
-  };
+    if (res.ok && data.todo) {
+      setTodos((prev) => [...(prev || []), data.todo]); // safe even if prev is undefined
+    } else {
+      console.error("Add todo failed:", data);
+    }
+  } catch (err) {
+    console.error("Error adding todo:", err);
+  }
+};
+
 
   const updateTodo = async (id, updated) => {
     const res = await fetch(`${API_URL}/${id}`, {

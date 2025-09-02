@@ -55,7 +55,7 @@ const TenantRequest = () => {
   const [statusFilter, setStatusFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const superAdminId = "0cdf325e-573b-4d79-9dcf-c1fe29c4a74f";
+  const superAdminId = "4428afd9-1f97-47b1-8939-9d4953c272d0";
 
   const handleCloseSnack = () => setSnack({ type: "", msg: "" });
 

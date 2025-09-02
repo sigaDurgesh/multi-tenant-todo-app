@@ -212,7 +212,7 @@ const LandingPage = () => {
             </Button>
             {!user ? (
               <GradientButton onClick={() => navigate("/login")}>
-                Get Started
+                Become A Tenant
               </GradientButton>
             ) : (
               <GradientButton
@@ -384,7 +384,7 @@ const LandingPage = () => {
             {!user ? (
               <>
                 <GradientButton onClick={() => navigate("/becometenant")}>
-                  Get Started Free
+                  Become A Tenant
                 </GradientButton>
                 <Button
                   variant="outlined"

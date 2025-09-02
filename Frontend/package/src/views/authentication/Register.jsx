@@ -1,11 +1,13 @@
+// src/views/authentication/Register.jsx
 import React, { useState, useContext } from "react";
 import { Grid, Box, Card, Typography, Stack, Button } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+
 import PageContainer from "src/components/container/PageContainer";
-import CustomTextField from "../../components/forms/theme-elements/CustomTextField"; // ✅ updated import
-import { AuthContext } from "../../context/AuthContext";
+import CustomTextField from "src/components/forms/theme-elements/CustomTextField";
+import { AuthContext } from "src/context/AuthContext";
 
 const Register = () => {
   const { setUser } = useContext(AuthContext);
@@ -14,7 +16,6 @@ const Register = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Formik + Yup validation
   const formik = useFormik({
     initialValues: { name: "", email: "", password: "" },
     validationSchema: Yup.object({
@@ -49,7 +50,6 @@ const Register = () => {
 
         const data = await response.json();
 
-        // Set user in context
         setUser({
           name: data.username || values.name,
           role: data.role || "user",
@@ -57,7 +57,7 @@ const Register = () => {
 
         navigate("/login");
       } catch (err) {
-        console.error("Error:", err);
+        console.error(err);
         setError("Registration failed. Please try again.");
       } finally {
         setLoading(false);
@@ -104,10 +104,8 @@ const Register = () => {
                 </Typography>
               )}
 
-              {/* ✅ Registration Form */}
               <Box component="form" noValidate onSubmit={formik.handleSubmit}>
                 <Stack spacing={2} mb={3}>
-                  {/* Name */}
                   <CustomTextField
                     id="name"
                     name="name"
@@ -118,8 +116,6 @@ const Register = () => {
                     error={formik.touched.name && Boolean(formik.errors.name)}
                     helperText={formik.touched.name && formik.errors.name}
                   />
-
-                  {/* Email */}
                   <CustomTextField
                     id="email"
                     name="email"
@@ -131,8 +127,6 @@ const Register = () => {
                     error={formik.touched.email && Boolean(formik.errors.email)}
                     helperText={formik.touched.email && formik.errors.email}
                   />
-
-                  {/* Password */}
                   <CustomTextField
                     id="password"
                     name="password"
@@ -148,7 +142,6 @@ const Register = () => {
                   />
                 </Stack>
 
-                {/* Submit */}
                 <Button
                   type="submit"
                   color="primary"
@@ -161,7 +154,6 @@ const Register = () => {
                 </Button>
               </Box>
 
-              {/* Login link */}
               <Stack direction="row" justifyContent="center" spacing={1} mt={3}>
                 <Typography color="textSecondary" variant="body2">
                   Already have an account?
