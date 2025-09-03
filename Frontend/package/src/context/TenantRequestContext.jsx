@@ -3,16 +3,10 @@ import React, { createContext, useState, useEffect, useContext } from "react";
 import { tenantApi } from "../services/tenantAdminAPI";
 import { AuthContext } from "./AuthContext";
 
-// ✅ Create TenantRequest Context
 export const TenantRequestContext = createContext();
 
-// ✅ Provider component
 export const TenantRequestProvider = ({ children }) => {
   const { user } = useContext(AuthContext); // Logged-in user
-
-  // ----------------------------
-  // Persisted State (localStorage)
-  // ----------------------------
   const [tenantRequestId, setTenantRequestId] = useState(
     () => localStorage.getItem("tenantRequestId") || null
   );

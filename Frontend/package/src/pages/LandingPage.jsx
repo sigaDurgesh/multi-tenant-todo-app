@@ -19,25 +19,26 @@ import {
   styled,
   IconButton,
   Drawer,
+  Link,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import TwitterIcon from "@mui/icons-material/Twitter";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import GitHubIcon from "@mui/icons-material/GitHub";
 
 import {
   Apartment,
   Security,
-  Speed,
-  Cloud,
-  Analytics,
   AutoAwesome,
   Star,
   Groups,
   TaskAlt,
   Public,
+  ListAlt,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router";
 import { AuthContext } from "../context/AuthContext";
 
-// ✅ Styled Gradient Button
 const GradientButton = styled(Button)(() => ({
   background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   borderRadius: "50px",
@@ -90,42 +91,76 @@ const LandingPage = () => {
     },
   ];
 
+  const menuItems = [
+    { label: "Features", id: "features" },
+    { label: "Pricing", id: "pricing" },
+    { label: "Contact", id: "contact" },
+  ];
   // ✅ Features
   const features = [
     {
       icon: <Apartment sx={{ fontSize: 48, color: "#667eea" }} />,
-      title: "Multi-Tenant Architecture",
+      title: "Multi-Tenant Support",
       description:
-        "Enterprise-grade multi-tenancy with complete data isolation, custom branding, and scalable infrastructure.",
+        "Manage multiple tenants with isolated data, user roles, and configurable settings per tenant.",
     },
     {
       icon: <Security sx={{ fontSize: 48, color: "#f093fb" }} />,
-      title: "Military-Grade Security",
+      title: "Secure Access Control",
       description:
-        "Advanced encryption, SSO, JWT authentication, and compliance with SOC2, GDPR, HIPAA.",
+        "Role-based permissions, JWT authentication, and secure data handling for all users.",
     },
-
     {
-      icon: <Analytics sx={{ fontSize: 48, color: "#fa709a" }} />,
-      title: "Advanced Analytics",
+      icon: <ListAlt sx={{ fontSize: 48, color: "#fa709a" }} />,
+      title: "Task Management",
       description:
-        "Real-time dashboards, productivity insights, team metrics, and AI-powered recommendations.",
+        "Create, edit, delete, and complete todos with real-time updates and notifications.",
     },
     {
       icon: <AutoAwesome sx={{ fontSize: 48, color: "#a8edea" }} />,
-      title: "AI Automation",
+      title: "Smart Productivity",
       description:
-        "Smart task prioritization, automated workflows, intelligent notifications, predictive analytics.",
+        "Prioritize tasks, track progress, and improve productivity with AI-powered suggestions.",
     },
   ];
 
+  // Example data for 3 rows
+  const sections = [
+    {
+      title: "Collaboration",
+      description:
+        "Communicate in countless ways from one place. Slack is built for bringing people and information together. Type things out. Talk things through. Invite external organisations into the conversation. A GIF shows how people collaborate using channels in Slack. 80% of the Fortune 100 use Slack Connect to work with partners and customers.",
+      imageUrl:
+        "https://a.slack-edge.com/b5bbfef/marketing/img/homepage/revamped-24/mobile/value-props/image-collaboration.en-GB@2x.png",
+    },
+    {
+      title: "Integration",
+      description:
+        "Connect the tools you already use into one central hub. Automate workflows and streamline your processes with seamless integrations. Keep everything organized and accessible from a single platform.",
+      imageUrl:
+        "https://a.slack-edge.com/b5bbfef/marketing/img/homepage/revamped-24/mobile/value-props/image-project-management.en-GB@2x.jpg",
+    },
+    {
+      title: "Productivity",
+      description:
+        "Focus on what matters. Reduce distractions and manage tasks efficiently. Bring teams together to achieve more with shared spaces and real-time collaboration tools.",
+      imageUrl:
+        "https://a.slack-edge.com/b5bbfef/marketing/img/homepage/revamped-24/mobile/value-props/image-integrations.en-GB@2x.jpg",
+    },
+  ];
   // ✅ Pricing
   const pricingPlans = [
     {
       title: "Starter",
       price: "Free",
       description: "Best for individuals and small teams  started.",
-      features: ["Up to 3 Tenants", "Basic Analytics","Priority Support",, "Community Support"],
+      features: [
+        "Up to 3 Tenants",
+        "Basic Analytics",
+        "Priority Support",
+        ,
+        "Community Support",
+      ],
     },
     {
       title: "Pro",
@@ -159,7 +194,7 @@ const LandingPage = () => {
         elevation={0}
         sx={{
           background: "#fff",
-          color: "#111",
+          color: "#181212ff",
           borderBottom: "1px solid rgba(0,0,0,0.08)",
         }}
       >
@@ -167,7 +202,7 @@ const LandingPage = () => {
           {/* Logo */}
           <Typography
             variant="h5"
-            sx={{ fontWeight: 800, color: "#667eea", cursor: "pointer" }}
+            sx={{ fontWeight: 900, color: "#667eea", cursor: "pointer" }}
             onClick={() => navigate("/")}
           >
             MultiTenant
@@ -178,38 +213,26 @@ const LandingPage = () => {
             direction="row"
             spacing={4}
             alignItems="center"
-            sx={{ display: { xs: "none", md: "flex" } }}
+            sx={{
+              flexGrow: 1,
+              justifyContent: "center",
+              display: { xs: "none", md: "flex" },
+            }}
           >
-            <Button
-              color="inherit"
-              onClick={() =>
-                document
-                  .getElementById("features")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              Features
-            </Button>
-            <Button
-              color="inherit"
-              onClick={() =>
-                document
-                  .getElementById("pricing")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              Pricing
-            </Button>
-            <Button
-              color="inherit"
-              onClick={() =>
-                document
-                  .getElementById("contact")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              Contact
-            </Button>
+            {menuItems.map((item) => (
+              <Button
+                key={item.id}
+                color="inherit"
+                onClick={() => scrollToSection(item.id)}
+                sx={{ fontWeight: 500 }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </Stack>
+
+          {/* Right Action Button */}
+          <Box sx={{ display: { xs: "none", md: "block" } }}>
             {!user ? (
               <GradientButton onClick={() => navigate("/login")}>
                 Become A Tenant
@@ -223,9 +246,9 @@ const LandingPage = () => {
                 Dashboard
               </GradientButton>
             )}
-          </Stack>
+          </Box>
 
-          {/* Mobile Menu (Hamburger) */}
+          {/* Mobile Hamburger */}
           <Box sx={{ display: { xs: "block", md: "none" } }}>
             <IconButton onClick={() => setMobileOpen(true)}>
               <MenuIcon />
@@ -242,39 +265,18 @@ const LandingPage = () => {
         >
           <Box sx={{ width: 260, p: 3 }}>
             <Stack spacing={2}>
-              <Button
-                color="inherit"
-                onClick={() => {
-                  setMobileOpen(false);
-                  document
-                    .getElementById("features")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                Features
-              </Button>
-              <Button
-                color="inherit"
-                onClick={() => {
-                  setMobileOpen(false);
-                  document
-                    .getElementById("pricing")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                Pricing
-              </Button>
-              <Button
-                color="inherit"
-                onClick={() => {
-                  setMobileOpen(false);
-                  document
-                    .getElementById("contact")
-                    ?.scrollIntoView({ behavior: "smooth" });
-                }}
-              >
-                Contact
-              </Button>
+              {menuItems.map((item) => (
+                <Button
+                  key={item.id}
+                  color="inherit"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    scrollToSection(item.id);
+                  }}
+                >
+                  {item.label}
+                </Button>
+              ))}
               {!user ? (
                 <GradientButton
                   fullWidth
@@ -449,9 +451,265 @@ const LandingPage = () => {
         </Container>
       </Box>
 
+      {/*  Text and Image */}
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 12 } }}>
+        {sections.map((section, index) => (
+          <Grid
+            container
+            key={index}
+            spacing={6}
+            alignItems="center"
+            sx={{ mb: 10 }}
+          >
+            <Grid
+              container
+              spacing={4} // space between text and image
+              alignItems="center"
+              sx={{ py: { xs: 4, md: 8 } }} // vertical padding
+            >
+              {/* Text Column */}
+              <Grid
+                item
+                xs={12}
+                md={6}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  textAlign: { xs: "center", md: "left" },
+                  px: { xs: 2, md: 0 }, // horizontal padding on mobile
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    mb: 2,
+                    fontSize: { xs: "1.8rem", md: "2.2rem" },
+                    color: "#111",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {section.title}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mb: 3,
+                    color: "text.secondary",
+                    lineHeight: 1.8,
+                    fontSize: { xs: "1rem", md: "1.05rem" },
+                    maxWidth: { md: "600px" }, // restrict width
+                  }}
+                >
+                  {section.description}
+                </Typography>
+
+                <Link
+                  to="/your-path"
+                  underline="hover" // only underline on hover
+                  sx={{
+                    mt: 2,
+                    fontWeight: 600,
+                    fontSize: "0.95rem",
+                    color: "#1976d2", // typical link color
+                    alignSelf: { xs: "center", md: "flex-start" }, // responsive alignment
+                    cursor: "pointer",
+                  }}
+                >
+                  Learn More
+                </Link>
+              </Grid>
+
+              {/* Image Column */}
+              <Grid
+                item
+                xs={12}
+                md={6}
+                sx={{
+                  display: "flex",
+                  justifyContent: { xs: "center", md: "flex-end" },
+                  alignItems: "center",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={section.imageUrl}
+                  alt={section.title}
+                  sx={{
+                    width: "100%",
+                    maxWidth: 500,
+                    borderRadius: 3,
+                    // boxShadow: "0 12px 30px rgba(0,0,0,0.1)",
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Grid>
+        ))}
+      </Container>
+
+      {/*text */}
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: { xs: 6, md: 12 },
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <Box sx={{ width: "100%", maxWidth: 1200 }}>
+          {/* Section Title */}
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              mb: { xs: 4, md: 8 },
+              textAlign: "center",
+              color: "#111",
+              fontSize: { xs: "1.8rem", md: "2.2rem" },
+            }}
+          >
+            We’re in the business of growing businesses.
+          </Typography>
+
+          <Grid
+            container
+            spacing={0}
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              justifyContent: "center",
+              alignItems: "stretch",
+            }}
+          >
+            {/* Left Statistic */}
+            <Grid
+              item
+              xs={12}
+              md={4}
+              sx={{
+                backgroundColor: "#1976d2",
+                color: "#fff",
+                borderTopLeftRadius: { xs: "20px", md: "40px" },
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                px: 4,
+                py: 4,
+                minHeight: { md: "300px" },
+              }}
+            >
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: "2.5rem", md: "3rem" },
+                  mb: 2,
+                }}
+              >
+                90%
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontSize: { xs: "1rem", md: "1.1rem" },
+                  lineHeight: 1.6,
+                  maxWidth: { md: "220px" },
+                }}
+              >
+                of users say that Slack helps them stay more connected
+              </Typography>
+            </Grid>
+
+            {/* Middle Statistic */}
+            <Grid
+              item
+              xs={12}
+              md={4}
+              sx={{
+                backgroundColor: "#42a5f5",
+                color: "#fff",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                px: 4,
+                py: 4,
+                minHeight: { md: "300px" },
+              }}
+            >
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: "2.5rem", md: "3rem" },
+                  mb: 2,
+                }}
+              >
+                89%
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontSize: { xs: "1rem", md: "1.1rem" },
+                  lineHeight: 1.6,
+                  maxWidth: { md: "220px" },
+                }}
+              >
+                of users say that Slack improves communication
+              </Typography>
+            </Grid>
+
+            {/* Right Statistic */}
+            <Grid
+              item
+              xs={12}
+              md={4}
+              sx={{
+                backgroundColor: "#64b5f6",
+                color: "#fff",
+                borderTopRightRadius: { xs: "20px", md: "40px" },
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                textAlign: "center",
+                px: 4,
+                py: 4,
+                minHeight: { md: "300px" },
+              }}
+            >
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: "2.5rem", md: "3rem" },
+                  mb: 2,
+                }}
+              >
+                36%
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontSize: { xs: "1rem", md: "1.1rem" },
+                  lineHeight: 1.6,
+                  maxWidth: { md: "220px" },
+                }}
+              >
+                increase in employee engagement
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
+      </Container>
+
       {/* Features Section */}
-      <Container maxWidth="lg" sx={{ py: { xs: 10, md: 14 } }}>
-        {/* Section Header */}
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>
         <Box sx={{ textAlign: "center", mb: { xs: 8, md: 12 } }}>
           <Typography
             variant="h2"
@@ -460,6 +718,7 @@ const LandingPage = () => {
               fontWeight: 800,
               mb: 3,
               color: "#1976d2",
+              lineHeight: 1.2,
             }}
           >
             Powerful Features
@@ -468,10 +727,10 @@ const LandingPage = () => {
             variant="h6"
             sx={{
               color: "text.secondary",
-              maxWidth: 700,
+              maxWidth: 720,
               mx: "auto",
               fontWeight: 400,
-              lineHeight: 1.7,
+              lineHeight: 1.8,
               fontSize: { xs: "1rem", md: "1.15rem" },
             }}
           >
@@ -496,10 +755,13 @@ const LandingPage = () => {
                   sx={{
                     flex: 1,
                     maxWidth: 360,
-                    borderRadius: 3,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                    borderRadius: 4,
+                    boxShadow: "0 8px 28px rgba(0,0,0,0.08)",
                     transition: "all 0.3s ease",
-                    "&:hover": { transform: "translateY(-5px)" },
+                    "&:hover": {
+                      transform: "translateY(-8px)",
+                      boxShadow: "0 12px 36px rgba(0,0,0,0.12)",
+                    },
                   }}
                 >
                   <CardContent
@@ -510,40 +772,44 @@ const LandingPage = () => {
                       alignItems: "flex-start",
                     }}
                   >
+                    {/* Icon */}
                     <Box
                       sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: 2,
+                        width: 64,
+                        height: 64,
+                        borderRadius: 3,
                         background: alpha("#1976d2", 0.1),
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         mb: 3,
                         color: "#1976d2",
-                        fontSize: 28,
+                        fontSize: 30,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                       }}
                     >
                       {feature.icon}
                     </Box>
 
+                    {/* Feature Title */}
                     <Typography
                       variant="h5"
                       sx={{
                         fontWeight: 700,
                         mb: 1.5,
                         color: "#111",
-                        fontSize: { xs: "1.2rem", md: "1.4rem" },
+                        fontSize: { xs: "1.25rem", md: "1.4rem" },
                       }}
                     >
                       {feature.title}
                     </Typography>
 
+                    {/* Feature Description */}
                     <Typography
                       variant="body2"
                       sx={{
                         color: "text.secondary",
-                        lineHeight: 1.6,
+                        lineHeight: 1.7,
                         flexGrow: 1,
                         fontSize: "0.95rem",
                       }}
@@ -551,6 +817,7 @@ const LandingPage = () => {
                       {feature.description}
                     </Typography>
 
+                    {/* Learn More CTA */}
                     <Button
                       variant="text"
                       sx={{
@@ -560,7 +827,10 @@ const LandingPage = () => {
                         fontWeight: 600,
                         fontSize: "0.95rem",
                         textTransform: "none",
-                        "&:hover": { textDecoration: "underline" },
+                        "&:hover": {
+                          textDecoration: "underline",
+                          color: "#115293",
+                        },
                       }}
                     >
                       Learn More →
@@ -574,7 +844,8 @@ const LandingPage = () => {
       </Container>
 
       {/* ✅ Pricing Section */}
-      <Container maxWidth="lg" sx={{ py: { xs: 10, md: 14 } }} id="pricing">
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }} id="pricing">
+        {/* Header */}
         <Box sx={{ textAlign: "center", mb: { xs: 8, md: 12 } }}>
           <Typography
             variant="h2"
@@ -589,54 +860,101 @@ const LandingPage = () => {
           </Typography>
           <Typography
             variant="h6"
-            sx={{ color: "text.secondary", maxWidth: 700, mx: "auto" }}
+            sx={{
+              color: "text.secondary",
+              maxWidth: 700,
+              mx: "auto",
+              fontWeight: 400,
+              lineHeight: 1.6,
+            }}
           >
             Choose the plan that works best for your organization.
           </Typography>
         </Box>
 
-        <Grid container spacing={4} justifyContent="center">
-          {pricingPlans.map((plan, i) => (
-            <Grid item xs={12} sm={6} md={4} key={i}>
-              <Card
-                sx={{
-                  borderRadius: 4,
-                  boxShadow:
-                    plan.title === "Pro"
-                      ? "0 8px 32px rgba(102, 126, 234, 0.4)"
-                      : "0 4px 16px rgba(0,0,0,0.08)",
-                  border:
-                    plan.title === "Pro"
-                      ? "2px solid #fefff2ff"
+        {/* Pricing Cards */}
+        <Grid container spacing={6} justifyContent="center">
+          {pricingPlans.map((plan, i) => {
+            const isPopular = plan.title === "Pro"; // highlight Pro plan
+            return (
+              <Grid item xs={12} sm={6} md={4} key={i}>
+                <Card
+                  sx={{
+                    borderRadius: 4,
+                    boxShadow: isPopular
+                      ? "0 12px 40px rgba(102, 126, 234, 0.35)"
+                      : "0 6px 20px rgba(0,0,0,0.08)",
+                    border: isPopular
+                      ? `2px solid ${alpha("#667eea", 0.5)}`
                       : "1px solid rgba(0,0,0,0.08)",
-                  transform: plan.title === "Pro" ? "scale(1.05)" : "none",
-                }}
-              >
-                <CardContent sx={{ p: 5, textAlign: "center" }}>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                    {plan.title}
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
-                    {plan.price}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "text.secondary", mb: 3 }}
-                  >
-                    {plan.description}
-                  </Typography>
-                  <Stack spacing={1.5} sx={{ mb: 4 }}>
-                    {plan.features.map((f, j) => (
-                      <Typography key={j} variant="body2">
-                        ✅ {f}
-                      </Typography>
-                    ))}
-                  </Stack>
-                  <GradientButton>Get Started</GradientButton>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
+                    transform: isPopular ? "scale(1.05)" : "none",
+                    transition: "all 0.3s ease",
+                    "&:hover": { transform: "translateY(-5px)", boxShadow: 12 },
+                  }}
+                >
+                  <CardContent sx={{ p: 5, textAlign: "center" }}>
+                    {/* Plan Title */}
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1,
+                        color: isPopular ? "#667eea" : "text.primary",
+                      }}
+                    >
+                      {plan.title}
+                    </Typography>
+
+                    {/* Price */}
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: 800,
+                        mb: 2,
+                        color: isPopular ? "#764ba2" : "text.primary",
+                      }}
+                    >
+                      {plan.price}
+                    </Typography>
+
+                    {/* Description */}
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "text.secondary", mb: 3 }}
+                    >
+                      {plan.description}
+                    </Typography>
+
+                    {/* Features List */}
+                    <Stack spacing={1.5} sx={{ mb: 4 }}>
+                      {plan.features.map((f, j) => (
+                        <Typography
+                          key={j}
+                          variant="body2"
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            fontWeight: 500,
+                          }}
+                        >
+                          <Box component="span" sx={{ color: "#4caf50" }}>
+                            ✅
+                          </Box>
+                          {f}
+                        </Typography>
+                      ))}
+                    </Stack>
+
+                    {/* CTA Button */}
+                    <GradientButton sx={{ px: 5, py: 1.5 }}>
+                      Get Started
+                    </GradientButton>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
         </Grid>
       </Container>
 
@@ -644,139 +962,124 @@ const LandingPage = () => {
       <Box
         component="footer"
         sx={{
-          py: { xs: 6, md: 10 },
+          py: { xs: 8, md: 12 },
           borderTop: "1px solid rgba(0,0,0,0.1)",
-          mt: 8,
-          background: "#f8f9fa",
+          mt: 10,
+          backgroundColor: "#f8f9fa",
         }}
       >
         <Container maxWidth="lg">
-          <Grid container spacing={6}>
+          <Grid container spacing={{ xs: 6, md: 4 }}>
             {/* Logo + Tagline */}
             <Grid item xs={12} md={3}>
               <Typography
                 variant="h5"
                 sx={{ fontWeight: 800, mb: 2, color: "#667eea" }}
               >
-                MultiTenant
+                Siga Systems
               </Typography>
               <Typography
                 variant="body2"
                 sx={{ color: "text.secondary", mb: 3 }}
               >
-                The future of team productivity and collaboration. Built with ❤️
-                for the modern workforce.
+                Building modern SaaS platforms for productivity, collaboration,
+                and scalable solutions.
               </Typography>
-              {/* Social Icons */}
-              <Stack direction="row" spacing={2}>
-                <Button
+              <Stack direction="row" spacing={1.5}>
+                <IconButton
+                  component={Link}
                   href="https://twitter.com"
                   target="_blank"
-                  sx={{ minWidth: 0, p: 1, color: "text.secondary" }}
+                  sx={{
+                    color: "#1DA1F2",
+                    bgcolor: alpha("#1DA1F2", 0.1),
+                    "&:hover": { bgcolor: alpha("#1DA1F2", 0.2) },
+                  }}
                 >
-                  <i className="fab fa-twitter"></i>
-                </Button>
-                <Button
+                  <TwitterIcon />
+                </IconButton>
+                <IconButton
+                  component={Link}
                   href="https://linkedin.com"
                   target="_blank"
-                  sx={{ minWidth: 0, p: 1, color: "text.secondary" }}
+                  sx={{
+                    color: "#0A66C2",
+                    bgcolor: alpha("#0A66C2", 0.1),
+                    "&:hover": { bgcolor: alpha("#0A66C2", 0.2) },
+                  }}
                 >
-                  <i className="fab fa-linkedin"></i>
-                </Button>
-                <Button
+                  <LinkedInIcon />
+                </IconButton>
+                <IconButton
+                  component={Link}
                   href="https://github.com"
                   target="_blank"
-                  sx={{ minWidth: 0, p: 1, color: "text.secondary" }}
+                  sx={{
+                    color: "#000",
+                    bgcolor: alpha("#000", 0.05),
+                    "&:hover": { bgcolor: alpha("#000", 0.1) },
+                  }}
                 >
-                  <i className="fab fa-github"></i>
-                </Button>
+                  <GitHubIcon />
+                </IconButton>
               </Stack>
             </Grid>
 
-            {/* Product */}
-            <Grid item xs={6} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Product
-              </Typography>
-              <Stack spacing={1}>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Features
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Pricing
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Docs
-                </Button>
-              </Stack>
-            </Grid>
-
-            {/* Company */}
-            <Grid item xs={6} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Company
-              </Typography>
-              <Stack spacing={1}>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  About
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Careers
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Contact
-                </Button>
-              </Stack>
-            </Grid>
-
-            {/* Resources */}
-            <Grid item xs={6} md={2}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Resources
-              </Typography>
-              <Stack spacing={1}>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Blog
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Help Center
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  API Docs
-                </Button>
-              </Stack>
-            </Grid>
-
-            {/* Legal */}
-            <Grid item xs={6} md={3}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
-                Legal
-              </Typography>
-              <Stack spacing={1}>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Terms of Service
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Privacy Policy
-                </Button>
-                <Button color="inherit" sx={{ justifyContent: "flex-start" }}>
-                  Security
-                </Button>
-              </Stack>
-            </Grid>
+            {/* Navigation Sections */}
+            {[
+              {
+                title: "Product",
+                links: ["Features", "Pricing", "Docs"],
+              },
+              {
+                title: "Company",
+                links: ["About", "Careers", "Contact"],
+              },
+              {
+                title: "Resources",
+                links: ["Blog", "Help Center", "API Docs"],
+              },
+              {
+                title: "Legal",
+                links: ["Terms of Service", "Privacy Policy", "Security"],
+              },
+            ].map((section, i) => (
+              <Grid item xs={6} md={2} key={i}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+                  {section.title}
+                </Typography>
+                <Stack spacing={1}>
+                  {section.links.map((link, j) => (
+                    <Link
+                      key={j}
+                      href="#"
+                      underline="none"
+                      color="text.secondary"
+                      sx={{
+                        "&:hover": { color: "#1976d2" },
+                        display: "block",
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      {link}
+                    </Link>
+                  ))}
+                </Stack>
+              </Grid>
+            ))}
           </Grid>
 
           {/* Bottom Row */}
           <Box
             sx={{
               textAlign: "center",
-              mt: 6,
+              mt: 8,
               color: "text.secondary",
               fontSize: "0.9rem",
             }}
           >
-            &copy; {new Date().getFullYear()} MultiTenant. All rights reserved.
-            | Designed with ❤️ using React & MUI
+            &copy; {new Date().getFullYear()} Siga Systems Pvt. Ltd. All rights
+            reserved. | Designed with ❤️ using React & MUI
           </Box>
         </Container>
       </Box>

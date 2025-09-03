@@ -1,745 +1,272 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import {
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  CircularProgress,
-  Chip,
-  Avatar,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Alert,
-  Tabs,
-  Tab,
-  LinearProgress,
-  Tooltip,
-  Badge,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemAvatar,
+  Box, Grid, Card, CardContent, Typography, LinearProgress, CircularProgress,
+  Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
+  Button, TextField, Tabs, Tab, Stack, FormControl, InputLabel, Select, MenuItem,
+  List, ListItem, ListItemAvatar, ListItemText, Snackbar, Alert
 } from "@mui/material";
 import {
-  Business as BusinessIcon,
-  People as PeopleIcon,
-  TrendingUp as TrendingUpIcon,
-  AccessTime as AccessTimeIcon,
+  Dashboard as DashboardIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   Pending as PendingIcon,
   Visibility as VisibilityIcon,
-  FilterList as FilterListIcon,
   Refresh as RefreshIcon,
-  Dashboard as DashboardIcon,
-  Notifications as NotificationsIcon,
-  ExpandMore as ExpandMoreIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationOnIcon,
-  CalendarToday as CalendarTodayIcon,
-  AttachMoney as AttachMoneyIcon,
-  Storage as StorageIcon,
-  CloudUpload as CloudUploadIcon,
-  NoteAddRounded,
+  Business as BusinessIcon
 } from "@mui/icons-material";
 import { AuthContext } from "../../context/AuthContext";
-import { TenantRequestContext } from "../../context/TenantRequestContext";
+import { format } from "date-fns";
 
-const SuperAdminDashboard = ({ navigate }) => {
-  // Mock user context
-    const { user } = useContext(AuthContext);
+import {tenantApi} from "../../services/tenantAdminAPI"
 
-   const {totalPending, totalApproved , totalRejected , totalActive,totalCount,requestCounts} = useContext(TenantRequestContext)
+const SuperAdminDashboard = () => {
+  const { user } = useContext(AuthContext);
+
   const [tenants, setTenants] = useState([]);
-  const [filteredTenants, setFilteredTenants] = useState([]);
-  const [loadingTenants, setLoadingTenants] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentTab, setCurrentTab] = useState(0);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentTab, setCurrentTab] = useState(0);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
-  // Fetch tenant requests from real API
-  const mockTenantApi = async () => {
-    setLoading(true);
-    setError(null);
+  const formatDate = (date) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    return isNaN(d) ? "-" : format(d, "MMM dd, yyyy HH:mm");
+  };
+
+  const fetchTenants = useCallback(async () => {
     try {
-      const res = await tenantApi.list(); 
-      if (Array.isArray(res.data)) {
-        setTenants(res.data);
-      } else {
-        setTenants([]);
-      }
+      setRefreshing(true);
+      const res = await tenantApi.list();
+      setTenants(res.data || []);
     } catch (err) {
-      console.error("Failed to fetch tenants:", err);
-      setError(err.message || "Something went wrong");
+      console.error(err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Real-time updates simulation
-  useEffect(() => {
-    fetchTenants();
-    const interval = setInterval(() => {
-      fetchTenants();
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch tenants
-  const fetchTenants = async () => {
-    try {
-      if (!loadingTenants) setRefreshing(true);
-      const data = await mockTenantApi.list();
-      setTenants(data?.data || []);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load tenants");
-    } finally {
-      setLoadingTenants(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTenants();
-  }, []);
+    const interval = setInterval(fetchTenants, 30000);
+    return () => clearInterval(interval);
+  }, [fetchTenants]);
 
-  // Filter tenants
-  useEffect(() => {
-    let filtered = tenants;
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((tenant) => tenant.status === statusFilter);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (tenant) =>
-          tenant.tenant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tenant.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredTenants(filtered);
-  }, [tenants, statusFilter, searchTerm]);
-
-  // Statistics calculations
-  const stats = {
-    total: tenants.length,
-    pending: tenants.filter((t) => t.status === "pending").length,
-    approved: tenants.filter((t) => t.status === "approved").length,
-    rejected: tenants.filter((t) => t.status === "rejected").length,
-    recentRequests: tenants.filter((t) => {
-      const created = new Date(t.created_at);
-      const today = new Date();
-      const diffTime = Math.abs(today - created);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 7;
-    }).length,
-  };
-
-  // Handle tenant actions
-  const handleViewTenant = (tenant) => {
-    setSelectedTenant(tenant);
-    setDialogOpen(true);
-  };
-
-  const handleStatusUpdate = async (tenantId, newStatus) => {
-    try {
-      await mockTenantApi.updateStatus(tenantId, newStatus);
-      fetchTenants();
-    } catch (err) {
-      setError("Failed to update tenant status");
-    }
-  };
+  const filteredTenants = tenants.filter(t => 
+    (statusFilter === "all" || t.status === statusFilter) &&
+    (t.tenant_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     t.requester.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
-        return "warning";
-      case "approved":
-        return "success";
-      case "rejected":
-        return "error";
-      default:
-        return "default";
+      case "pending": return "warning";
+      case "approved": return "success";
+      case "rejected": return "error";
+      default: return "default";
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending":
-        return <PendingIcon />;
-      case "approved":
-        return <CheckCircleIcon />;
-      case "rejected":
-        return <CancelIcon />;
-      default:
-        return null;
+      case "pending": return <PendingIcon />;
+      case "approved": return <CheckCircleIcon />;
+      case "rejected": return <CancelIcon />;
+      default: return null;
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const handleStatusUpdate = async (tenantId, newStatus) => {
+    if (!window.confirm(`Are you sure you want to ${newStatus} this tenant?`)) return;
+    try {
+      await tenantApi.updateStatus(tenantId, newStatus);
+      setSnackbar({ open: true, message: `Tenant ${newStatus}`, severity: "success" });
+      fetchTenants();
+    } catch (err) {
+      setSnackbar({ open: true, message: "Update failed", severity: "error" });
+    }
   };
 
   const TabPanel = ({ children, value, index }) => (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
+    <div hidden={value !== index}>{value === index && <Box sx={{ p: 2 }}>{children}</Box>}</div>
   );
+
+  const totalApproved = tenants.filter(t => t.status==="approved").length;
+  const totalPending = tenants.filter(t => t.status==="pending").length;
+  const totalRejected = tenants.filter(t => t.status==="rejected").length;
 
   return (
     <Box sx={{ p: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{ fontWeight: "bold", color: "#1976d2" }}
-        >
-          <DashboardIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1976d2" }}>
+          <DashboardIcon sx={{ mr: 1 }} />
           Super Admin Dashboard
         </Typography>
         <Typography variant="body1" color="textSecondary">
-          Welcome back, {user.name}! Monitor and manage tenant requests in
-          real-time.
+          Welcome back, {user?.name || "Admin"}! Monitor tenant requests in real-time.
         </Typography>
       </Box>
 
-      {/* Real-time indicator */}
       {refreshing && <LinearProgress sx={{ mb: 2 }} />}
 
-      {/* Statistics Cards */}
+      {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)",
-              color: "white",
-            }}
-          >
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #4caf50, #81c784)", color: "white" }}>
             <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {requestCounts.totalApproved}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Total Approved
-                  </Typography>
-                </Box>
-                <BusinessIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
+              <Typography variant="h5">Total Tenants</Typography>
+              <Typography variant="h3">{tenants.length}</Typography>
             </CardContent>
           </Card>
         </Grid>
-
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)",
-              color: "white",
-            }}
-          >
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #1976d2, #42a5f5)", color: "white" }}>
             <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                {/* Icon with badge */}
-                <Badge
-                  badgeContent={stats.pending}
-                  color="error"
-                  overlap="circular"
-                  anchorOrigin={{ vertical: "top", horizontal: "right" }}
-                >
-                  <PendingIcon sx={{ fontSize: 40, opacity: 0.9 }} />
-                </Badge>
-
-                {/* Stat Text */}
-                <Box sx={{ textAlign: "right" }}>
-                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {requestCounts.totalPending}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Pending Requests
-                  </Typography>
-                </Box>
-              </Box>
+              <Typography variant="h5">Approved</Typography>
+              <Typography variant="h3">{totalApproved}</Typography>
             </CardContent>
           </Card>
         </Grid>
-
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #f44336 0%, #e57373 100%)",
-              color: "white",
-            }}
-          >
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #ff9800, #ffb74d)", color: "white" }}>
             <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {requestCounts.totalRejected}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Rejected
-                  </Typography>
-                </Box>
-                <CancelIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
+              <Typography variant="h5">Pending</Typography>
+              <Typography variant="h3">{totalPending}</Typography>
             </CardContent>
           </Card>
         </Grid>
-
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #4caf50 0%, #81c784 100%)",
-              color: "white",
-            }}
-          >
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #f44336, #e57373)", color: "white" }}>
             <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {stats.approved}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Active Tenants
-                  </Typography>
-                </Box>
-                <CheckCircleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        
-
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Box>
-                  <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-                    {stats.recentRequests}
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    This Week
-                  </Typography>
-                </Box>
-                <TrendingUpIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
+              <Typography variant="h5">Rejected</Typography>
+              <Typography variant="h3">{totalRejected}</Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Filters and Controls */}
-      <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 2 }}>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Search Tenants"
-                variant="outlined"
-                size="small"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Status Filter</InputLabel>
-                <Select
-                  value={statusFilter}
-                  label="Status Filter"
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <MenuItem value="all">All Status</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
-                  <MenuItem value="rejected">Rejected</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<RefreshIcon />}
-                onClick={fetchTenants}
-                disabled={refreshing}
-              >
-                Refresh
-              </Button>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <Typography variant="body2" color="textSecondary" align="center">
-                Last updated: {new Date().toLocaleTimeString()}
-              </Typography>
-            </Grid>
+      {/* Filters */}
+      <Card sx={{ mb: 3, p: 2 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
+            <TextField fullWidth size="small" label="Search" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
           </Grid>
-        </CardContent>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Status</InputLabel>
+              <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="approved">Approved</MenuItem>
+                <MenuItem value="rejected">Rejected</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <Button variant="outlined" fullWidth startIcon={<RefreshIcon />} onClick={fetchTenants}>Refresh</Button>
+          </Grid>
+        </Grid>
       </Card>
 
-      {/* Main Content Tabs */}
-      <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-        <Tabs
-          value={currentTab}
-          onChange={(e, newValue) => setCurrentTab(newValue)}
-          variant="fullWidth"
-          sx={{ borderBottom: 1, borderColor: "divider" }}
-        >
-          <Tab label={`All Requests (${filteredTenants.length})`} />
-          <Tab
-            label={`Pending (${
-              filteredTenants.filter((t) => t.status === "pending").length
-            })`}
-          />
+      {/* Tabs */}
+      <Card sx={{ borderRadius: 3, p: 2 }}>
+        <Tabs value={currentTab} onChange={(e,val)=>setCurrentTab(val)} variant="fullWidth">
+          <Tab label={`All (${tenants.length})`} />
+          <Tab label={`Pending (${totalPending})`} />
           <Tab label="Recent Activity" />
           <Tab label="Analytics" />
         </Tabs>
 
-        {/* Tab 1: All Requests */}
+        {/* All Requests */}
         <TabPanel value={currentTab} index={0}>
-          {loadingTenants ? (
-            <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : error ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          ) : filteredTenants.length === 0 ? (
-            <Typography align="center" color="textSecondary" sx={{ p: 4 }}>
-              No tenant requests found.
-            </Typography>
-          ) : (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Company</TableCell>
-                    <TableCell>Contact</TableCell>
-                    <TableCell>Plan</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Requested</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredTenants.map((tenant) => (
-                    <TableRow key={tenant.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Avatar sx={{ mr: 2, bgcolor: "#1976d2" }}>
-                            {tenant.tenant_name.charAt(0)}
-                          </Avatar>
-                          <Box>
-                            <Typography
-                              variant="subtitle2"
-                              sx={{ fontWeight: "bold" }}
-                            >
-                              {tenant.tenant_name}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary">
-                              {tenant.industry} • {tenant.company_size}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{tenant.email}</Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {tenant.phone}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={tenant.subscription_plan}
-                          size="small"
-                          variant="outlined"
-                          color={
-                            tenant.subscription_plan === "Enterprise"
-                              ? "primary"
-                              : tenant.subscription_plan === "Premium"
-                              ? "secondary"
-                              : "default"
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={getStatusIcon(tenant.status)}
-                          label={tenant.status.toUpperCase()}
-                          color={getStatusColor(tenant.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {formatDate(tenant.created_at)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title="View Details">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewTenant(tenant)}
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </TabPanel>
-
-        {/* Tab 2: Pending Requests */}
-        <TabPanel value={currentTab} index={1}>
-          <Stack spacing={2}>
-            {filteredTenants
-              .filter((t) => t.status === "pending")
-              .map((tenant) => (
-                <Card
-                  key={tenant.id}
-                  sx={{ borderLeft: 4, borderLeftColor: "warning.main" }}
-                >
-                  <CardContent>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} md={8}>
-                        <Typography variant="h6">
-                          {tenant.tenant_name}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          gutterBottom
-                        >
-                          {tenant.email} • {tenant.phone}
-                        </Typography>
-                        <Typography variant="body2">
-                          Requested: {formatDate(tenant.created_at)}
-                        </Typography>
-                        <Box sx={{ mt: 1 }}>
-                          <Chip
-                            label={tenant.subscription_plan}
-                            size="small"
-                            sx={{ mr: 1 }}
-                          />
-                          <Chip
-                            label={`${tenant.estimated_users} users`}
-                            size="small"
-                          />
-                        </Box>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Stack spacing={1} alignItems="flex-end">
-                          <Button
-                            variant="contained"
-                            color="success"
-                            size="small"
-                            startIcon={<CheckCircleIcon />}
-                            onClick={() =>
-                              handleStatusUpdate(tenant.id, "approved")
-                            }
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            size="small"
-                            startIcon={<CancelIcon />}
-                            onClick={() =>
-                              handleStatusUpdate(tenant.id, "rejected")
-                            }
-                          >
-                            Reject
-                          </Button>
-                          <Button
-                            variant="text"
-                            size="small"
-                            startIcon={<VisibilityIcon />}
-                            onClick={() => handleViewTenant(tenant)}
-                          >
-                            View Details
-                          </Button>
-                        </Stack>
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
+          {loading ? <CircularProgress /> : filteredTenants.length===0 ? <Typography>No tenants found.</Typography> :
+            <List>
+              {filteredTenants.map(t => (
+                <ListItem key={t.id} secondaryAction={
+                  <Stack direction="row" spacing={1}>
+                    {t.status==="pending" && <>
+                      <Button variant="contained" color="success" onClick={()=>handleStatusUpdate(t.id,"approved")}>Approve</Button>
+                      <Button variant="outlined" color="error" onClick={()=>handleStatusUpdate(t.id,"rejected")}>Reject</Button>
+                    </>}
+                    <IconButton onClick={()=>{setSelectedTenant(t); setDialogOpen(true);}}><VisibilityIcon/></IconButton>
+                  </Stack>
+                }>
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor:getStatusColor(t.status)}}>{getStatusIcon(t.status)}</Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={t.tenant_name || "-"}
+                    secondary={`Requester: ${t.requester.email || "-"} • Requested: ${formatDate(t.requested_at)} • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}`}
+                  />
+                </ListItem>
               ))}
-          </Stack>
+            </List>
+          }
         </TabPanel>
 
-        {/* Tab 3: Recent Activity */}
-        <TabPanel value={currentTab} index={2}>
+        {/* Pending Requests */}
+        <TabPanel value={currentTab} index={1}>
           <List>
-            {tenants.slice(0, 10).map((tenant, index) => (
-              <ListItem key={tenant.id}>
+            {tenants.filter(t=>t.status==="pending").map(t=>(
+              <ListItem key={t.id} secondaryAction={
+                <Stack direction="row" spacing={1}>
+                  <Button variant="contained" color="success" onClick={()=>handleStatusUpdate(t.id,"approved")}>Approve</Button>
+                  <Button variant="outlined" color="error" onClick={()=>handleStatusUpdate(t.id,"rejected")}>Reject</Button>
+                  <IconButton onClick={()=>{setSelectedTenant(t); setDialogOpen(true);}}><VisibilityIcon/></IconButton>
+                </Stack>
+              }>
                 <ListItemAvatar>
-                  <Avatar
-                    sx={{
-                      bgcolor:
-                        getStatusColor(tenant.status) === "success"
-                          ? "#4caf50"
-                          : getStatusColor(tenant.status) === "warning"
-                          ? "#ff9800"
-                          : "#f44336",
-                    }}
-                  >
-                    {getStatusIcon(tenant.status)}
-                  </Avatar>
+                  <Avatar sx={{ bgcolor:getStatusColor(t.status)}}>{getStatusIcon(t.status)}</Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={`${
-                    tenant.tenant_name
-                  } - ${tenant.status.toUpperCase()}`}
-                  secondary={`${formatDate(tenant.created_at)} • ${
-                    tenant.subscription_plan
-                  } Plan`}
+                  primary={t.tenant_name || "-"}
+                  secondary={`Requester: ${t.requester.email || "-"} • Requested: ${formatDate(t.requested_at)}`}
                 />
               </ListItem>
             ))}
           </List>
         </TabPanel>
 
-        {/* Tab 4: Analytics */}
+        {/* Recent Activity */}
+        <TabPanel value={currentTab} index={2}>
+          <List>
+            {tenants.sort((a,b)=>new Date(b.reviewed_at)-new Date(a.reviewed_at)).map(t=>(
+              <ListItem key={t.id}>
+                <ListItemAvatar>
+                  <Avatar sx={{bgcolor:getStatusColor(t.status)}}>{getStatusIcon(t.status)}</Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={`${t.tenant_name || "-"} - ${t.status.toUpperCase()}`}
+                  secondary={`Requester: ${t.requester.email || "-"} • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </TabPanel>
+
+        {/* Analytics */}
         <TabPanel value={currentTab} index={3}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Request Trends
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Weekly request volume and approval rates
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 2,
-                    height: 200,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: "#f5f5f5",
-                  }}
-                >
-                  <Typography color="textSecondary">
-                    Chart visualization would go here
-                  </Typography>
+              <Card sx={{p:2}}>
+                <Typography variant="h6">Request Trends</Typography>
+                <Typography variant="body2" color="textSecondary">Weekly request volume</Typography>
+                <Box sx={{mt:2,height:200,display:"flex",alignItems:"center",justifyContent:"center",bgcolor:"#f5f5f5"}}>
+                  <Typography color="textSecondary">Chart Placeholder</Typography>
                 </Box>
               </Card>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Industry Distribution
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Breakdown of tenant requests by industry
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 2,
-                    height: 200,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: "#f5f5f5",
-                  }}
-                >
-                  <Typography color="textSecondary">
-                    Pie chart would go here
-                  </Typography>
+              <Card sx={{p:2}}>
+                <Typography variant="h6">Status Distribution</Typography>
+                <Typography variant="body2" color="textSecondary">Approved / Pending / Rejected</Typography>
+                <Box sx={{mt:2,height:200,display:"flex",alignItems:"center",justifyContent:"center",bgcolor:"#f5f5f5"}}>
+                  <Typography color="textSecondary">Chart Placeholder</Typography>
                 </Box>
               </Card>
             </Grid>
@@ -747,133 +274,32 @@ const SuperAdminDashboard = ({ navigate }) => {
         </TabPanel>
       </Card>
 
-      {/* Tenant Details Dialog */}
-      <Dialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6">
-            {selectedTenant?.tenant_name} - Details
-          </Typography>
-        </DialogTitle>
+      {/* Tenant Details Modal */}
+      <Dialog open={dialogOpen} onClose={()=>setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedTenant?.tenant_name || "-"}</DialogTitle>
         <DialogContent>
-          {selectedTenant && (
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Stack spacing={2}>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Contact Information
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedTenant.email}
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedTenant.phone}
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedTenant.address}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Company Details
-                    </Typography>
-                    <Typography variant="body1">
-                      Industry: {selectedTenant.industry}
-                    </Typography>
-                    <Typography variant="body1">
-                      Size: {selectedTenant.company_size}
-                    </Typography>
-                    <Typography variant="body1">
-                      Estimated Users: {selectedTenant.estimated_users}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Stack spacing={2}>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Subscription
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedTenant.subscription_plan}
-                    </Typography>
-                    <Chip
-                      label={selectedTenant.status.toUpperCase()}
-                      color={getStatusColor(selectedTenant.status)}
-                      size="small"
-                    />
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Requested Features
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 0.5,
-                        mt: 1,
-                      }}
-                    >
-                      {selectedTenant.requested_features?.map(
-                        (feature, index) => (
-                          <Chip
-                            key={index}
-                            label={feature}
-                            size="small"
-                            variant="outlined"
-                          />
-                        )
-                      )}
-                    </Box>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Request Date
-                    </Typography>
-                    <Typography variant="body1">
-                      {formatDate(selectedTenant.created_at)}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-            </Grid>
-          )}
+          {selectedTenant && <Stack spacing={1}>
+            <Typography>Tenant Name: {selectedTenant.tenant_name || "-"}</Typography>
+            <Typography>Requester Email: {selectedTenant.requester.email || "-"}</Typography>
+            <Typography>Requested At: {formatDate(selectedTenant.requested_at)}</Typography>
+            <Typography>Status: {selectedTenant.status.toUpperCase()}</Typography>
+            <Typography>Reviewed At: {formatDate(selectedTenant.reviewed_at)}</Typography>
+            <Typography>Reviewer Email: {selectedTenant.reviewer?.email || "-"}</Typography>
+          </Stack>}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Close</Button>
-          {selectedTenant?.status === "pending" && (
-            <>
-              <Button
-                variant="contained"
-                color="success"
-                onClick={() => {
-                  handleStatusUpdate(selectedTenant.id, "approved");
-                  setDialogOpen(false);
-                }}
-              >
-                Approve
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => {
-                  handleStatusUpdate(selectedTenant.id, "rejected");
-                  setDialogOpen(false);
-                }}
-              >
-                Reject
-              </Button>
-            </>
-          )}
+          <Button onClick={()=>setDialogOpen(false)}>Close</Button>
+          {selectedTenant?.status==="pending" && <>
+            <Button variant="contained" color="success" onClick={()=>{handleStatusUpdate(selectedTenant.id,"approved"); setDialogOpen(false)}}>Approve</Button>
+            <Button variant="contained" color="error" onClick={()=>{handleStatusUpdate(selectedTenant.id,"rejected"); setDialogOpen(false)}}>Reject</Button>
+          </>}
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar */}
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={()=>setSnackbar({...snackbar, open:false})}>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+      </Snackbar>
     </Box>
   );
 };
@@ -886,26 +312,13 @@ export default SuperAdminDashboard;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useState, useEffect } from "react";
+// import React, { useState, useEffect, useCallback } from 'react';
 // import {
 //   Box,
+//   Grid,
 //   Card,
 //   CardContent,
 //   Typography,
-//   Tabs,
-//   Tab,
 //   Table,
 //   TableBody,
 //   TableCell,
@@ -913,1013 +326,1800 @@ export default SuperAdminDashboard;
 //   TableHead,
 //   TableRow,
 //   Paper,
+//   CircularProgress,
 //   Chip,
 //   Avatar,
 //   IconButton,
-//   Button,
-//   TextField,
-//   Select,
-//   MenuItem,
-//   FormControl,
-//   InputLabel,
-//   Grid,
-//   AppBar,
-//   Toolbar,
-//   Badge,
-//   Switch,
-//   FormControlLabel,
-//   Alert,
-//   LinearProgress,
 //   Dialog,
 //   DialogTitle,
 //   DialogContent,
 //   DialogActions,
-//   Divider,
+//   Button,
+//   TextField,
+//   Alert,
+//   Tabs,
+//   Tab,
+//   LinearProgress,
+//   Tooltip,
+//   Badge,
+//   Stack,
+//   FormControl,
+//   InputLabel,
+//   Select,
+//   MenuItem,
 //   List,
 //   ListItem,
-//   ListItemText,
 //   ListItemIcon,
-//   InputAdornment,
-//   ToggleButton,
-//   ToggleButtonGroup,
-//   ThemeProvider,
-//   createTheme,
-//   CssBaseline,
-// } from "@mui/material";
+//   ListItemText,
+//   ListItemAvatar,
+//   AppBar,
+//   Toolbar,
+//   Menu,
+//   Divider,
+//   Snackbar,
+//   TablePagination,
+//   Checkbox,
+//   FormGroup,
+//   FormControlLabel,
+//   Switch,
+//   CardActions,
+//   Collapse,
+//   Fab,
+//   SpeedDial,
+//   SpeedDialAction,
+//   SpeedDialIcon,
+//   Breadcrumbs,
+//   Link,
+//   Container,
+//   useTheme,
+//   alpha
+// } from '@mui/material';
 // import {
-//   BarChart,
-//   Bar,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   Legend,
-//   ResponsiveContainer,
-//   LineChart,
-//   Line,
-//   PieChart,
-//   Pie,
-//   Cell,
-//   AreaChart,
-//   Area,
-// } from "recharts";
-// import {
-//   Users,
-//   Building2,
-//   TrendingUp,
-//   Clock,
-//   CheckCircle,
-//   XCircle,
-//   AlertTriangle,
-//   Eye,
-//   Search,
-//   Filter,
-//   RefreshCw,
-//   Download,
-//   Settings,
-//   Bell,
-//   Calendar,
-//   DollarSign,
-//   Server,
-//   Activity,
-//   Shield,
-//   Globe,
-//   Database,
-//   Zap,
-//   Mail,
-//   Phone,
-//   MapPin,
-//   MoreVertical,
-//   Edit,
-//   Trash2,
-//   Plus,
-//   Star,
-//   ArrowUp,
-//   ArrowDown,
-// } from "lucide-react";
+//   Dashboard as DashboardIcon,
+//   Business as BusinessIcon,
+//   People as PeopleIcon,
+//   TrendingUp as TrendingUpIcon,
+//   AccessTime as AccessTimeIcon,
+//   CheckCircle as CheckCircleIcon,
+//   Cancel as CancelIcon,
+//   Pending as PendingIcon,
+//   Visibility as VisibilityIcon,
+//   FilterList as FilterListIcon,
+//   Refresh as RefreshIcon,
+//   Notifications as NotificationsIcon,
+//   ExpandMore as ExpandMoreIcon,
+//   Email as EmailIcon,
+//   Phone as PhoneIcon,
+//   LocationOn as LocationOnIcon,
+//   CalendarToday as CalendarTodayIcon,
+//   AttachMoney as AttachMoneyIcon,
+//   Storage as StorageIcon,
+//   CloudUpload as CloudUploadIcon,
+//   NoteAdd as NoteAddIcon,
+//   Search as SearchIcon,
+//   Download as DownloadIcon,
+//   Upload as UploadIcon,
+//   Settings as SettingsIcon,
+//   MoreVert as MoreVertIcon,
+//   Edit as EditIcon,
+//   Delete as DeleteIcon,
+//   FileUpload as FileUploadIcon,
+//   Assignment as AssignmentIcon,
+//   Analytics as AnalyticsIcon,
+//   Security as SecurityIcon,
+//   Group as GroupIcon,
+//   Domain as DomainIcon,
+//   Timeline as TimelineIcon,
+//   PieChart as PieChartIcon,
+//   BarChart as BarChartIcon,
+//   Home as HomeIcon,
+//   ChevronRight as ChevronRightIcon,
+//   Warning as WarningIcon,
+//   Info as InfoIcon,
+//   Close as CloseIcon,
+//   Add as AddIcon,
+//   Send as SendIcon
+// } from '@mui/icons-material';
 
-// const SuperAdminDashboard = () => {
-//   // State management
-//   const [activeTab, setActiveTab] = useState(0);
-//   const [tenants, setTenants] = useState([]);
-//   const [selectedTenant, setSelectedTenant] = useState(null);
-//   const [notifications, setNotifications] = useState([]);
-//   const [realTimeData, setRealTimeData] = useState({});
-//   const [filters, setFilters] = useState({
-//     status: "all",
-//     plan: "all",
-//     industry: "all",
-//     dateRange: "30",
-//   });
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [loading, setLoading] = useState(false);
-//   const [darkMode, setDarkMode] = useState(false);
-
-//   // Create Material-UI theme
-//   const theme = createTheme({
-//     palette: {
-//       mode: darkMode ? "dark" : "light",
-//       primary: {
-//         main: "#1976d2",
-//       },
-//       secondary: {
-//         main: "#dc004e",
-//       },
-//     },
-//     components: {
-//       MuiCard: {
-//         styleOverrides: {
-//           root: {
-//             borderRadius: 12,
-//             boxShadow:
-//               "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-//           },
-//         },
-//       },
-//     },
-//   });
-
-//   // Mock data generator
-//   const generateMockData = () => {
-//     const companies = [
-//       "TechCorp",
-//       "DataFlow Inc",
-//       "CloudSys",
-//       "NextGen Solutions",
-//       "DigitalHub",
-//       "InnovateLabs",
-//       "ScaleUp Co",
-//       "FutureWorks",
-//     ];
-//     const industries = [
-//       "Technology",
-//       "Healthcare",
-//       "Finance",
-//       "Retail",
-//       "Manufacturing",
-//       "Education",
-//       "Government",
-//     ];
-//     const plans = ["Starter", "Professional", "Enterprise", "Custom"];
-//     const statuses = ["pending", "approved", "rejected", "active", "suspended"];
-
-//     return Array.from({ length: 25 }, (_, i) => ({
-//       id: i + 1,
-//       tenant_name: `${
-//         companies[Math.floor(Math.random() * companies.length)]
-//       } ${i + 1}`,
-//       email: `contact${i + 1}@example.com`,
-//       phone: `+1-555-${Math.floor(Math.random() * 900) + 100}-${
-//         Math.floor(Math.random() * 9000) + 1000
-//       }`,
-//       industry: industries[Math.floor(Math.random() * industries.length)],
-//       subscription_plan: plans[Math.floor(Math.random() * plans.length)],
-//       status: statuses[Math.floor(Math.random() * statuses.length)],
-//       company_size: ["1-10", "11-50", "51-200", "201-1000", "1000+"][
-//         Math.floor(Math.random() * 5)
-//       ],
-//       estimated_users: Math.floor(Math.random() * 1000) + 10,
-//       monthly_revenue: Math.floor(Math.random() * 50000) + 1000,
-//       storage_used: Math.floor(Math.random() * 100),
-//       api_calls: Math.floor(Math.random() * 1000000),
-//       created_at: new Date(
-//         Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000
-//       ).toISOString(),
-//       last_active: new Date(
-//         Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000
-//       ).toISOString(),
-//       location: ["New York", "San Francisco", "London", "Tokyo", "Sydney"][
-//         Math.floor(Math.random() * 5)
-//       ],
-//       compliance_score: Math.floor(Math.random() * 40) + 60,
-//       support_tickets: Math.floor(Math.random() * 10),
-//       integrations: Math.floor(Math.random() * 8) + 1,
-//     }));
-//   };
-
-//   // Initialize data
-//   useEffect(() => {
-//     const mockTenants = generateMockData();
-//     setTenants(mockTenants);
-
-//     // Generate notifications
-//     setNotifications([
+// // Mock API Service
+// const tenantApi = {
+//   list: async (params = {}) => {
+//     // Simulate API delay
+//     await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    
+//     const mockData = [
 //       {
 //         id: 1,
-//         type: "warning",
-//         message: "High API usage detected for TechCorp 1",
-//         time: "2 min ago",
+//         tenant_name: "TechCorp Solutions",
+//         email: "admin@techcorp.com",
+//         phone: "+1-555-0123",
+//         address: "123 Tech Street, Silicon Valley, CA 94025",
+//         industry: "Technology",
+//         company_size: "100-500",
+//         estimated_users: 150,
+//         subscription_plan: "Enterprise",
+//         status: "pending",
+//         created_at: "2024-12-15T10:30:00Z",
+//         updated_at: "2024-12-15T10:30:00Z",
+//         requested_features: ["Multi-tenant", "API Access", "Custom Branding"],
+//         monthly_budget: 5000,
+//         contact_person: "John Smith",
+//         website: "https://techcorp.com",
+//         tax_id: "123-456-789",
+//         priority: "high"
 //       },
 //       {
 //         id: 2,
-//         type: "success",
-//         message: "New tenant approved: DataFlow Inc 3",
-//         time: "15 min ago",
+//         tenant_name: "Global Manufacturing Inc",
+//         email: "it@globalmanuf.com",
+//         phone: "+1-555-0124",
+//         address: "456 Industrial Blvd, Detroit, MI 48201",
+//         industry: "Manufacturing",
+//         company_size: "500+",
+//         estimated_users: 300,
+//         subscription_plan: "Premium",
+//         status: "approved",
+//         created_at: "2024-12-14T15:45:00Z",
+//         updated_at: "2024-12-16T09:20:00Z",
+//         requested_features: ["Inventory Management", "Analytics", "Mobile App"],
+//         monthly_budget: 3000,
+//         contact_person: "Sarah Johnson",
+//         website: "https://globalmanuf.com",
+//         tax_id: "987-654-321",
+//         priority: "medium"
 //       },
 //       {
 //         id: 3,
-//         type: "info",
-//         message: "Scheduled maintenance in 2 hours",
-//         time: "1 hour ago",
+//         tenant_name: "HealthCare Plus",
+//         email: "admin@healthcareplus.com",
+//         phone: "+1-555-0125",
+//         address: "789 Medical Center Dr, Boston, MA 02115",
+//         industry: "Healthcare",
+//         company_size: "50-100",
+//         estimated_users: 75,
+//         subscription_plan: "Standard",
+//         status: "rejected",
+//         created_at: "2024-12-13T08:15:00Z",
+//         updated_at: "2024-12-14T16:30:00Z",
+//         requested_features: ["HIPAA Compliance", "Patient Portal", "Reporting"],
+//         monthly_budget: 1500,
+//         contact_person: "Dr. Michael Brown",
+//         website: "https://healthcareplus.com",
+//         tax_id: "456-789-123",
+//         priority: "low",
+//         rejection_reason: "Incomplete documentation"
 //       },
 //       {
 //         id: 4,
-//         type: "error",
-//         message: "Payment failed for CloudSys 2",
-//         time: "3 hours ago",
+//         tenant_name: "EduLearn Platform",
+//         email: "contact@edulearn.edu",
+//         phone: "+1-555-0126",
+//         address: "321 University Ave, Stanford, CA 94305",
+//         industry: "Education",
+//         company_size: "10-50",
+//         estimated_users: 500,
+//         subscription_plan: "Enterprise",
+//         status: "pending",
+//         created_at: "2024-12-16T11:00:00Z",
+//         updated_at: "2024-12-16T11:00:00Z",
+//         requested_features: ["LMS Integration", "Video Streaming", "Assessment Tools"],
+//         monthly_budget: 2000,
+//         contact_person: "Prof. Lisa Davis",
+//         website: "https://edulearn.edu",
+//         tax_id: "789-123-456",
+//         priority: "high"
 //       },
-//     ]);
+//       {
+//         id: 5,
+//         tenant_name: "RetailMax Chain",
+//         email: "tech@retailmax.com",
+//         phone: "+1-555-0127",
+//         address: "555 Commerce St, New York, NY 10001",
+//         industry: "Retail",
+//         company_size: "500+",
+//         estimated_users: 200,
+//         subscription_plan: "Premium",
+//         status: "approved",
+//         created_at: "2024-12-12T14:20:00Z",
+//         updated_at: "2024-12-15T10:45:00Z",
+//         requested_features: ["POS Integration", "Inventory", "Customer Analytics"],
+//         monthly_budget: 4000,
+//         contact_person: "Alex Wilson",
+//         website: "https://retailmax.com",
+//         tax_id: "321-654-987",
+//         priority: "medium"
+//       }
+//     ];
 
-//     // Real-time updates simulation
-//     const interval = setInterval(() => {
-//       setRealTimeData({
-//         activeUsers: Math.floor(Math.random() * 1000) + 500,
-//         systemLoad: Math.floor(Math.random() * 100),
-//         responseTime: Math.floor(Math.random() * 200) + 50,
-//         uptime: 99.98,
-//         timestamp: new Date().toLocaleTimeString(),
-//       });
-//     }, 3000);
+//     // Apply filters
+//     let filtered = [...mockData];
+//     if (params.status && params.status !== 'all') {
+//       filtered = filtered.filter(item => item.status === params.status);
+//     }
+//     if (params.search) {
+//       const searchLower = params.search.toLowerCase();
+//       filtered = filtered.filter(item => 
+//         item.tenant_name.toLowerCase().includes(searchLower) ||
+//         item.email.toLowerCase().includes(searchLower) ||
+//         item.industry.toLowerCase().includes(searchLower)
+//       );
+//     }
 
-//     return () => clearInterval(interval);
-//   }, []);
+//     return {
+//       data: filtered,
+//       total: filtered.length,
+//       page: params.page || 1,
+//       limit: params.limit || 10
+//     };
+//   },
 
-//   // Filter tenants
-//   const filteredTenants = tenants.filter((tenant) => {
-//     const matchesSearch =
-//       tenant.tenant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       tenant.email.toLowerCase().includes(searchTerm.toLowerCase());
-//     const matchesStatus =
-//       filters.status === "all" || tenant.status === filters.status;
-//     const matchesPlan =
-//       filters.plan === "all" || tenant.subscription_plan === filters.plan;
-//     const matchesIndustry =
-//       filters.industry === "all" || tenant.industry === filters.industry;
+//   updateStatus: async (id, status, reason = '') => {
+//     await new Promise(resolve => setTimeout(resolve, 500));
+//     console.log(`Updating tenant ${id} to ${status}`, reason);
+//     return { success: true };
+//   },
 
-//     return matchesSearch && matchesStatus && matchesPlan && matchesIndustry;
-//   });
+//   bulkUpdate: async (ids, status) => {
+//     await new Promise(resolve => setTimeout(resolve, 1000));
+//     console.log(`Bulk updating tenants ${ids.join(', ')} to ${status}`);
+//     return { success: true };
+//   },
+
+//   exportData: async (format = 'csv') => {
+//     await new Promise(resolve => setTimeout(resolve, 2000));
+//     console.log(`Exporting data in ${format} format`);
+//     return { success: true, downloadUrl: '#' };
+//   }
+// };
+
+// const SuperAdminDashboard = () => {
+//   const theme = useTheme();
+  
+//   // Enhanced State Management
+//   const [tenants, setTenants] = useState([]);
+//   const [filteredTenants, setFilteredTenants] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [refreshing, setRefreshing] = useState(false);
+//   const [error, setError] = useState(null);
+//   const [selectedTenant, setSelectedTenant] = useState(null);
+//   const [dialogOpen, setDialogOpen] = useState(false);
+//   const [currentTab, setCurrentTab] = useState(0);
+//   const [searchTerm, setSearchTerm] = useState('');
+//   const [statusFilter, setStatusFilter] = useState('all');
+//   const [industryFilter, setIndustryFilter] = useState('all');
+//   const [priorityFilter, setPriorityFilter] = useState('all');
+//   const [sortBy, setSortBy] = useState('created_at');
+  
+  
+//   // New advanced states
+//   const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
+//   const [fullscreen, setFullscreen] = useState(false);
+//   const [dateFilter, setDateFilter] = useState({ from: '', to: '' });
+//   const [analytics, setAnalytics] = useState(null);
+//   const [systemHealth, setSystemHealth] = useState(null);
+//   const [assignDialog, setAssignDialog] = useState({ open: false, tenant: null });
+//   const [noteDialog, setNoteDialog] = useState({ open: false, tenant: null });
+//   const [newNote, setNewNote] = useState('');
+//   const [selectedAssignee, setSelectedAssignee] = useState('');
+//   const [exportDialog, setExportDialog] = useState({ open: false, format: 'csv' });
+//   const [notificationDialog, setNotificationDialog] = useState({ open: false, type: 'email' });
+//   const [notificationMessage, setNotificationMessage] = useState('');
+//   const [compactMode, setCompactMode] = useState(false);
+//   const [showArchivedTenants, setShowArchivedTenants] = useState(false);
+//   const [favoritesTenants, setFavoritesTenants] = useState([]);
+//   const [recentActivity, setRecentActivity] = useState([]);
+//   const [onlineStatus, setOnlineStatus] = useState(true);
+//   const [sortOrder, setSortOrder] = useState('desc');
+//   const [page, setPage] = useState(0);
+//   const [rowsPerPage, setRowsPerPage] = useState(10);
+//   const [selectedTenants, setSelectedTenants] = useState([]);
+//   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+//   const [anchorEl, setAnchorEl] = useState(null);
+//   const [bulkActionAnchor, setBulkActionAnchor] = useState(null);
+//   const [autoRefresh, setAutoRefresh] = useState(true);
+//   const [expandedCard, setExpandedCard] = useState(null);
+//   const [actionDialog, setActionDialog] = useState({ open: false, type: '', tenant: null });
+//   const [actionReason, setActionReason] = useState('');
 
 //   // Statistics
-//   const stats = {
-//     total: tenants.length,
-//     pending: tenants.filter((t) => t.status === "pending").length,
-//     approved: tenants.filter((t) => t.status === "approved").length,
-//     active: tenants.filter((t) => t.status === "active").length,
-//     rejected: tenants.filter((t) => t.status === "rejected").length,
-//     suspended: tenants.filter((t) => t.status === "suspended").length,
-//     totalRevenue: tenants.reduce((sum, t) => sum + t.monthly_revenue, 0),
-//     avgUsers: Math.floor(
-//       tenants.reduce((sum, t) => sum + t.estimated_users, 0) / tenants.length
-//     ),
-//     totalApiCalls: tenants.reduce((sum, t) => sum + t.api_calls, 0),
+//  const stats = React.useMemo(() => {
+//   if (!Array.isArray(tenants)) return {
+//     total: 0,
+//     pending: 0,
+//     approved: 0,
+//     rejected: 0,
+//     thisWeek: 0,
+//     highPriority: 0
 //   };
 
-//   // Chart data
-//   const monthlyData = [
-//     { month: "Jan", requests: 65, approved: 48, revenue: 125000 },
-//     { month: "Feb", requests: 78, approved: 62, revenue: 145000 },
-//     { month: "Mar", requests: 90, approved: 75, revenue: 168000 },
-//     { month: "Apr", requests: 85, approved: 68, revenue: 155000 },
-//     { month: "May", requests: 95, approved: 82, revenue: 178000 },
-//     { month: "Jun", requests: 88, approved: 71, revenue: 162000 },
-//   ];
+//   const total = tenants.length;
+//   const pending = tenants.filter(t => t.status === 'pending').length;
+//   const approved = tenants.filter(t => t.status === 'approved').length;
+//   const rejected = tenants.filter(t => t.status === 'rejected').length;
 
-//   const industryData = [
-//     { name: "Technology", value: 35, color: "#0088FE" },
-//     { name: "Healthcare", value: 25, color: "#00C49F" },
-//     { name: "Finance", value: 20, color: "#FFBB28" },
-//     { name: "Retail", value: 12, color: "#FF8042" },
-//     { name: "Other", value: 8, color: "#8884d8" },
-//   ];
+//   const weekAgo = new Date();
+//   weekAgo.setDate(weekAgo.getDate() - 7);
 
-//   const planDistribution = [
-//     { plan: "Starter", count: 8, revenue: 24000 },
-//     { plan: "Professional", count: 12, revenue: 84000 },
-//     { plan: "Enterprise", count: 5, revenue: 125000 },
-//     { plan: "Custom", count: 3, revenue: 75000 },
-//   ];
+//   const thisWeek = tenants.filter(t => {
+//     const created = new Date(t.created_at);
+//     return created > weekAgo;
+//   }).length;
 
-//   // Action handlers
-//   const handleStatusUpdate = (tenantId, newStatus) => {
-//     setTenants((prev) =>
-//       prev.map((t) => (t.id === tenantId ? { ...t, status: newStatus } : t))
-//     );
+//   const highPriority = tenants.filter(t => t.priority === 'high').length;
 
-//     // Add notification
-//     const tenant = tenants.find((t) => t.id === tenantId);
-//     setNotifications((prev) => [
-//       {
-//         id: Date.now(),
-//         type: "success",
-//         message: `${tenant.tenant_name} status updated to ${newStatus}`,
-//         time: "Just now",
-//       },
-//       ...prev.slice(0, 9),
-//     ]);
+//   return { total, pending, approved, rejected, thisWeek, highPriority };
+// }, [tenants]);
+
+//   // Fetch tenants with error handling and retry logic
+//   const fetchTenants = useCallback(async (showLoading = true) => {
+//     try {
+//       if (showLoading && !refreshing) setLoading(true);
+//       if (!showLoading) setRefreshing(true);
+      
+//       const params = {
+//         search: searchTerm,
+//         status: statusFilter,
+//         sortBy,
+//         sortOrder,
+//         page: page + 1,
+//         limit: rowsPerPage
+//       };
+      
+//       const response = await tenantApi.list(params);
+//       setTenants(response.data);
+//       setError(null);
+      
+//       if (!showLoading) {
+//         showSnackbar('Data refreshed successfully', 'success');
+//       }
+//     } catch (err) {
+//       console.error('Failed to fetch tenants:', err);
+//       setError(err.message || 'Failed to load tenant data');
+//       showSnackbar('Failed to load data', 'error');
+//     } finally {
+//       setLoading(false);
+//       setRefreshing(false);
+//     }
+//   }, [searchTerm, statusFilter, sortBy, sortOrder, page, rowsPerPage, refreshing]);
+
+//   // Auto-refresh functionality
+//   useEffect(() => {
+//     fetchTenants();
+//   }, [fetchTenants]);
+
+//   useEffect(() => {
+//     let interval;
+//     if (autoRefresh) {
+//       interval = setInterval(() => {
+//         fetchTenants(false);
+//       }, 30000); // Refresh every 30 seconds
+//     }
+//     return () => clearInterval(interval);
+//   }, [autoRefresh, fetchTenants]);
+
+//   // Filter tenants based on search and status
+//   useEffect(() => {
+//     let filtered = [...tenants];
+    
+//     if (statusFilter !== 'all') {
+//       filtered = filtered.filter(tenant => tenant.status === statusFilter);
+//     }
+    
+//     if (searchTerm) {
+//       const searchLower = searchTerm.toLowerCase();
+//       filtered = filtered.filter(tenant =>
+//         tenant.tenant_name.toLowerCase().includes(searchLower) ||
+//         tenant.email.toLowerCase().includes(searchLower) ||
+//         tenant.industry.toLowerCase().includes(searchLower) ||
+//         tenant.contact_person.toLowerCase().includes(searchLower)
+//       );
+//     }
+    
+//     // Sort tenants
+//     filtered.sort((a, b) => {
+//       const aVal = a[sortBy];
+//       const bVal = b[sortBy];
+      
+//       if (sortOrder === 'asc') {
+//         return aVal > bVal ? 1 : -1;
+//       } else {
+//         return aVal < bVal ? 1 : -1;
+//       }
+//     });
+    
+//     setFilteredTenants(filtered);
+//   }, [tenants, searchTerm, statusFilter, sortBy, sortOrder]);
+
+//   // Utility functions
+//   const showSnackbar = (message, severity = 'success') => {
+//     setSnackbar({ open: true, message, severity });
 //   };
 
-//   const exportData = () => {
-//     const dataStr = JSON.stringify(filteredTenants, null, 2);
-//     const dataBlob = new Blob([dataStr], { type: "application/json" });
-//     const url = URL.createObjectURL(dataBlob);
-//     const link = document.createElement("a");
-//     link.href = url;
-//     link.download = "tenant_data.json";
-//     link.click();
+//   const handleCloseSnackbar = () => {
+//     setSnackbar(prev => ({ ...prev, open: false }));
 //   };
 
-//   // Get status color
+//   const formatDate = (dateString) => {
+//     return new Date(dateString).toLocaleDateString('en-US', {
+//       year: 'numeric',
+//       month: 'short',
+//       day: 'numeric',
+//       hour: '2-digit',
+//       minute: '2-digit',
+//     });
+//   };
+
 //   const getStatusColor = (status) => {
 //     switch (status) {
-//       case "active":
-//         return "success";
-//       case "pending":
-//         return "warning";
-//       case "approved":
-//         return "info";
-//       case "suspended":
-//         return "secondary";
-//       case "rejected":
-//         return "error";
-//       default:
-//         return "default";
+//       case 'pending': return 'warning';
+//       case 'approved': return 'success';
+//       case 'rejected': return 'error';
+//       default: return 'default';
 //     }
 //   };
 
-//   // Get plan color
-//   const getPlanColor = (plan) => {
-//     switch (plan) {
-//       case "Enterprise":
-//         return "secondary";
-//       case "Professional":
-//         return "primary";
-//       case "Custom":
-//         return "warning";
-//       default:
-//         return "default";
+//   const getStatusIcon = (status) => {
+//     switch (status) {
+//       case 'pending': return <PendingIcon />;
+//       case 'approved': return <CheckCircleIcon />;
+//       case 'rejected': return <CancelIcon />;
+//       default: return null;
 //     }
 //   };
 
-//   // Components
-//   const StatCard = ({ title, value, icon: Icon, trend, color, subtitle }) => (
-//     <Card sx={{ height: "100%" }}>
+//   const getPriorityColor = (priority) => {
+//     switch (priority) {
+//       case 'high': return '#f44336';
+//       case 'medium': return '#ff9800';
+//       case 'low': return '#4caf50';
+//       default: return '#9e9e9e';
+//     }
+//   };
+
+//   // Event handlers
+//   const handleViewTenant = (tenant) => {
+//     setSelectedTenant(tenant);
+//     setDialogOpen(true);
+//   };
+
+//   const handleStatusUpdate = async (tenantId, newStatus, reason = '') => {
+//     try {
+//       await tenantApi.updateStatus(tenantId, newStatus, reason);
+//       await fetchTenants(false);
+//       showSnackbar(`Tenant ${newStatus} successfully`, 'success');
+//       setActionDialog({ open: false, type: '', tenant: null });
+//       setActionReason('');
+//     } catch (err) {
+//       showSnackbar('Failed to update tenant status', 'error');
+//     }
+//   };
+
+//   const handleBulkAction = async (action) => {
+//     if (selectedTenants.length === 0) {
+//       showSnackbar('Please select tenants first', 'warning');
+//       return;
+//     }
+
+//     try {
+//       await tenantApi.bulkUpdate(selectedTenants, action);
+//       await fetchTenants(false);
+//       setSelectedTenants([]);
+//       showSnackbar(`${selectedTenants.length} tenants ${action} successfully`, 'success');
+//       setBulkActionAnchor(null);
+//     } catch (err) {
+//       showSnackbar('Failed to perform bulk action', 'error');
+//     }
+//   };
+
+//   const handleSelectTenant = (tenantId) => {
+//     setSelectedTenants(prev => 
+//       prev.includes(tenantId) 
+//         ? prev.filter(id => id !== tenantId)
+//         : [...prev, tenantId]
+//     );
+//   };
+
+//   const handleSelectAllTenants = (event) => {
+//     if (event.target.checked) {
+//       setSelectedTenants(filteredTenants.map(t => t.id));
+//     } else {
+//       setSelectedTenants([]);
+//     }
+//   };
+
+//   const handleExportData = async (format) => {
+//     try {
+//       setLoading(true);
+//       await tenantApi.exportData(format);
+//       showSnackbar(`Data exported successfully as ${format.toUpperCase()}`, 'success');
+//     } catch (err) {
+//       showSnackbar('Failed to export data', 'error');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const openActionDialog = (type, tenant) => {
+//     setActionDialog({ open: true, type, tenant });
+//   };
+
+//   const StatCard = ({ title, value, icon, gradient, badgeCount }) => (
+//     <Card
+//       sx={{
+//         borderRadius: 3,
+//         boxShadow: 3,
+//         background: gradient,
+//         color: 'white',
+//         position: 'relative',
+//         overflow: 'visible'
+//       }}
+//     >
 //       <CardContent>
-//         <Box display="flex" alignItems="center" justifyContent="space-between">
+//         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 //           <Box>
-//             <Typography variant="body2" color="text.secondary" gutterBottom>
-//               {title}
-//             </Typography>
-//             <Typography variant="h4" component="div" fontWeight="bold">
+//             <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
 //               {value}
 //             </Typography>
-//             {subtitle && (
-//               <Typography variant="caption" color="text.secondary">
-//                 {subtitle}
-//               </Typography>
+//             <Typography variant="body2" sx={{ opacity: 0.9 }}>
+//               {title}
+//             </Typography>
+//           </Box>
+//           <Box sx={{ position: 'relative' }}>
+//             {badgeCount > 0 && (
+//               <Badge
+//                 badgeContent={badgeCount}
+//                 color="error"
+//                 sx={{ position: 'absolute', top: -8, right: -8 }}
+//               >
+//                 {icon}
+//               </Badge>
 //             )}
+//             {badgeCount === 0 && icon}
 //           </Box>
-//           <Avatar sx={{ bgcolor: `${color}.100`, color: `${color}.600` }}>
-//             <Icon size={24} />
-//           </Avatar>
-//         </Box>
-//         {trend && (
-//           <Box display="flex" alignItems="center" mt={2}>
-//             {trend > 0 ? (
-//               <ArrowUp size={16} color="#4caf50" style={{ marginRight: 4 }} />
-//             ) : (
-//               <ArrowDown size={16} color="#f44336" style={{ marginRight: 4 }} />
-//             )}
-//             <Typography
-//               variant="caption"
-//               color={trend > 0 ? "success.main" : "error.main"}
-//             >
-//               {Math.abs(trend)}% vs last month
-//             </Typography>
-//           </Box>
-//         )}
-//       </CardContent>
-//     </Card>
-//   );
-
-//   const NotificationPanel = () => (
-//     <Card>
-//       <CardContent>
-//         <Box
-//           display="flex"
-//           alignItems="center"
-//           justifyContent="space-between"
-//           mb={2}
-//         >
-//           <Typography variant="h6" component="div">
-//             Live Notifications
-//           </Typography>
-//           <Bell size={20} />
-//         </Box>
-//         <Box sx={{ maxHeight: 300, overflowY: "auto" }}>
-//           {notifications.map((notif) => (
-//             <Alert
-//               key={notif.id}
-//               severity={
-//                 notif.type === "warning"
-//                   ? "warning"
-//                   : notif.type === "success"
-//                   ? "success"
-//                   : notif.type === "error"
-//                   ? "error"
-//                   : "info"
-//               }
-//               sx={{ mb: 1 }}
-//             >
-//               <Typography variant="body2" fontWeight="medium">
-//                 {notif.message}
-//               </Typography>
-//               <Typography variant="caption" color="text.secondary">
-//                 {notif.time}
-//               </Typography>
-//             </Alert>
-//           ))}
 //         </Box>
 //       </CardContent>
 //     </Card>
 //   );
 
-//   const SystemHealthPanel = () => (
-//     <Card>
-//       <CardContent>
-//         <Typography variant="h6" gutterBottom>
-//           System Health
-//         </Typography>
-//         <Box mb={3}>
-//           <Box
-//             display="flex"
-//             justifyContent="space-between"
-//             alignItems="center"
-//             mb={1}
-//           >
-//             <Typography variant="body2" color="text.secondary">
-//               CPU Usage
-//             </Typography>
-//             <Typography variant="body2" fontWeight="medium">
-//               {realTimeData.systemLoad || 0}%
-//             </Typography>
-//           </Box>
-//           <LinearProgress
-//             variant="determinate"
-//             value={realTimeData.systemLoad || 0}
-//             sx={{ height: 8, borderRadius: 4 }}
-//           />
-//         </Box>
-
-//         <Grid container spacing={2}>
-//           <Grid item xs={6}>
-//             <Card
-//               sx={{
-//                 bgcolor: "success.50",
-//                 border: "1px solid",
-//                 borderColor: "success.200",
-//               }}
-//             >
-//               <CardContent sx={{ textAlign: "center", py: 2 }}>
-//                 <Server size={24} color="#4caf50" style={{ marginBottom: 8 }} />
-//                 <Typography variant="h5" fontWeight="bold" color="success.main">
-//                   {realTimeData.uptime || 99.98}%
-//                 </Typography>
-//                 <Typography variant="caption" color="success.main">
-//                   Uptime
-//                 </Typography>
-//               </CardContent>
-//             </Card>
-//           </Grid>
-//           <Grid item xs={6}>
-//             <Card
-//               sx={{
-//                 bgcolor: "primary.50",
-//                 border: "1px solid",
-//                 borderColor: "primary.200",
-//               }}
-//             >
-//               <CardContent sx={{ textAlign: "center", py: 2 }}>
-//                 <Zap size={24} color="#1976d2" style={{ marginBottom: 8 }} />
-//                 <Typography variant="h5" fontWeight="bold" color="primary.main">
-//                   {realTimeData.responseTime || 125}ms
-//                 </Typography>
-//                 <Typography variant="caption" color="primary.main">
-//                   Response Time
-//                 </Typography>
-//               </CardContent>
-//             </Card>
-//           </Grid>
-//         </Grid>
-//       </CardContent>
-//     </Card>
+//   const TabPanel = ({ children, value, index }) => (
+//     <div hidden={value !== index}>
+//       {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+//     </div>
 //   );
-
-//   // Initialize with mock data
-//   useEffect(() => {
-//     setTenants(generateMockData());
-//   }, []);
-
-//   if (loading) {
-//     return (
-//       <Box
-//         display="flex"
-//         justifyContent="center"
-//         alignItems="center"
-//         minHeight="100vh"
-//       >
-//         <Box sx={{ width: "100px" }}>
-//           <LinearProgress />
-//         </Box>
-//       </Box>
-//     );
-//   }
 
 //   return (
-//     <ThemeProvider theme={theme}>
-//       <CssBaseline />
-//       <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-//         {/* Header */}
-//         <AppBar position="sticky" elevation={1}>
-//           <Toolbar>
-//             <Box
-//               display="flex"
-//               alignItems="center"
-//               justifyContent="space-between"
-//               width="100%"
-//             >
-//               <Box>
-//                 <Typography variant="h5" component="div" fontWeight="bold">
-//                   Super Admin Dashboard
-//                 </Typography>
-//                 <Typography variant="body2" color="rgba(255,255,255,0.7)">
-//                   Comprehensive tenant management and analytics
-//                 </Typography>
-//               </Box>
-//               <Box display="flex" alignItems="center" gap={2}>
-//                 <FormControlLabel
-//                   control={
-//                     <Switch
-//                       checked={darkMode}
-//                       onChange={() => setDarkMode(!darkMode)}
-//                       color="default"
-//                     />
-//                   }
-//                   label={darkMode ? "🌙" : "☀️"}
+//     <Box sx={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+//       {/* App Bar */} 
+//       <AppBar position="sticky" sx={{ backgroundColor: 'white', boxShadow: 1 }}>
+//         <Toolbar>
+//           <DashboardIcon sx={{ mr: 2, color: 'primary.main' }} />
+//           <Typography variant="h6" sx={{ flexGrow: 1, color: 'text.primary', fontWeight: 'bold' }}>
+//             Super Admin Dashboard
+//           </Typography>
+          
+//           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//             <FormControlLabel
+//               control={
+//                 <Switch 
+//                   checked={autoRefresh} 
+//                   onChange={(e) => setAutoRefresh(e.target.checked)}
+//                   size="small"
 //                 />
-//                 <Badge badgeContent={notifications.length} color="error">
-//                   <IconButton color="inherit">
-//                     <Bell size={20} />
-//                   </IconButton>
-//                 </Badge>
-//                 <Box display="flex" alignItems="center" gap={1}>
-//                   <Avatar
-//                     sx={{ width: 32, height: 32, bgcolor: "secondary.main" }}
-//                   >
-//                     SA
-//                   </Avatar>
-//                   <Typography variant="body2">Super Admin</Typography>
-//                 </Box>
-//               </Box>
-//             </Box>
-//           </Toolbar>
-//         </AppBar>
+//               }
+//               label={<Typography variant="body2" color="text.secondary">Auto Refresh</Typography>}
+//             />
+            
+//             <Badge badgeContent={stats.pending} color="warning">
+//               <IconButton>
+//                 <NotificationsIcon />
+//               </IconButton>
+//             </Badge>
+            
+//             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+//               <MoreVertIcon />
+//             </IconButton>
+//           </Box>
+//         </Toolbar>
+        
+//         {refreshing && <LinearProgress />}
+//       </AppBar>
 
-//         {/* Navigation Tabs */}
-//         <Box
-//           sx={{
-//             borderBottom: 1,
-//             borderColor: "divider",
-//             bgcolor: "background.paper",
-//           }}
-//         >
-//           <Tabs
-//             value={activeTab}
-//             onChange={(e, newValue) => setActiveTab(newValue)}
-//             sx={{ px: 3 }}
-//           >
-//             <Tab icon={<Activity size={20} />} label="Overview" />
-//             <Tab icon={<Building2 size={20} />} label="Tenants" />
-//             <Tab icon={<TrendingUp size={20} />} label="Analytics" />
-//             <Tab icon={<Server size={20} />} label="System" />
-//             <Tab icon={<Settings size={20} />} label="Settings" />
-//           </Tabs>
+//       <Container maxWidth="xl" sx={{ py: 3 }}>
+//         {/* Breadcrumbs */}
+//         <Breadcrumbs sx={{ mb: 2 }}>
+//           <Link color="inherit" href="#" onClick={() => {}} sx={{ display: 'flex', alignItems: 'center' }}>
+//             <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+//             Dashboard
+//           </Link>
+//           <Typography color="text.primary">Tenant Management</Typography>
+//         </Breadcrumbs>
+
+//         {/* Header */}
+//         <Box sx={{ mb: 4 }}>
+//           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+//             Tenant Management Dashboard
+//           </Typography>
+//           <Typography variant="body1" color="text.secondary">
+//             Monitor and manage tenant requests in real-time with advanced analytics and bulk operations.
+//           </Typography>
 //         </Box>
 
-//         <Box p={3}>
-//           {/* Overview Tab */}
-//           {activeTab === 0 && (
-//             <Box>
-//               {/* Key Metrics */}
-//               <Grid container spacing={3} mb={3}>
-//                 <Grid item xs={12} sm={6} lg={3}>
-//                   <StatCard
-//                     title="Total Tenants"
-//                     value={stats.total}
-//                     icon={Building2}
-//                     trend={8.2}
-//                     color="primary"
-//                     subtitle={`${stats.active} active`}
-//                   />
-//                 </Grid>
-//                 <Grid item xs={12} sm={6} lg={3}>
-//                   <StatCard
-//                     title="Pending Requests"
-//                     value={stats.pending}
-//                     icon={Clock}
-//                     trend={-15.3}
-//                     color="warning"
-//                     subtitle="Requires attention"
-//                   />
-//                 </Grid>
-//                 <Grid item xs={12} sm={6} lg={3}>
-//                   <StatCard
-//                     title="Monthly Revenue"
-//                     value={`$${(stats.totalRevenue / 1000).toFixed(0)}K`}
-//                     icon={DollarSign}
-//                     trend={12.8}
+//         {/* Statistics Cards */}
+//         <Grid container spacing={3} sx={{ mb: 4 }}>
+//           <Grid item xs={12} sm={6} md={2}>
+//             <StatCard
+//               title="Total Requests"
+//               value={stats.total}
+//               icon={<BusinessIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
+//               gradient="linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)"
+//             />
+//           </Grid>
+          
+//           <Grid item xs={12} sm={6} md={2}>
+//             <StatCard
+//               title="Pending"
+//               value={stats.pending}
+//               icon={<PendingIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
+//               gradient="linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)"
+//               badgeCount={stats.highPriority}
+//             />
+//           </Grid>
+          
+//           <Grid item xs={12} sm={6} md={2}>
+//             <StatCard
+//               title="Approved"
+//               value={stats.approved}
+//               icon={<CheckCircleIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
+//               gradient="linear-gradient(135deg, #4caf50 0%, #81c784 100%)"
+//             />
+//           </Grid>
+          
+//           <Grid item xs={12} sm={6} md={2}>
+//             <StatCard
+//               title="Rejected"
+//               value={stats.rejected}
+//               icon={<CancelIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
+//               gradient="linear-gradient(135deg, #f44336 0%, #e57373 100%)"
+//             />
+//           </Grid>
+          
+//           <Grid item xs={12} sm={6} md={2}>
+//             <StatCard
+//               title="This Week"
+//               value={stats.thisWeek}
+//               icon={<TrendingUpIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
+//               gradient="linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)"
+//             />
+//           </Grid>
+          
+//           <Grid item xs={12} sm={6} md={2}>
+//             <StatCard
+//               title="High Priority"
+//               value={stats.highPriority}
+//               icon={<WarningIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
+//               gradient="linear-gradient(135deg, #e91e63 0%, #f06292 100%)"
+//             />
+//           </Grid>
+//         </Grid>
+
+//         {/* Filters and Controls */}
+//         <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 2 }}>
+//           <CardContent>
+//             <Grid container spacing={2} alignItems="center">
+//               <Grid item xs={12} md={4}>
+//                 <TextField
+//                   fullWidth
+//                   label="Search tenants..."
+//                   variant="outlined"
+//                   size="small"
+//                   value={searchTerm}
+//                   onChange={(e) => setSearchTerm(e.target.value)}
+//                   InputProps={{
+//                     startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+//                   }}
+//                 />
+//               </Grid>
+              
+//               <Grid item xs={12} md={2}>
+//                 <FormControl fullWidth size="small">
+//                   <InputLabel>Status</InputLabel>
+//                   <Select
+//                     value={statusFilter}
+//                     label="Status"
+//                     onChange={(e) => setStatusFilter(e.target.value)}
+//                   >
+//                     <MenuItem value="all">All Status</MenuItem>
+//                     <MenuItem value="pending">Pending</MenuItem>
+//                     <MenuItem value="approved">Approved</MenuItem>
+//                     <MenuItem value="rejected">Rejected</MenuItem>
+//                   </Select>
+//                 </FormControl>
+//               </Grid>
+              
+//               <Grid item xs={12} md={2}>
+//                 <FormControl fullWidth size="small">
+//                   <InputLabel>Sort By</InputLabel>
+//                   <Select
+//                     value={sortBy}
+//                     label="Sort By"
+//                     onChange={(e) => setSortBy(e.target.value)}
+//                   >
+//                     <MenuItem value="created_at">Date Created</MenuItem>
+//                     <MenuItem value="tenant_name">Company Name</MenuItem>
+//                     <MenuItem value="priority">Priority</MenuItem>
+//                     <MenuItem value="estimated_users">Users</MenuItem>
+//                   </Select>
+//                 </FormControl>
+//               </Grid>
+              
+//               <Grid item xs={12} md={2}>
+//                 <Button
+//                   fullWidth
+//                   variant="outlined"
+//                   startIcon={<RefreshIcon />}
+//                   onClick={() => fetchTenants(false)}
+//                   disabled={refreshing}
+//                 >
+//                   Refresh
+//                 </Button>
+//               </Grid>
+              
+//               <Grid item xs={12} md={2}>
+//                 <Button
+//                   fullWidth
+//                   variant="contained"
+//                   startIcon={<DownloadIcon />}
+//                   onClick={(e) => setBulkActionAnchor(e.currentTarget)}
+//                   disabled={loading}
+//                 >
+//                   Export
+//                 </Button>
+//               </Grid>
+//             </Grid>
+            
+//             {selectedTenants.length > 0 && (
+//               <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.1), borderRadius: 1 }}>
+//                 <Typography variant="body2" sx={{ mb: 1 }}>
+//                   {selectedTenants.length} tenant(s) selected
+//                 </Typography>
+//                 <Stack direction="row" spacing={1}>
+//                   <Button
+//                     size="small"
+//                     variant="contained"
 //                     color="success"
-//                     subtitle="This month"
-//                   />
-//                 </Grid>
-//                 <Grid item xs={12} sm={6} lg={3}>
-//                   <StatCard
-//                     title="Active Users"
-//                     value={realTimeData.activeUsers || 742}
-//                     icon={Users}
-//                     trend={5.4}
-//                     color="secondary"
-//                     subtitle="Right now"
-//                   />
-//                 </Grid>
-//               </Grid>
+//                     onClick={() => handleBulkAction('approved')}
+//                   >
+//                     Bulk Approve
+//                   </Button>
+//                   <Button
+//                     size="small"
+//                     variant="contained"
+//                     color="error"
+//                     onClick={() => handleBulkAction('rejected')}
+//                   >
+//                     Bulk Reject
+//                   </Button>
+//                   <Button
+//                     size="small"
+//                     variant="outlined"
+//                     onClick={() => setSelectedTenants([])}
+//                   >
+//                     Clear Selection
+//                   </Button>
+//                 </Stack>
+//               </Box>
+//             )}
+//           </CardContent>
+//         </Card>
 
-//               {/* Charts Row */}
-//               <Grid container spacing={3} mb={3}>
-//                 {/* Monthly Trends */}
-//                 <Grid item xs={12} lg={6}>
-//                   <Card>
-//                     <CardContent>
-//                       <Typography variant="h6" gutterBottom>
-//                         Monthly Trends
-//                       </Typography>
-//                       <ResponsiveContainer width="100%" height={300}>
-//                         <AreaChart data={monthlyData}>
-//                           <CartesianGrid strokeDasharray="3 3" />
-//                           <XAxis dataKey="month" />
-//                           <YAxis />
-//                           <Tooltip />
-//                           <Area
-//                             type="monotone"
-//                             dataKey="requests"
-//                             stackId="1"
-//                             stroke="#8884d8"
-//                             fill="#8884d8"
-//                             fillOpacity={0.6}
-//                           />
-//                           <Area
-//                             type="monotone"
-//                             dataKey="approved"
-//                             stackId="1"
-//                             stroke="#82ca9d"
-//                             fill="#82ca9d"
-//                             fillOpacity={0.6}
-//                           />
-//                         </AreaChart>
-//                       </ResponsiveContainer>
-//                     </CardContent>
-//                   </Card>
-//                 </Grid>
+//         {/* Main Content */}
+//         <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+//           <Tabs
+//             value={currentTab}
+//             onChange={(e, newValue) => setCurrentTab(newValue)}
+//             variant="fullWidth"
+//             sx={{ borderBottom: 1, borderColor: 'divider' }}
+//           >
+//             <Tab 
+//               label={`All Requests (${filteredTenants.length})`} 
+//               icon={<AssignmentIcon />}
+//               iconPosition="start"
+//             />
+//             <Tab 
+//               label={`Pending (${filteredTenants.filter(t => t.status === 'pending').length})`}
+//               icon={<PendingIcon />}
+//               iconPosition="start"
+//             />
+//             <Tab 
+//               label="Analytics"
+//               icon={<AnalyticsIcon />}
+//               iconPosition="start"
+//             />
+//             <Tab 
+//               label="Activity Log"
+//               icon={<TimelineIcon />}
+//               iconPosition="start"
+//             />
+//           </Tabs>
 
-//                 {/* Industry Distribution */}
-//                 <Grid item xs={12} lg={6}>
-//                   <Card>
-//                     <CardContent>
-//                       <Typography variant="h6" gutterBottom>
-//                         Industry Distribution
-//                       </Typography>
-//                       <ResponsiveContainer width="100%" height={300}>
-//                         <PieChart>
-//                           <Pie
-//                             data={industryData}
-//                             cx="50%"
-//                             cy="50%"
-//                             outerRadius={100}
-//                             fill="#8884d8"
-//                             dataKey="value"
-//                             label={({ name, percent }) =>
-//                               `${name} ${(percent * 100).toFixed(0)}%`
-//                             }
-//                           >
-//                             {industryData.map((entry, index) => (
-//                               <Cell key={`cell-${index}`} fill={entry.color} />
-//                             ))}
-//                           </Pie>
-//                           <Tooltip />
-//                         </PieChart>
-//                       </ResponsiveContainer>
-//                     </CardContent>
-//                   </Card>
-//                 </Grid>
-//               </Grid>
-
-//               {/* Bottom Row */}
-//               <Grid container spacing={3}>
-//                 <Grid item xs={12} lg={4}>
-//                   <NotificationPanel />
-//                 </Grid>
-//                 <Grid item xs={12} lg={4}>
-//                   <SystemHealthPanel />
-//                 </Grid>
-
-//                 {/* Quick Actions */}
-//                 <Grid item xs={12} lg={4}>
-//                   <Card>
-//                     <CardContent>
-//                       <Typography variant="h6" gutterBottom>
-//                         Quick Actions
-//                       </Typography>
-//                       <Box display="flex" flexDirection="column" gap={2}>
-//                         <Button
-//                           variant="contained"
-//                           fullWidth
-//                           startIcon={<Plus size={16} />}
-//                           sx={{ py: 1.5 }}
-//                         >
-//                           Add New Tenant
-//                         </Button>
-//                         <Button
-//                           variant="contained"
-//                           color="success"
-//                           fullWidth
-//                           startIcon={<Download size={16} />}
-//                           onClick={exportData}
-//                           sx={{ py: 1.5 }}
-//                         >
-//                           Export Data
-//                         </Button>
-//                         <Button
-//                           variant="contained"
-//                           color="secondary"
-//                           fullWidth
-//                           startIcon={<Settings size={16} />}
-//                           sx={{ py: 1.5 }}
-//                         >
-//                           System Settings
-//                         </Button>
-//                       </Box>
-//                     </CardContent>
-//                   </Card>
-//                 </Grid>
-//               </Grid>
-//             </Box>
-//           )}
-
-//           {/* Tenants Tab */}
-//           {activeTab === 1 && (
-//             <Box>
-//               {/* Filters */}
-//               <Card sx={{ mb: 3 }}>
-//                 <CardContent>
-//                   <Grid container spacing={2}>
-//                     <Grid item xs={12} md={4}>
-//                       <TextField
-//                         fullWidth
-//                         placeholder="Search tenants..."
-//                         value={searchTerm}
-//                         onChange={(e) => setSearchTerm(e.target.value)}
-//                         InputProps={{
-//                           startAdornment: (
-//                             <InputAdornment position="start">
-//                               <Search size={20} />
-//                             </InputAdornment>
-//                           ),
-//                         }}
-//                       />
-//                     </Grid>
-
-//                     <Grid item xs={12} md={2}>
-//                       <FormControl fullWidth>
-//                         <InputLabel>Status</InputLabel>
-//                         <Select
-//                           value={filters.status}
-//                           label="Status"
-//                           onChange={(e) =>
-//                             setFilters({ ...filters, status: e.target.value })
-//                           }
-//                         >
-//                           <MenuItem value="all">All Status</MenuItem>
-//                           <MenuItem value="pending">Pending</MenuItem>
-//                           <MenuItem value="approved">Approved</MenuItem>
-//                           <MenuItem value="active">Active</MenuItem>
-//                           <MenuItem value="suspended">Suspended</MenuItem>
-//                           <MenuItem value="rejected">Rejected</MenuItem>
-//                         </Select>
-//                       </FormControl>
-//                     </Grid>
-
-//                     <Grid item xs={12} md={2}>
-//                       <FormControl fullWidth>
-//                         <InputLabel>Plan</InputLabel>
-//                         <Select
-//                           value={filters.plan}
-//                           label="Plan"
-//                           onChange={(e) =>
-//                             setFilters({ ...filters, plan: e.target.value })
-//                           }
-//                         >
-//                           <MenuItem value="all">All Plans</MenuItem>
-//                           <MenuItem value="Starter">Starter</MenuItem>
-//                           <MenuItem value="Professional">Professional</MenuItem>
-//                           <MenuItem value="Enterprise">Enterprise</MenuItem>
-//                           <MenuItem value="Custom">Custom</MenuItem>
-//                         </Select>
-//                       </FormControl>
-//                     </Grid>
-
-//                     <Grid item xs={12} md={2}>
-//                       <FormControl fullWidth>
-//                         <InputLabel>Industry</InputLabel>
-//                         <Select
-//                           value={filters.industry}
-//                           label="Industry"
-//                           onChange={(e) =>
-//                             setFilters({ ...filters, industry: e.target.value })
-//                           }
-//                         >
-//                           <MenuItem value="all">All Industries</MenuItem>
-//                           <MenuItem value="Technology">Technology</MenuItem>
-//                           <MenuItem value="Healthcare">Healthcare</MenuItem>
-//                           <MenuItem value="Finance">Finance</MenuItem>
-//                           <MenuItem value="Retail">Retail</MenuItem>
-//                           <MenuItem value="Manufacturing">
-//                             Manufacturing
-//                           </MenuItem>
-//                           <MenuItem value="Education">Education</MenuItem>
-//                           <MenuItem value="Government">Government</MenuItem>
-//                         </Select>
-//                       </FormControl>
-//                     </Grid>
-
-//                     <Grid item xs={12} md={2}>
-//                       <Button
-//                         variant="contained"
-//                         fullWidth
-//                         startIcon={<Download size={16} />}
-//                         onClick={exportData}
-//                         sx={{ height: 56 }}
-//                       >
-//                         Export
-//                       </Button>
-//                     </Grid>
-//                   </Grid>
-//                 </CardContent>
-//               </Card>
-
-//               {/* Tenants Table */}
-//               <Card>
+//           {/* Tab 1: All Requests */}
+//           <TabPanel value={currentTab} index={0}>
+//             {loading ? (
+//               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+//                 <CircularProgress />
+//               </Box>
+//             ) : error ? (
+//               <Alert severity="error" sx={{ m: 2 }}>
+//                 {error}
+//                 <Button onClick={() => fetchTenants()} sx={{ ml: 2 }}>
+//                   Retry
+//                 </Button>
+//               </Alert>
+//             ) : filteredTenants.length === 0 ? (
+//               <Box sx={{ textAlign: 'center', p: 4 }}>
+//                 <BusinessIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+//                 <Typography variant="h6" color="text.secondary" gutterBottom>
+//                   No tenant requests found
+//                 </Typography>
+//                 <Typography variant="body2" color="text.secondary">
+//                   Try adjusting your search criteria or filters
+//                 </Typography>
+//               </Box>
+//             ) : (
+//               <>
 //                 <TableContainer>
 //                   <Table>
 //                     <TableHead>
 //                       <TableRow>
+//                         <TableCell padding="checkbox">
+//                           <Checkbox
+//                             indeterminate={selectedTenants.length > 0 && selectedTenants.length < filteredTenants.length}
+//                             checked={selectedTenants.length === filteredTenants.length && filteredTenants.length > 0}
+//                             onChange={handleSelectAllTenants}
+//                           />
+//                         </TableCell>
 //                         <TableCell>Company</TableCell>
 //                         <TableCell>Contact</TableCell>
-//                         <TableCell>Plan & Usage</TableCell>
+//                         <TableCell>Plan & Users</TableCell>
 //                         <TableCell>Status</TableCell>
-//                         <TableCell>Revenue</TableCell>
-//                         <TableCell align="right">Actions</TableCell>
+//                         <TableCell>Priority</TableCell>
+//                         <TableCell>Created</TableCell>
+//                         <TableCell>Actions</TableCell>
 //                       </TableRow>
 //                     </TableHead>
-
 //                     <TableBody>
-//                       {filteredTenants.map((tenant) => (
-//                         <TableRow key={tenant.id} hover>
-//                           {/* Company */}
+//                       {filteredTenants
+//                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+//                         .map((tenant) => (
+//                         <TableRow 
+//                           key={tenant.id} 
+//                           hover
+//                           selected={selectedTenants.includes(tenant.id)}
+//                         >
+//                           <TableCell padding="checkbox">
+//                             <Checkbox
+//                               checked={selectedTenants.includes(tenant.id)}
+//                               onChange={() => handleSelectTenant(tenant.id)}
+//                             />
+//                           </TableCell>
 //                           <TableCell>
-//                             <Box display="flex" alignItems="center">
-//                               <Avatar
-//                                 sx={{
-//                                   mr: 2,
-//                                   bgcolor: "primary.main",
-//                                   background:
-//                                     "linear-gradient(45deg, #2196F3 30%, #9C27B0 90%)",
+//                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//                               <Avatar 
+//                                 sx={{ 
+//                                   mr: 2, 
+//                                   bgcolor: 'primary.main',
+//                                   width: 40,
+//                                   height: 40
 //                                 }}
 //                               >
-//                                 {tenant.tenant_name?.charAt(0)}
+//                                 {tenant.tenant_name.charAt(0)}
 //                               </Avatar>
 //                               <Box>
-//                                 <Typography
-//                                   variant="subtitle2"
-//                                   fontWeight="medium"
-//                                 >
+//                                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
 //                                   {tenant.tenant_name}
 //                                 </Typography>
-//                                 <Typography
-//                                   variant="caption"
-//                                   color="text.secondary"
-//                                 >
+//                                 <Typography variant="body2" color="text.secondary">
 //                                   {tenant.industry} • {tenant.company_size}
+//                                 </Typography>
+//                                 <Typography variant="caption" color="text.secondary">
+//                                   {tenant.contact_person}
 //                                 </Typography>
 //                               </Box>
 //                             </Box>
 //                           </TableCell>
-
-//                           {/* Contact */}
 //                           <TableCell>
-//                             <Box>
-//                               <Typography variant="body2">
-//                                 {tenant.email}
-//                               </Typography>
-//                               <Typography
-//                                 variant="caption"
-//                                 color="text.secondary"
-//                               >
-//                                 {tenant.phone}
-//                               </Typography>
-//                               <Typography
-//                                 variant="caption"
-//                                 color="text.secondary"
-//                                 display="block"
-//                               >
-//                                 📍 {tenant.location}
-//                               </Typography>
-//                             </Box>
+//                             <Stack spacing={0.5}>
+//                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//                                 <EmailIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+//                                 <Typography variant="body2">{tenant.email}</Typography>
+//                               </Box>
+//                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//                                 <PhoneIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+//                                 <Typography variant="body2">{tenant.phone}</Typography>
+//                               </Box>
+//                             </Stack>
 //                           </TableCell>
-
-//                           {/* Plan & Usage */}
-//                           <TableCell>
-//                             <Box>
-//                               <Chip
-//                                 label={tenant.subscription_plan}
-//                                 color={getPlanColor(tenant.subscription_plan)}
-//                                 size="small"
-//                                 sx={{ mb: 1 }}
-//                               />
-//                               <Typography
-//                                 variant="caption"
-//                                 color="text.secondary"
-//                                 display="block"
-//                               >
-//                                 {tenant.estimated_users} users •{" "}
-//                                 {tenant.storage_used}% storage
-//                               </Typography>
-//                               <Typography
-//                                 variant="caption"
-//                                 color="text.secondary"
-//                                 display="block"
-//                               >
-//                                 {(tenant.api_calls / 1000).toFixed(0)}K API
-//                                 calls
-//                               </Typography>
-//                             </Box>
-//                           </TableCell>
-
-//                           {/* Status */}
 //                           <TableCell>
 //                             <Chip
-//                               label={
-//                                 tenant.status.charAt(0).toUpperCase() +
-//                                 tenant.status.slice(1)
-//                               }
-//                               color={getStatusColor(tenant.status)}
+//                               label={tenant.subscription_plan}
 //                               size="small"
-//                               icon={
-//                                 tenant.status === "active" ? (
-//                                   <CheckCircle size={16} />
-//                                 ) : tenant.status === "pending" ? (
-//                                   <Clock size={16} />
-//                                 ) : tenant.status === "rejected" ? (
-//                                   <XCircle size={16} />
-//                                 ) : null
+//                               variant="outlined"
+//                               color={
+//                                 tenant.subscription_plan === 'Enterprise' ? 'primary' :
+//                                 tenant.subscription_plan === 'Premium' ? 'secondary' : 'default'
 //                               }
+//                               sx={{ mb: 0.5 }}
 //                             />
-//                           </TableCell>
-
-//                           {/* Revenue */}
-//                           <TableCell>
-//                             <Typography variant="body2">
-//                               ${tenant.revenue}
+//                             <Typography variant="body2" color="text.secondary">
+//                               {tenant.estimated_users} users
+//                             </Typography>
+//                             <Typography variant="caption" color="text.secondary">
+//                               ${tenant.monthly_budget}/month
 //                             </Typography>
 //                           </TableCell>
-
-//                           {/* Actions */}
-//                           <TableCell align="right">
-//                             {/* Place your action buttons here */}
-//                             <Button size="small" variant="outlined">
-//                               View
-//                             </Button>
+//                           <TableCell>
+//                             <Chip
+//                               icon={getStatusIcon(tenant.status)}
+//                               label={tenant.status.toUpperCase()}
+//                               color={getStatusColor(tenant.status)}
+//                               size="small"
+//                               sx={{ fontWeight: 'bold' }}
+//                             />
+//                           </TableCell>
+//                           <TableCell>
+//                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//                               <Box
+//                                 sx={{
+//                                   width: 8,
+//                                   height: 8,
+//                                   borderRadius: '50%',
+//                                   bgcolor: getPriorityColor(tenant.priority),
+//                                   mr: 1
+//                                 }}
+//                               />
+//                               <Typography 
+//                                 variant="body2" 
+//                                 sx={{ 
+//                                   textTransform: 'capitalize',
+//                                   color: getPriorityColor(tenant.priority),
+//                                   fontWeight: 'medium'
+//                                 }}
+//                               >
+//                                 {tenant.priority}
+//                               </Typography>
+//                             </Box>
+//                           </TableCell>
+//                           <TableCell>
+//                             <Typography variant="body2">
+//                               {formatDate(tenant.created_at)}
+//                             </Typography>
+//                           </TableCell>
+//                           <TableCell>
+//                             <Stack direction="row" spacing={0.5}>
+//                               <Tooltip title="View Details">
+//                                 <IconButton
+//                                   size="small"
+//                                   onClick={() => handleViewTenant(tenant)}
+//                                 >
+//                                   <VisibilityIcon fontSize="small" />
+//                                 </IconButton>
+//                               </Tooltip>
+                              
+//                               {tenant.status === 'pending' && (
+//                                 <>
+//                                   <Tooltip title="Approve">
+//                                     <IconButton
+//                                       size="small"
+//                                       color="success"
+//                                       onClick={() => openActionDialog('approve', tenant)}
+//                                     >
+//                                       <CheckCircleIcon fontSize="small" />
+//                                     </IconButton>
+//                                   </Tooltip>
+                                  
+//                                   <Tooltip title="Reject">
+//                                     <IconButton
+//                                       size="small"
+//                                       color="error"
+//                                       onClick={() => openActionDialog('reject', tenant)}
+//                                     >
+//                                       <CancelIcon fontSize="small" />
+//                                     </IconButton>
+//                                   </Tooltip>
+//                                 </>
+//                               )}
+                              
+//                               <Tooltip title="More Actions">
+//                                 <IconButton
+//                                   size="small"
+//                                   onClick={(e) => {
+//                                     setAnchorEl(e.currentTarget);
+//                                     setSelectedTenant(tenant);
+//                                   }}
+//                                 >
+//                                   <MoreVertIcon fontSize="small" />
+//                                 </IconButton>
+//                               </Tooltip>
+//                             </Stack>
 //                           </TableCell>
 //                         </TableRow>
 //                       ))}
 //                     </TableBody>
 //                   </Table>
 //                 </TableContainer>
-//               </Card>
+                
+//                 <TablePagination
+//                   component="div"
+//                   count={filteredTenants.length}
+//                   page={page}
+//                   onPageChange={(e, newPage) => setPage(newPage)}
+//                   rowsPerPage={rowsPerPage}
+//                   onRowsPerPageChange={(e) => {
+//                     setRowsPerPage(parseInt(e.target.value, 10));
+//                     setPage(0);
+//                   }}
+//                   rowsPerPageOptions={[5, 10, 25, 50]}
+//                 />
+//               </>
+//             )}
+//           </TabPanel>
+
+//           {/* Tab 2: Pending Requests */}
+//           <TabPanel value={currentTab} index={1}>
+//             <Stack spacing={2} sx={{ p: 2 }}>
+//               {filteredTenants
+//                 .filter(t => t.status === 'pending')
+//                 .map((tenant) => (
+//                   <Card
+//                     key={tenant.id}
+//                     sx={{ 
+//                       borderLeft: 4, 
+//                       borderLeftColor: getPriorityColor(tenant.priority),
+//                       '&:hover': { boxShadow: 4 }
+//                     }}
+//                   >
+//                     <CardContent>
+//                       <Grid container spacing={2}>
+//                         <Grid item xs={12} md={8}>
+//                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+//                             <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+//                               {tenant.tenant_name.charAt(0)}
+//                             </Avatar>
+//                             <Box>
+//                               <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+//                                 {tenant.tenant_name}
+//                               </Typography>
+//                               <Typography variant="body2" color="text.secondary">
+//                                 {tenant.contact_person} • {tenant.industry}
+//                               </Typography>
+//                             </Box>
+//                             <Chip
+//                               label={tenant.priority}
+//                               size="small"
+//                               sx={{ 
+//                                 ml: 'auto',
+//                                 bgcolor: alpha(getPriorityColor(tenant.priority), 0.1),
+//                                 color: getPriorityColor(tenant.priority)
+//                               }}
+//                             />
+//                           </Box>
+                          
+//                           <Grid container spacing={2} sx={{ mb: 2 }}>
+//                             <Grid item xs={6}>
+//                               <Typography variant="body2" color="text.secondary">Contact</Typography>
+//                               <Typography variant="body2">{tenant.email}</Typography>
+//                               <Typography variant="body2">{tenant.phone}</Typography>
+//                             </Grid>
+//                             <Grid item xs={6}>
+//                               <Typography variant="body2" color="text.secondary">Details</Typography>
+//                               <Typography variant="body2">
+//                                 {tenant.subscription_plan} • {tenant.estimated_users} users
+//                               </Typography>
+//                               <Typography variant="body2">
+//                                 Budget: ${tenant.monthly_budget}/month
+//                               </Typography>
+//                             </Grid>
+//                           </Grid>
+                          
+//                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+//                             {tenant.requested_features?.map((feature, index) => (
+//                               <Chip
+//                                 key={index}
+//                                 label={feature}
+//                                 size="small"
+//                                 variant="outlined"
+//                               />
+//                             ))}
+//                           </Box>
+                          
+//                           <Typography variant="body2" color="text.secondary">
+//                             Requested: {formatDate(tenant.created_at)}
+//                           </Typography>
+//                         </Grid>
+                        
+//                         <Grid item xs={12} md={4}>
+//                           <CardActions sx={{ flexDirection: 'column', gap: 1, p: 0 }}>
+//                             <Button
+//                               fullWidth
+//                               variant="contained"
+//                               color="success"
+//                               startIcon={<CheckCircleIcon />}
+//                               onClick={() => openActionDialog('approve', tenant)}
+//                             >
+//                               Approve Request
+//                             </Button>
+                            
+//                             <Button
+//                               fullWidth
+//                               variant="outlined"
+//                               color="error"
+//                               startIcon={<CancelIcon />}
+//                               onClick={() => openActionDialog('reject', tenant)}
+//                             >
+//                               Reject Request
+//                             </Button>
+                            
+//                             <Button
+//                               fullWidth
+//                               variant="text"
+//                               startIcon={<VisibilityIcon />}
+//                               onClick={() => handleViewTenant(tenant)}
+//                             >
+//                               View Full Details
+//                             </Button>
+//                           </CardActions>
+//                         </Grid>
+//                       </Grid>
+//                     </CardContent>
+//                   </Card>
+//                 ))}
+              
+//               {filteredTenants.filter(t => t.status === 'pending').length === 0 && (
+//                 <Box sx={{ textAlign: 'center', py: 6 }}>
+//                   <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
+//                   <Typography variant="h6" color="text.secondary" gutterBottom>
+//                     No Pending Requests
+//                   </Typography>
+//                   <Typography variant="body2" color="text.secondary">
+//                     All tenant requests have been processed
+//                   </Typography>
+//                 </Box>
+//               )}
+//             </Stack>
+//           </TabPanel>
+
+//           {/* Tab 3: Analytics */}
+//           <TabPanel value={currentTab} index={2}>
+//             <Grid container spacing={3} sx={{ p: 2 }}>
+//               <Grid item xs={12} md={6}>
+//                 <Card sx={{ p: 3, height: '100%' }}>
+//                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+//                     <PieChartIcon sx={{ mr: 1 }} />
+//                     Status Distribution
+//                   </Typography>
+//                   <Box sx={{ mt: 3 }}>
+//                     <Stack spacing={2}>
+//                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                         <Typography variant="body2">Pending</Typography>
+//                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+//                           {stats.pending} ({((stats.pending / stats.total) * 100).toFixed(1)}%)
+//                         </Typography>
+//                       </Box>
+//                       <LinearProgress 
+//                         variant="determinate" 
+//                         value={(stats.pending / stats.total) * 100}
+//                         color="warning"
+//                         sx={{ height: 8, borderRadius: 4 }}
+//                       />
+                      
+//                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                         <Typography variant="body2">Approved</Typography>
+//                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+//                           {stats.approved} ({((stats.approved / stats.total) * 100).toFixed(1)}%)
+//                         </Typography>
+//                       </Box>
+//                       <LinearProgress 
+//                         variant="determinate" 
+//                         value={(stats.approved / stats.total) * 100}
+//                         color="success"
+//                         sx={{ height: 8, borderRadius: 4 }}
+//                       />
+                      
+//                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                         <Typography variant="body2">Rejected</Typography>
+//                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+//                           {stats.rejected} ({((stats.rejected / stats.total) * 100).toFixed(1)}%)
+//                         </Typography>
+//                       </Box>
+//                       <LinearProgress 
+//                         variant="determinate" 
+//                         value={(stats.rejected / stats.total) * 100}
+//                         color="error"
+//                         sx={{ height: 8, borderRadius: 4 }}
+//                       />
+//                     </Stack>
+//                   </Box>
+//                 </Card>
+//               </Grid>
+              
+//               <Grid item xs={12} md={6}>
+//                 <Card sx={{ p: 3, height: '100%' }}>
+//                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+//                     <BarChartIcon sx={{ mr: 1 }} />
+//                     Industry Breakdown
+//                   </Typography>
+//                   <Box sx={{ mt: 3 }}>
+//                     <Stack spacing={2}>
+//                       {[...new Set(tenants.map(t => t.industry))].map(industry => {
+//                         const count = tenants.filter(t => t.industry === industry).length;
+//                         const percentage = (count / tenants.length) * 100;
+                        
+//                         return (
+//                           <Box key={industry}>
+//                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                               <Typography variant="body2">{industry}</Typography>
+//                               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+//                                 {count} ({percentage.toFixed(1)}%)
+//                               </Typography>
+//                             </Box>
+//                             <LinearProgress 
+//                               variant="determinate" 
+//                               value={percentage}
+//                               sx={{ height: 6, borderRadius: 3, mt: 0.5 }}
+//                             />
+//                           </Box>
+//                         );
+//                       })}
+//                     </Stack>
+//                   </Box>
+//                 </Card>
+//               </Grid>
+              
+//               <Grid item xs={12}>
+//                 <Card sx={{ p: 3 }}>
+//                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+//                     <TimelineIcon sx={{ mr: 1 }} />
+//                     Key Metrics
+//                   </Typography>
+//                   <Grid container spacing={3} sx={{ mt: 2 }}>
+//                     <Grid item xs={12} sm={6} md={3}>
+//                       <Box sx={{ textAlign: 'center' }}>
+//                         <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
+//                           {Math.round(tenants.reduce((acc, t) => acc + t.estimated_users, 0) / tenants.length)}
+//                         </Typography>
+//                         <Typography variant="body2" color="text.secondary">
+//                           Avg Users per Tenant
+//                         </Typography>
+//                       </Box>
+//                     </Grid>
+                    
+//                     <Grid item xs={12} sm={6} md={3}>
+//                       <Box sx={{ textAlign: 'center' }}>
+//                         <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
+//                           ${Math.round(tenants.reduce((acc, t) => acc + t.monthly_budget, 0) / 1000)}K
+//                         </Typography>
+//                         <Typography variant="body2" color="text.secondary">
+//                           Total Monthly Revenue
+//                         </Typography>
+//                       </Box>
+//                     </Grid>
+                    
+//                     <Grid item xs={12} sm={6} md={3}>
+//                       <Box sx={{ textAlign: 'center' }}>
+//                         <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
+//                           {Math.round((stats.approved / stats.total) * 100)}%
+//                         </Typography>
+//                         <Typography variant="body2" color="text.secondary">
+//                           Approval Rate
+//                         </Typography>
+//                       </Box>
+//                     </Grid>
+                    
+//                     <Grid item xs={12} sm={6} md={3}>
+//                       <Box sx={{ textAlign: 'center' }}>
+//                         <Typography variant="h4" color="info.main" sx={{ fontWeight: 'bold' }}>
+//                           {Math.round(stats.thisWeek / 7 * 10) / 10}
+//                         </Typography>
+//                         <Typography variant="body2" color="text.secondary">
+//                           Avg Daily Requests
+//                         </Typography>
+//                       </Box>
+//                     </Grid>
+//                   </Grid>
+//                 </Card>
+//               </Grid>
+//             </Grid>
+//           </TabPanel>
+
+//           {/* Tab 4: Activity Log */}
+//           <TabPanel value={currentTab} index={3}>
+//             <List sx={{ p: 2 }}>
+//               {tenants
+//                 .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+//                 .slice(0, 20)
+//                 .map((tenant, index) => (
+//                   <ListItem key={`${tenant.id}-${index}`} sx={{ mb: 1 }}>
+//                     <ListItemAvatar>
+//                       <Avatar
+//                         sx={{
+//                           bgcolor: 
+//                             tenant.status === 'approved' ? 'success.main' :
+//                             tenant.status === 'pending' ? 'warning.main' :
+//                             'error.main'
+//                         }}
+//                       >
+//                         {getStatusIcon(tenant.status)}
+//                       </Avatar>
+//                     </ListItemAvatar>
+                    
+//                     <ListItemText
+//                       primary={
+//                         <Typography>
+//                           <strong>{tenant.tenant_name}</strong> - {tenant.status.toUpperCase()}
+//                         </Typography>
+//                       }
+//                       secondary={
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">
+//                             {formatDate(tenant.updated_at)} • {tenant.subscription_plan} Plan
+//                           </Typography>
+//                           {tenant.status === 'rejected' && tenant.rejection_reason && (
+//                             <Typography variant="body2" color="error.main" sx={{ mt: 0.5 }}>
+//                               Reason: {tenant.rejection_reason}
+//                             </Typography>
+//                           )}
+//                         </Box>
+//                       }
+//                     />
+                    
+//                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//                       <Chip
+//                         label={tenant.priority}
+//                         size="small"
+//                         sx={{ 
+//                           bgcolor: alpha(getPriorityColor(tenant.priority), 0.1),
+//                           color: getPriorityColor(tenant.priority)
+//                         }}
+//                       />
+//                     </Box>
+//                   </ListItem>
+//                 ))}
+//             </List>
+//           </TabPanel>
+//         </Card>
+//       </Container>
+
+//       {/* Floating Action Button */}
+//       <SpeedDial
+//         ariaLabel="Quick Actions"
+//         sx={{ position: 'fixed', bottom: 16, right: 16 }}
+//         icon={<SpeedDialIcon />}
+//       >
+//         <SpeedDialAction
+//           icon={<RefreshIcon />}
+//           tooltipTitle="Refresh Data"
+//           onClick={() => fetchTenants(false)}
+//         />
+//         <SpeedDialAction
+//           icon={<DownloadIcon />}
+//           tooltipTitle="Export Data"
+//           onClick={(e) => setBulkActionAnchor(e.currentTarget)}
+//         />
+//         <SpeedDialAction
+//           icon={<AnalyticsIcon />}
+//           tooltipTitle="View Analytics"
+//           onClick={() => setCurrentTab(2)}
+//         />
+//       </SpeedDial>
+
+//       {/* Tenant Details Dialog */}
+//       <Dialog
+//         open={dialogOpen}
+//         onClose={() => setDialogOpen(false)}
+//         maxWidth="lg"
+//         fullWidth
+//         PaperProps={{ sx: { borderRadius: 3 } }}
+//       >
+//         <DialogTitle sx={{ pb: 1 }}>
+//           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+//               {selectedTenant?.tenant_name} - Detailed Information
+//             </Typography>
+//             <IconButton onClick={() => setDialogOpen(false)}>
+//               <CloseIcon />
+//             </IconButton>
+//           </Box>
+//         </DialogTitle>
+        
+//         <DialogContent>
+//           {selectedTenant && (
+//             <Grid container spacing={3}>
+//               <Grid item xs={12} md={6}>
+//                 <Stack spacing={3}>
+//                   <Card variant="outlined">
+//                     <CardContent>
+//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+//                         <BusinessIcon sx={{ mr: 1 }} />
+//                         Company Information
+//                       </Typography>
+//                       <Stack spacing={1}>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Company Name</Typography>
+//                           <Typography variant="body1">{selectedTenant.tenant_name}</Typography>
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Industry</Typography>
+//                           <Typography variant="body1">{selectedTenant.industry}</Typography>
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Company Size</Typography>
+//                           <Typography variant="body1">{selectedTenant.company_size}</Typography>
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Website</Typography>
+//                           <Link href={selectedTenant.website} target="_blank" rel="noopener">
+//                             {selectedTenant.website}
+//                           </Link>
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Tax ID</Typography>
+//                           <Typography variant="body1">{selectedTenant.tax_id}</Typography>
+//                         </Box>
+//                       </Stack>
+//                     </CardContent>
+//                   </Card>
+                  
+//                   <Card variant="outlined">
+//                     <CardContent>
+//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+//                         <PeopleIcon sx={{ mr: 1 }} />
+//                         Contact Information
+//                       </Typography>
+//                       <Stack spacing={1}>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Contact Person</Typography>
+//                           <Typography variant="body1">{selectedTenant.contact_person}</Typography>
+//                         </Box>
+//                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//                           <EmailIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
+//                           <Typography variant="body1">{selectedTenant.email}</Typography>
+//                         </Box>
+//                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+//                           <PhoneIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
+//                           <Typography variant="body1">{selectedTenant.phone}</Typography>
+//                         </Box>
+//                         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+//                           <LocationOnIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary', mt: 0.5 }} />
+//                           <Typography variant="body1">{selectedTenant.address}</Typography>
+//                         </Box>
+//                       </Stack>
+//                     </CardContent>
+//                   </Card>
+//                 </Stack>
+//               </Grid>
+              
+//               <Grid item xs={12} md={6}>
+//                 <Stack spacing={3}>
+//                   <Card variant="outlined">
+//                     <CardContent>
+//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+//                         <AttachMoneyIcon sx={{ mr: 1 }} />
+//                         Subscription Details
+//                       </Typography>
+//                       <Stack spacing={1}>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Plan</Typography>
+//                           <Chip 
+//                             label={selectedTenant.subscription_plan}
+//                             color={
+//                               selectedTenant.subscription_plan === 'Enterprise' ? 'primary' :
+//                               selectedTenant.subscription_plan === 'Premium' ? 'secondary' : 'default'
+//                             }
+//                             sx={{ mt: 2 }}
+//             />
 //             </Box>
+//             </Stack>
+//             </CardContent>
+//             </Card>
+//           </Stack>
+
+//             <DialogContent>
+//               {actionDialog.type === 'reject' && (
+//                 <TextField
+//                   fullWidth
+//                   multiline
+//                   rows={4}
+//                   variant="outlined"
+//                   label="Reason for Rejection"
+//                   value={actionReason}
+//                   onChange={(e) => setActionReason(e.target.value)}
+//                 />
+//               )}
+//             </DialogContent>
+//           <DialogActions>
+//             <Button onClick={() => setActionDialog({ open: false, type: '', tenant: null })}>
+//               Cancel
+//             </Button>
+//             <Button
+//               variant="contained"
+//               color={actionDialog.type === 'approve' ? 'success' : 'error'}
+//               onClick={() => handleStatusUpdate(actionDialog.tenant?.id, actionDialog.type === 'approve' ? 'approved' : 'rejected', actionReason)}
+//             >
+//               {actionDialog.type === 'approve' ? 'Approve' : 'Reject'}
+//             </Button>
+//           </DialogActions>
+//             <Button onClick={() => setActionDialog({ open: false, type: '', tenant: null })}>
+//               Cancel
+//             </Button>
+//             <Button
+//             variant="contained"
+//             color={actionDialog.type === 'approve' ? 'success' : 'error'}
+//             onClick={() => handleStatusUpdate(actionDialog.tenant?.id, actionDialog.type === 'approve' ? 'approved' : 'rejected', actionReason)}
+//           >
+//             {actionDialog.type === 'approve' ? 'Approve' : 'Reject'}
+//           </Button>
+
+//       {/* Context Menu */}
+//       <Menu
+//         anchorEl={anchorEl}
+//         open={Boolean(anchorEl)}
+//         onClose={() => setAnchorEl(null)}
+//       >
+//         <MenuItem onClick={() => handleViewTenant(selectedTenant)}>
+//           <ListItemIcon>
+//             <VisibilityIcon fontSize="small" />
+//           </ListItemIcon>
+//           <ListItemText>View Details</ListItemText>
+//         </MenuItem>
+        
+//         {selectedTenant?.status === 'pending' && (
+//           <>
+//             <MenuItem onClick={() => {
+//               setAnchorEl(null);
+//               openActionDialog('approve', selectedTenant);
+//             }}>
+//               <ListItemIcon>
+//                 <CheckCircleIcon fontSize="small" />
+//               </ListItemIcon>
+//               <ListItemText>Approve</ListItemText>
+//             </MenuItem>
+            
+//             <MenuItem onClick={() => {
+//               setAnchorEl(null);
+//               openActionDialog('reject', selectedTenant);
+//             }}>
+//               <ListItemIcon>
+//                 <CancelIcon fontSize="small" />
+//               </ListItemIcon>
+//               <ListItemText>Reject</ListItemText>
+//             </MenuItem>
+//           </>
+//         )}
+        
+//         <Divider />
+        
+//         <MenuItem onClick={() => {
+//           setAnchorEl(null);
+//           // Add edit functionality here
+//         }}>
+//           <ListItemIcon>
+//             <EditIcon fontSize="small" />
+//           </ListItemIcon>
+//           <ListItemText>Edit Details</ListItemText>
+//         </MenuItem>
+        
+//         <MenuItem onClick={() => {
+//           setAnchorEl(null);
+//           // Add delete functionality here
+//         }}>
+//           <ListItemIcon>
+//             <DeleteIcon fontSize="small" />
+//           </ListItemIcon>
+//           <ListItemText>Delete Request</ListItemText>
+//         </MenuItem>
+//       </Menu>
+
+//       {/* Bulk Actions Menu */}
+//       <Menu
+//         anchorEl={bulkActionAnchor}
+//         open={Boolean(bulkActionAnchor)}
+//         onClose={() => setBulkActionAnchor(null)}
+//       >
+//         <MenuItem onClick={() => {
+//           setBulkActionAnchor(null);
+//           handleExportData('csv');
+//         }}>
+//           <ListItemIcon>
+//             <DownloadIcon fontSize="small" />
+//           </ListItemIcon>
+//           <ListItemText>Export as CSV</ListItemText>
+//         </MenuItem>
+        
+//         <MenuItem onClick={() => {
+//           setBulkActionAnchor(null);
+//           handleExportData('xlsx');
+//         }}>
+//           <ListItemIcon>
+//             <DownloadIcon fontSize="small" />
+//           </ListItemIcon>
+//           <ListItemText>Export as Excel</ListItemText>
+//         </MenuItem>
+        
+//         <MenuItem onClick={() => {
+//           setBulkActionAnchor(null);
+//           handleExportData('pdf');
+//         }}>
+//           <ListItemIcon>
+//             <DownloadIcon fontSize="small" />
+//           </ListItemIcon>
+//           <ListItemText>Export as PDF</ListItemText>
+//         </MenuItem>
+//       </Menu>
+
+//       {/* Snackbar for notifications */}
+//       <Snackbar
+//         open={snackbar.open}
+//         autoHideDuration={6000}
+//         onClose={handleCloseSnackbar}
+//         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+//       >
+//         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+//           {snackbar.message}
+//         </Alert>
+//       </Snackbar>
+    
+ 
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Estimated Users</Typography>
+//                           <Typography variant="body1">{selectedTenant.estimated_users}</Typography>
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Monthly Budget</Typography>
+//                           <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+//                             ${selectedTenant.monthly_budget}
+//                           </Typography>
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Status</Typography>
+//                           <Chip
+//                             icon={getStatusIcon(selectedTenant.status)}
+//                             label={selectedTenant.status.toUpperCase()}
+//                             color={getStatusColor(selectedTenant.status)}
+//                             sx={{ mt: 0.5 }}
+//                           />
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Priority</Typography>
+//                           <Chip
+//                             label={selectedTenant.priority}
+//                             size="small"
+//                             sx={{ 
+//                               mt: 0.5,
+//                               bgcolor: alpha(getPriorityColor(selectedTenant.priority), 0.1),
+//                               color: getPriorityColor(selectedTenant.priority)
+//                             }}
+//                           />
+//                         </Box>
+                      
+                  
+//                   <Card variant="outlined">
+//                     <CardContent>
+//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+//                         <SettingsIcon sx={{ mr: 1 }} />
+//                         Requested Features
+//                       </Typography>
+//                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+//                         {selectedTenant.requested_features?.map((feature, index) => (
+//                           <Chip
+//                             key={index}
+//                             label={feature}
+//                             variant="outlined"
+//                             size="small"
+//                           />
+//                         ))}
+//                       </Box>
+//                     </CardContent>
+//                   </Card>
+                  
+//                   <Card variant="outlined">
+//                     <CardContent>
+//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+//                         <CalendarTodayIcon sx={{ mr: 1 }} />
+//                         Timeline
+//                       </Typography>
+//                       <Stack spacing={1}>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Request Date</Typography>
+//                           <Typography variant="body1">{formatDate(selectedTenant.created_at)}</Typography>
+//                         </Box>
+//                         <Box>
+//                           <Typography variant="body2" color="text.secondary">Last Updated</Typography>
+//                           <Typography variant="body1">{formatDate(selectedTenant.updated_at)}</Typography>
+//                         </Box>
+//                         {selectedTenant.status === 'rejected' && selectedTenant.rejection_reason && (
+//                           <Box>
+//                             <Typography variant="body2" color="text.secondary">Rejection Reason</Typography>
+//                             <Typography variant="body1" color="error.main">
+//                               {selectedTenant.rejection_reason}
+//                             </Typography>
+//                           </Box>
+//                         )}
+//                       </Stack>
+//                     </CardContent>
+//                   </Card>
+                
+//               </Grid>
+//             </Grid>
 //           )}
-//         </Box>
-//       </Box>
-//     </ThemeProvider>
-//   );
+//         </DialogContent>
+        
+//         <DialogActions sx={{ p: 3, pt: 1 }}>
+//           <Button onClick={() => setDialogOpen(false)}>
+//             Close
+//           </Button>
+//           {selectedTenant?.status === 'pending' && (
+//             <>
+//               <Button
+//                 variant="contained"
+//                 color="success"
+//                 startIcon={<CheckCircleIcon />}
+//                 onClick={() => {
+//                   setDialogOpen(false);
+//                   openActionDialog('approve', selectedTenant);
+//                 }}
+//               >
+//                 Approve
+//               </Button>
+//               <Button
+//                 variant="contained"
+//                 color="error"
+//                 startIcon={<CancelIcon />}
+//                 onClick={() => {
+//                   setDialogOpen(false);
+//                   openActionDialog('reject', selectedTenant);
+//                 }}
+//               >
+//                 Reject
+//               </Button>
+//             </>
+//           )}
+//         </DialogActions>
+//       </Dialog>
+
+//       {/* Action Confirmation Dialog */}
+//       <Dialog
+//         open={actionDialog.open}
+//         onClose={() => setActionDialog({ open: false, type: '', tenant: null })}
+//         maxWidth="sm"
+//         fullWidth
+//       >
+//         <DialogTitle>
+//           {actionDialog.type === 'approve' ? 'Approve Tenant Request' : 'Reject Tenant Request'}
+//         </DialogTitle>
+//         <DialogContent>
+//           <Typography variant="body1" gutterBottom>
+//             Are you sure you want to {actionDialog.type} the request from{' '}
+//             <strong>{actionDialog.tenant?.tenant_name}</strong>?
+//           </Typography>
+          
+//           {actionDialog.type === 'reject' && (
+//             <TextField
+//               fullWidth
+//               multiline
+//               rows={3}
+//               label="Reason for rejection (optional)"
+//               value={actionReason}
+//               onChange={(e) => setActionReason(e.target.value)}
+//               sx={{ mt: 2 }}
+//               inputProps={{ maxLength: 500 }}
+//             />
+//           )}
+//         </DialogContent>
+//       </Dialog>
+
+//   </Box>
+// )
 // };
 
 // export default SuperAdminDashboard;

@@ -30,6 +30,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
@@ -80,6 +81,7 @@ const Sidebar = () => {
             path: "/tenant-admin/users",
             badge: userStats.totalUsers,
           },
+          { text: "Invite People", icon: <PersonAddIcon />, path: "/tenant-admin/createuser" },
         ],
       },
       {
@@ -160,19 +162,7 @@ const Sidebar = () => {
         </IconButton>
       </Box>
 
-      {/* Back Button */}
-      <Box sx={{ px: 1, py: 1 }}>
-        <Tooltip title="Back to Home" placement="right">
-          <ListItemButton onClick={() => navigate("/")}>
-            <ListItemIcon>
-              <ArrowBackIcon sx={{ color: "primary.main" }} />
-            </ListItemIcon>
-            {!collapsed && <ListItemText primary="Back to Home" />}
-          </ListItemButton>
-        </Tooltip>
-      </Box>
-
-      <Divider />
+      
 
       {/* Menu Sections */}
       <List sx={{ flexGrow: 1 }}>
@@ -243,6 +233,21 @@ const Sidebar = () => {
           </Box>
         ))}
       </List>
+
+      <Divider/>
+      {/* Back Button */}
+      <Box sx={{ px: 1, py: 1 }}>
+        <Tooltip title="Back to Home" placement="right">
+          <ListItemButton onClick={() => navigate("/")}>
+            <ListItemIcon>
+              <ArrowBackIcon sx={{ color: "primary.main" }} />
+            </ListItemIcon>
+            {!collapsed && <ListItemText primary="Back to Home" />}
+          </ListItemButton>
+        </Tooltip>
+      </Box>
+
+      <Divider />
 
       <Divider />
 
