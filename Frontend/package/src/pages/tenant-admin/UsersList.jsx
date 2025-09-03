@@ -15,21 +15,18 @@ import {
   IconButton,
   Chip,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   TextField,
   Snackbar,
   Alert,
   Stack,
-  MenuItem,
-  FormHelperText,
+  Tooltip,
+
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { TenantRequestContext } from "../../context/TenantRequestContext";
-import { tenantApi } from "../../services/tenantAdminAPI"; // 👈 import api
+import { Box } from "@mui/system";
+import { useNavigate } from "react-router";
 
 const UsersList = () => {
   const {
@@ -45,14 +42,16 @@ const UsersList = () => {
   const [open, setOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newTenantId, setNewTenantId] = useState("");
-  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [snack, setSnack] = useState({ open: false, type: "", msg: "" });
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
+  const navigate = useNavigate();
   useEffect(() => {
     if (tenantId) {
       fetchTenantUsers(tenantId);
-      setNewTenantId(tenantId); // auto-fill tenantId
+      setNewTenantId(tenantId);
     }
   }, [tenantId]);
 
@@ -65,164 +64,163 @@ const UsersList = () => {
     return Object.keys(temp).length === 0;
   };
 
-  const handleAddUser = async () => {
-    if (!validate()) return;
+  const handleCloseSnack = () => setSnack({ open: false, type: "", msg: "" });
 
-    setLoading(true);
-    try {
-      const result = await tenantApi.addTenantUser(newTenantId, newEmail);
-
-      setSnack({
-        open: true,
-        type: "success",
-        msg: result.message || "User invited successfully",
-      });
-
-      setNewEmail("");
-      setOpen(false);
-      fetchTenantUsers(newTenantId); // refresh list
-    } catch (err) {
-      console.error("Add user error:", err);
-
-      // Handle duplicate user error specifically
-      if (err.message?.toLowerCase().includes("exists")) {
-        setErrors({ email: "This user already exists in tenant. Try another email." });
-      }
-
-      setSnack({
-        open: true,
-        type: "error",
-        msg: err.message || "Failed to add user",
-      });
-    } finally {
-      setLoading(false);
+  const getStatusColor = (status) => {
+    switch ((status || "Active").toLowerCase()) {
+      case "active":
+        return "success";
+      case "pending":
+        return "warning";
+      case "blocked":
+        return "error";
+      default:
+        return "default";
     }
   };
 
-  const handleCloseSnack = () => setSnack({ open: false, type: "", msg: "" });
-
-  if (loadingUsers) {
-    return (
-      <Grid container justifyContent="center" sx={{ mt: 5 }}>
-        <CircularProgress />
-      </Grid>
-    );
-  }
-
-  if (errorUsers) {
-    return (
-      <Typography color="error" textAlign="center" sx={{ mt: 5 }}>
-        {errorUsers}
-      </Typography>
-    );
-  }
+  const filteredUsers = tenantUsers.filter(
+    (u) =>
+      (statusFilter === "all" ||
+        u.status?.toLowerCase() === statusFilter.toLowerCase()) &&
+      (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
-    <div>
-      <Grid container justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h5">
-          Users Management {tenantDetails ? `- ${tenantDetails.name}` : ""}
-          <Typography component="span" variant="subtitle2" sx={{ ml: 1, color: "text.secondary" }}>
-            ({userStats.totalUsers || 0} users)
+    <Box>
+      {/* Header + Stats */}
+      <Grid
+        container
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 3 }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+            Users Management
           </Typography>
-        </Typography>
-        <Button variant="contained" color="primary" onClick={() => setOpen(true)}>
+          <Typography variant="subtitle1" color="text.secondary">
+            {tenantDetails ? `Tenant: ${tenantDetails.name}` : ""} | Total
+            Users: <strong>{userStats.totalUsers || 0}</strong>
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => navigate("/tenant-admin/createuser")}
+        >
           Add New User
         </Button>
       </Grid>
 
-      <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Tenant Users
-          </Typography>
+      {/* Filters */}
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} md={6}>
+          <TextField
+            label="Search by name/email"
+            fullWidth
+            size="small"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </Grid>
+        {/* <Grid item xs={12} md={3}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Status Filter</InputLabel>
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="blocked">Blocked</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid> */}
+      </Grid>
 
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>User Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {tenantUsers.length > 0 ? (
-                  tenantUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.name || user.email.split("@")[0]}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={user.status || "Active"}
-                          color={(user.status || "Active") === "Active" ? "success" : "default"}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton color="primary">
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton color="error">
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+      {/* Loading/Error */}
+      {loadingUsers ? (
+        <Grid container justifyContent="center" sx={{ mt: 5 }}>
+          <CircularProgress />
+        </Grid>
+      ) : errorUsers ? (
+        <Typography color="error" textAlign="center" sx={{ mt: 5 }}>
+          {errorUsers}
+        </Typography>
+      ) : (
+        <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
+              Tenant Users
+            </Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
-                      No users found
+                    <TableCell>
+                      <strong>Name</strong>
+                    </TableCell>
+                    <TableCell>
+                      <strong>Email</strong>
+                    </TableCell>
+                    <TableCell>
+                      <strong>Status</strong>
+                    </TableCell>
+                    <TableCell align="right">
+                      <strong>Actions</strong>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+                </TableHead>
+                <TableBody>
+                  {filteredUsers.length > 0 ? (
+                    filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          {user.name || user.email.split("@")[0]}
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={user.status || "Active"}
+                            color={getStatusColor(user.status)}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            justifyContent="flex-end"
+                          >
+                            <Tooltip title="Edit User">
+                              <IconButton color="primary">
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete User">
+                              <IconButton color="error">
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        No users found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Add User Modal */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Invite New User</DialogTitle>
-        <DialogContent dividers>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField
-              label="Tenant ID"
-              fullWidth
-              value={newTenantId}
-              onChange={(e) => setNewTenantId(e.target.value)}
-              error={!!errors.tenantId}
-              helperText={errors.tenantId}
-              disabled={!!tenantId}
-            />
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              error={!!errors.email}
-              helperText={errors.email}
-            />
-            
-            <FormHelperText>Here,user will be added under the Tenant.</FormHelperText>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={handleAddUser}
-            disabled={loading}
-            sx={{ minWidth: 120 }}
-          >
-            {loading ? <CircularProgress size={22} color="inherit" /> : "Add User"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
+      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={4000}
@@ -237,7 +235,7 @@ const UsersList = () => {
           {snack.msg}
         </Alert>
       </Snackbar>
-    </div>
+    </Box>
   );
 };
 

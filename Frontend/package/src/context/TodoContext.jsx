@@ -18,7 +18,6 @@ export const TodosProvider = ({ children }) => {
     return;
   }
 
-  console.log(user?.token)
 
   setLoading(true);
   try {
