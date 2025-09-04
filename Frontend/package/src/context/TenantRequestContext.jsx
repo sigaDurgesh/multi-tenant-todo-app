@@ -35,6 +35,7 @@ export const TenantRequestProvider = ({ children }) => {
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [errorRequests, setErrorRequests] = useState(null);
 
+    const superAdminId = "4428afd9-1f97-47b1-8939-9d4953c272d0";
   // ----------------------------
   // Tenant Users Stats
   // ----------------------------
@@ -187,6 +188,7 @@ export const TenantRequestProvider = ({ children }) => {
         tenantDetails,
         fetchTenantDetails,
         tenantUsers,
+        superAdminId,
         fetchTenantUsers,
         loadingUsers,
         errorUsers,

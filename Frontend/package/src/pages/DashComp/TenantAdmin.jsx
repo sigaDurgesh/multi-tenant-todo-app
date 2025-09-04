@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useCallback } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Box,
   Grid,
@@ -16,24 +16,18 @@ import {
   Avatar,
   Chip,
   CircularProgress,
-  Button,
   TextField,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Snackbar,
   Alert,
+  InputLabel,
 } from "@mui/material";
 import {
-  PersonAdd as PersonAddIcon,
-  Group as GroupIcon,
-  Assessment as AssessmentIcon,
-  Settings as SettingsIcon,
   Pending as PendingIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
-  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import { TenantRequestContext } from "../../context/TenantRequestContext";
 import { format } from "date-fns";
@@ -50,8 +44,11 @@ const TenantAdminDashboard = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [refreshing, setRefreshing] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const safeFormatDate = (date) => {
     if (!date) return "-";
@@ -69,6 +66,7 @@ const TenantAdminDashboard = () => {
     }
   };
 
+
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
       case "pending": return <PendingIcon fontSize="small" />;
@@ -79,23 +77,24 @@ const TenantAdminDashboard = () => {
     }
   };
 
-  const fetchUsers = useCallback(async () => {
-    if (!tenantId) return;
-    try {
-      setRefreshing(true);
-      await fetchTenantUsers(tenantId);
-      setRefreshing(false);
-    } catch (err) {
-      setRefreshing(false);
-      setSnackbar({ open: true, message: "Failed to fetch users", severity: "error" });
-    }
-  }, [tenantId, fetchTenantUsers]);
+const fetchUsers = useCallback(async () => {
+  if (!tenantId) return;
+  try {
+    setRefreshing(true);
+    await fetchTenantUsers(tenantId);
+  } catch (err) {
+    console.error("Error fetching tenant users:", err);
+  } finally {
+    setRefreshing(false);
+  }
+}, [tenantId, fetchTenantUsers]);
 
-  // useEffect(() => {
-  //   fetchUsers();
-  //   const interval = setInterval(fetchUsers, 30000); // Auto refresh every 30s
-  //   return () => clearInterval(interval);
-  // }, [fetchUsers]);
+useEffect(() => {
+  if (!tenantId) return;
+  fetchUsers();
+  const interval = setInterval(fetchUsers, 30000);
+  return () => clearInterval(interval);
+}, [tenantId, fetchUsers]);
 
   const filteredUsers = tenantUsers.filter(
     (user) =>
@@ -114,7 +113,7 @@ const TenantAdminDashboard = () => {
       </Typography>
 
       {/* Loading/Error */}
-      {(loadingUsers || refreshing) && (
+      {loadingUsers && (
         <Grid container justifyContent="center" sx={{ mt: 3 }}>
           <CircularProgress />
         </Grid>
@@ -126,74 +125,82 @@ const TenantAdminDashboard = () => {
       )}
 
       {/* Summary Cards */}
-      {!loadingUsers && !errorUsers && (
-        <Grid container spacing={3} sx={{ mt: 2 }}>
-          {[
-            { title: "Total Users", value: userStats.totalUsers || 0, color: "primary" },
-            { title: "Active Users", value: userStats.byStatus?.Active || 0, color: "success" },
-            { title: "Pending Users", value: userStats.byStatus?.Pending || 0, color: "warning" },
-            { title: "Rejected Users", value: userStats.byStatus?.Rejected || 0, color: "error" },
-          ].map((stat) => (
-            <Grid item xs={12} sm={6} md={3} key={stat.title}>
-              <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-                <CardContent>
-                  <Typography variant="h6">{stat.title}</Typography>
-                  <Typography variant="h4" color={stat.color}>
-                    {stat.value}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+{!loadingUsers && !errorUsers && (
+  <Grid container spacing={3} sx={{ mt: 2 }}>
+    {[
+      {
+        title: "Total Users",
+        value: userStats.totalUsers || 0,
+        color: "primary",
+      },
+      {
+        title: "Active Users",
+        value: userStats.totalUsers || 0,
+        color: "success",
+      },
+      // {
+      //   title: "Pending Users",
+      //   value: userStats.byStatus?.Pending || 0,
+      //   color: "warning",
+      // },
+      // {
+      //   title: "Rejected Users",
+      //   value: userStats.byStatus?.Rejected || 0,
+      //   color: "error",
+      // },
+      // {
+      //   title: "Approved Users",
+      //   value: userStats.byStatus?.Approved || 0,
+      //   color: "success",
+      // },
+      {
+        title: "Inactive Users",
+        value: userStats.byStatus?.Inactive || 0,
+        color: "default",
+      },
+    ].map((stat) => (
+      <Grid item xs={12} sm={6} md={3} key={stat.title}>
+        <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+          <CardContent>
+            <Typography variant="h6">{stat.title}</Typography>
+            <Typography
+              variant="h4"
+              color={stat.color === "default" ? "textSecondary" : stat.color}
+            >
+              {stat.value}
+            </Typography>
+          </CardContent>
+        </Card>
+      </Grid>
+    ))}
+  </Grid>
+)}
 
-      {/* Quick Actions */}
-      {/* <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>Quick Actions</Typography>
-          <Divider sx={{ mb: 2 }} />
-          <Grid container spacing={2}>
-            <Grid item>
-              <Button variant="contained" color="primary" startIcon={<PersonAddIcon />}>Add User</Button>
-            </Grid>
-            <Grid item>
-              <Button variant="outlined" color="secondary" startIcon={<GroupIcon />}>Manage Users</Button>
-            </Grid>
-            <Grid item>
-              <Button variant="outlined" color="success" startIcon={<AssessmentIcon />}>View Reports</Button>
-            </Grid>
-            <Grid item>
-              <Button variant="outlined" color="warning" startIcon={<SettingsIcon />}>Tenant Settings</Button>
-            </Grid>
-            <Grid item>
-              <Button variant="outlined" color="info" startIcon={<RefreshIcon />} onClick={fetchUsers}>Refresh</Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card> */}
 
       {/* Filters */}
       {!loadingUsers && !errorUsers && (
         <Card sx={{ mt: 3, p: 2, borderRadius: 2, boxShadow: 3 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
-              <TextField fullWidth size="small" label="Search Users" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <TextField
+                fullWidth
+                size="small"
+                label="Search Users"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </Grid>
             <Grid item xs={12} md={3}>
-              
               <FormControl fullWidth size="small">
-                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <InputLabel >Status Filter</InputLabel>
+                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} >
                   <MenuItem value="all">All</MenuItem>
                   <MenuItem value="active">Active</MenuItem>
                   <MenuItem value="pending">Pending</MenuItem>
                   <MenuItem value="rejected">Rejected</MenuItem>
                 </Select>
               </FormControl>
-              
             </Grid>
-                            <InputLabel style={{color:'orange'}}>Status Filter</InputLabel>
-
           </Grid>
         </Card>
       )}
@@ -220,7 +227,7 @@ const TenantAdminDashboard = () => {
                     <TableRow key={index}>
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Avatar sx={{ mr: 1, bgcolor: "primary.main" }}>{user.name?.charAt(0) || user.email.charAt(0)}</Avatar>
+                          <Avatar sx={{ mr: 1, bgcolor: "primary.main" }}> {user.name?.charAt(0) || user.email.charAt(0)} </Avatar>
                           {user.name || user.email.split("@")[0]}
                         </Box>
                       </TableCell>
@@ -240,7 +247,7 @@ const TenantAdminDashboard = () => {
       )}
 
       {/* Snackbar */}
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>

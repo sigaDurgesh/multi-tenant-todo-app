@@ -12,25 +12,24 @@ import {
   Divider,
   IconButton,
   Tooltip,
-  Switch,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
-import ApartmentIcon from "@mui/icons-material/Apartment";
-import NoteAddIcon from "@mui/icons-material/NoteAdd";
-import ListAltIcon from "@mui/icons-material/ListAlt";
 import AddBusinessIcon from "@mui/icons-material/AddBusiness";
-import LoginIcon from "@mui/icons-material/Login";
-import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import PersonIcon from "@mui/icons-material/Person";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MenuIcon from "@mui/icons-material/Menu";
 import LogoutIcon from "@mui/icons-material/Logout";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import ApartmentIcon from '@mui/icons-material/Apartment';
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
@@ -43,10 +42,30 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const [collapsed, setCollapsed] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
 
   const toggleCollapse = () => setCollapsed(!collapsed);
   const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  // Dropdown handlers
+  const handleMenuOpen = (event) => setMenuAnchor(event.currentTarget);
+  const handleMenuClose = () => setMenuAnchor(null);
+
+ const handleLogout = () => {
+  const confirmLogout = window.confirm("Are you sure you want to logout?");
+  if (confirmLogout) {
+    logout();
+    navigate("/login");
+  }
+  handleMenuClose();
+};
+
+
+  const handleInvitePeople = () => {
+    navigate("/tenant-admin/createuser");
+    handleMenuClose();
+  };
 
   // Role-based menu config
   const menuItems = {
@@ -55,8 +74,16 @@ const Sidebar = () => {
         section: "Main",
         items: [
           { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
-          { text: "Tenants", icon: <ApartmentIcon />, path: "/superAdmin/tenants" },
-          { text: "Create Tenant", icon: <AddBusinessIcon />, path: "/superAdmin/create" },
+          {
+            text: "Tenants",
+            icon: <ApartmentIcon />,
+            path: "/superAdmin/tenants",
+          },
+          {
+            text: "Create Tenant",
+            icon: <AddBusinessIcon />,
+            path: "/superAdmin/create",
+          },
           {
             text: "Tenant Requests",
             icon: <NoteAddIcon />,
@@ -81,34 +108,16 @@ const Sidebar = () => {
             path: "/tenant-admin/users",
             badge: userStats.totalUsers,
           },
-          { text: "Invite People", icon: <PersonAddIcon />, path: "/tenant-admin/createuser" },
+          {
+            text: "Invite People",
+            icon: <PersonAddIcon />,
+            path: "/tenant-admin/createuser",
+          },
         ],
       },
       {
         section: "Account",
         items: [{ text: "Profile", icon: <PersonIcon />, path: "/profile" }],
-      },
-    ],
-    user: [
-      {
-        section: "Todos",
-        items: [
-          { text: "Add Todos", icon: <NoteAddIcon />, path: "/user/addtodos" },
-          { text: "My Todos", icon: <ListAltIcon />, path: "/user/todos" },
-        ],
-      },
-      {
-        section: "Account",
-        items: [{ text: "Profile", icon: <PersonIcon />, path: "/profile" }],
-      },
-    ],
-    guest: [
-      {
-        section: "Access",
-        items: [
-          { text: "Login", icon: <LoginIcon />, path: "/login" },
-          { text: "Register", icon: <AppRegistrationIcon />, path: "/register" },
-        ],
       },
     ],
   };
@@ -124,7 +133,7 @@ const Sidebar = () => {
         [`& .MuiDrawer-paper`]: {
           width: collapsed ? 80 : 260,
           boxSizing: "border-box",
-          backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+          backgroundColor: darkMode ? "#452446ff" : "#fff",
           color: darkMode ? "#fff" : "#000",
           transition: "width 0.3s",
           borderRight: "1px solid #eee",
@@ -138,40 +147,76 @@ const Sidebar = () => {
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
           p: 2,
-          bgcolor: "primary.main",
+          bgcolor: "#b144faff",
           color: "white",
+          cursor: "pointer",
         }}
+        onClick={handleMenuOpen}
       >
         {!collapsed && (
           <Box display="flex" alignItems="center">
-            <Avatar sx={{ bgcolor: "secondary.main", mr: 1 }}>
+            <Avatar sx={{ bgcolor: "primary.main", mr: 1 }}>
               {user?.tenant_name ? user.tenant_name[0].toUpperCase() : "?"}
             </Avatar>
             <Box>
               <Typography variant="subtitle2" fontWeight="bold">
-                {user?.name || (role === "superAdmin" ? "Super Admin" : "Guest")}
+                {user?.tenant_name || user?.name || "Tenant Admin"}
               </Typography>
+
               <Typography variant="caption" sx={{ opacity: 0.8 }}>
                 {role}
               </Typography>
             </Box>
+            <KeyboardArrowDownIcon fontSize="small" /> {/* ✅ Down arrow */}
           </Box>
         )}
-        <IconButton size="small" onClick={toggleCollapse}>
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleCollapse();
+          }}
+        >
           <MenuIcon sx={{ color: "white" }} />
         </IconButton>
       </Box>
 
-      
+      {/* Dropdown Menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+      >
+        <MenuItem onClick={handleInvitePeople}>
+          <PersonAddIcon fontSize="small" sx={{ mr: 1 }} />
+          Invite People
+        </MenuItem>
+        <MenuItem onClick={handleMenuClose}>
+          <AddBusinessIcon fontSize="small" sx={{ mr: 1 }} />
+          Upgrade Tenant
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleLogout}>
+          <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+          Logout
+        </MenuItem>
+      </Menu>
 
-      {/* Menu Sections */}
+      {/* Role-based Menu */}
       <List sx={{ flexGrow: 1 }}>
         {(menuItems[role] || []).map((section) => (
           <Box key={section.section} sx={{ mb: 2 }}>
             {!collapsed && (
               <Typography
                 variant="caption"
-                sx={{ pl: 2, pb: 1, fontWeight: "bold", color: "text.secondary" }}
+                sx={{
+                  pl: 2,
+                  pb: 1,
+                  fontWeight: "bold",
+                  color: "text.secondary",
+                }}
               >
                 {section.section}
               </Typography>
@@ -199,10 +244,7 @@ const Sidebar = () => {
                     <ListItemIcon sx={{ minWidth: 40 }}>
                       {item.badge ? (
                         <Box
-                          sx={{
-                            position: "relative",
-                            display: "inline-flex",
-                          }}
+                          sx={{ position: "relative", display: "inline-flex" }}
                         >
                           {item.icon}
                           <Box
@@ -234,7 +276,8 @@ const Sidebar = () => {
         ))}
       </List>
 
-      <Divider/>
+      <Divider />
+
       {/* Back Button */}
       <Box sx={{ px: 1, py: 1 }}>
         <Tooltip title="Back to Home" placement="right">
@@ -246,8 +289,6 @@ const Sidebar = () => {
           </ListItemButton>
         </Tooltip>
       </Box>
-
-      <Divider />
 
       <Divider />
 
@@ -279,7 +320,7 @@ const Sidebar = () => {
           {/* Logout */}
           {user && (
             <Tooltip title="Logout" placement="top">
-              <IconButton onClick={logout}>
+              <IconButton onClick={handleLogout}>
                 <LogoutIcon color="error" />
               </IconButton>
             </Tooltip>

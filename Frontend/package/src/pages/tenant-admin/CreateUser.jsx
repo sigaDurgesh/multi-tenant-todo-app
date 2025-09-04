@@ -12,32 +12,18 @@ import {
   Paper,
 } from "@mui/material";
 import TenantRequestContext from "../../context/TenantRequestContext";
+import { tenantApi } from "../../services/tenantAdminAPI";
 
-// Mock API for demo purposes, replace with your real API
-const tenantApi = {
-  addTenantUser: async (tenantId, email) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (email === "exists@example.com") {
-          reject(new Error("User already exists"));
-        } else {
-          resolve({ message: "User invited successfully" });
-        }
-      }, 1000);
-    });
-  },
-};
+
 
 const CreateUser = () => {
-    const {tenantId} = useContext(TenantRequestContext);
-
-  const [newTenantId, setNewTenantId] = useState(tenantId);
+  const {tenantId:contextTenantId } = useContext(TenantRequestContext);
+  const [newTenantId, setNewTenantId] = useState(contextTenantId || "");
   const [newEmail, setNewEmail] = useState("");
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState({ open: false, type: "success", msg: "" });
 
-  console.log("Tenant id",tenantId) 
   const validate = () => {
     const tempErrors = {};
     if (!newTenantId) tempErrors.tenantId = "Tenant ID is required";
@@ -53,15 +39,15 @@ const CreateUser = () => {
     setLoading(true);
     try {
       const result = await tenantApi.addTenantUser(newTenantId, newEmail);
-      setSnack({ open: true, type: "success", msg: result.message || "User invited successfully" });
+      setSnack({ open: true, type: "success", msg: result?.message || "User invited successfully" });
       setNewEmail("");
-      // fetchTenantUsers(newTenantId); // Uncomment if you want to refresh the user list
+      setErrors({});
     } catch (err) {
       console.error("Add user error:", err);
-      if (err.message?.toLowerCase().includes("exists")) {
+      if (err?.message?.toLowerCase().includes("exists")) {
         setErrors({ email: "This user already exists in tenant." });
       }
-      setSnack({ open: true, type: "error", msg: err.message || "Failed to add user" });
+      setSnack({ open: true, type: "error", msg: err?.message || "Failed to add user" });
     } finally {
       setLoading(false);
     }
@@ -82,7 +68,7 @@ const CreateUser = () => {
             onChange={(e) => setNewTenantId(e.target.value)}
             error={!!errors.tenantId}
             helperText={errors.tenantId}
-            disabled={!!tenantId}
+            disabled={!!contextTenantId}
           />
           <TextField
             label="Email"
