@@ -8,7 +8,8 @@ import {
   getUsersByTenant,
   createTenantWithAdmin,
   addUserUnderTenant,
-  softDeleteTenant
+  softDeleteTenant,
+  getTenantsWithUserCount
 } from "../controllers/tenant.controller.js";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 const router = express.Router();
@@ -21,6 +22,9 @@ router.put("/review-request", reviewTenantRequest);
 
 // Super admin lists requests
 router.get("/", listReviewedTenantRequests);
+
+// Get tenants with user count (for super admin)
+router.get("/all-tenant", authenticateJWT , getTenantsWithUserCount);
 
 // Get request by ID
 router.get("/:id", getTenantRequestById);
