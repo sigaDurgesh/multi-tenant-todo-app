@@ -16,7 +16,7 @@ const Tenant = sequelize.define("Tenant", {
     defaultValue: false,
   },
   deleted_at: {
-    type: DataTypes.DATE,
+    type: DataTypes.STRING(255),
   },
   is_active :{
     type: DataTypes.BOOLEAN,
