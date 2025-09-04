@@ -597,7 +597,7 @@ export const softDeleteTenant = async (req, res) => {
     await tenant.update({
       is_deleted: true,
       deleted_at: newDate,
-      deleted_at_formatted: formatDate(new Date())
+      is_active: false
     });
 
     return res.status(200).json({
