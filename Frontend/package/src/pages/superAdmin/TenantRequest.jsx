@@ -19,6 +19,8 @@ import {
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tenantApi } from "../../services/tenantAdminAPI";
+import TenantRequestContext from "../../context/TenantRequestContext";
+import { useContext } from "react";
 
 // Utils
 const formatLocalDateTime = (iso) => {
@@ -55,10 +57,9 @@ const TenantRequest = () => {
   const [statusFilter, setStatusFilter] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const superAdminId = "4428afd9-1f97-47b1-8939-9d4953c272d0";
+  const {superAdminId} = useContext(TenantRequestContext);
 
   const handleCloseSnack = () => setSnack({ type: "", msg: "" });
-
   // Fetch table properly
   const fetchTable = useCallback(async () => {
     setLoadingTable(true);
@@ -139,6 +140,7 @@ const TenantRequest = () => {
 
   const handleDeleteRow = async (id) => {
     setActing(true);
+    alert("API not integrating for soft delete please check once...")
     try {
       await tenantApi.softDelete(id);
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, deleted: true } : r)));
@@ -285,7 +287,6 @@ const TenantRequest = () => {
         </CardContent>
       </Card>
 
-      {/* Tenant Details Dialog */}
       {/* Tenant Details Dialog */}
 <Dialog open={viewOpen} onClose={closeView} fullWidth maxWidth="sm">
   <DialogTitle>Tenant Details</DialogTitle>

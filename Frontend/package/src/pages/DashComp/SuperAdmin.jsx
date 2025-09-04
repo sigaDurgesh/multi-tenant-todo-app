@@ -1,9 +1,34 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import {
-  Box, Grid, Card, CardContent, Typography, LinearProgress, CircularProgress,
-  Avatar, IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, TextField, Tabs, Tab, Stack, FormControl, InputLabel, Select, MenuItem,
-  List, ListItem, ListItemAvatar, ListItemText, Snackbar, Alert
+  Box,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  LinearProgress,
+  CircularProgress,
+  Avatar,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Tabs,
+  Tab,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Snackbar,
+  Alert,
+  Chip,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -12,12 +37,12 @@ import {
   Pending as PendingIcon,
   Visibility as VisibilityIcon,
   Refresh as RefreshIcon,
-  Business as BusinessIcon
+  Business as BusinessIcon,
 } from "@mui/icons-material";
 import { AuthContext } from "../../context/AuthContext";
 import { format } from "date-fns";
 
-import {tenantApi} from "../../services/tenantAdminAPI"
+import { tenantApi } from "../../services/tenantAdminAPI";
 
 const SuperAdminDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -30,7 +55,11 @@ const SuperAdminDashboard = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const formatDate = (date) => {
     if (!date) return "-";
@@ -53,39 +82,53 @@ const SuperAdminDashboard = () => {
 
   useEffect(() => {
     fetchTenants();
-    const interval = setInterval(fetchTenants, 30000);
+    const interval = setInterval(fetchTenants, 100000);
     return () => clearInterval(interval);
   }, [fetchTenants]);
 
-  const filteredTenants = tenants.filter(t => 
-    (statusFilter === "all" || t.status === statusFilter) &&
-    (t.tenant_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     t.requester.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredTenants = tenants.filter(
+    (t) =>
+      (statusFilter === "all" || t.status === statusFilter) &&
+      (t.tenant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.requester.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending": return "warning";
-      case "approved": return "success";
-      case "rejected": return "error";
-      default: return "default";
+      case "pending":
+        return "warning";
+      case "approved":
+        return "success";
+      case "rejected":
+        return "error";
+      default:
+        return "default";
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending": return <PendingIcon />;
-      case "approved": return <CheckCircleIcon />;
-      case "rejected": return <CancelIcon />;
-      default: return null;
+      case "pending":
+        return <PendingIcon />;
+      case "approved":
+        return <CheckCircleIcon />;
+      case "rejected":
+        return <CancelIcon />;
+      default:
+        return null;
     }
   };
 
   const handleStatusUpdate = async (tenantId, newStatus) => {
-    if (!window.confirm(`Are you sure you want to ${newStatus} this tenant?`)) return;
+    if (!window.confirm(`Are you sure you want to ${newStatus} this tenant?`))
+      return;
     try {
       await tenantApi.updateStatus(tenantId, newStatus);
-      setSnackbar({ open: true, message: `Tenant ${newStatus}`, severity: "success" });
+      setSnackbar({
+        open: true,
+        message: `Tenant ${newStatus}`,
+        severity: "success",
+      });
       fetchTenants();
     } catch (err) {
       setSnackbar({ open: true, message: "Update failed", severity: "error" });
@@ -93,12 +136,14 @@ const SuperAdminDashboard = () => {
   };
 
   const TabPanel = ({ children, value, index }) => (
-    <div hidden={value !== index}>{value === index && <Box sx={{ p: 2 }}>{children}</Box>}</div>
+    <div hidden={value !== index}>
+      {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
+    </div>
   );
 
-  const totalApproved = tenants.filter(t => t.status==="approved").length;
-  const totalPending = tenants.filter(t => t.status==="pending").length;
-  const totalRejected = tenants.filter(t => t.status==="rejected").length;
+  const totalApproved = tenants.filter((t) => t.status === "approved").length;
+  const totalPending = tenants.filter((t) => t.status === "pending").length;
+  const totalRejected = tenants.filter((t) => t.status === "rejected").length;
 
   return (
     <Box sx={{ p: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
@@ -108,7 +153,8 @@ const SuperAdminDashboard = () => {
           Super Admin Dashboard
         </Typography>
         <Typography variant="body1" color="textSecondary">
-          Welcome back, {user?.name || "Admin"}! Monitor tenant requests in real-time.
+          Welcome back, {user?.name || "Admin"}! Monitor tenant requests in
+          real-time.
         </Typography>
       </Box>
 
@@ -117,7 +163,14 @@ const SuperAdminDashboard = () => {
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #4caf50, #81c784)", color: "white" }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: 3,
+              background: "linear-gradient(135deg, #4caf50, #81c784)",
+              color: "white",
+            }}
+          >
             <CardContent>
               <Typography variant="h5">Total Tenants</Typography>
               <Typography variant="h3">{tenants.length}</Typography>
@@ -125,7 +178,14 @@ const SuperAdminDashboard = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #1976d2, #42a5f5)", color: "white" }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: 3,
+              background: "linear-gradient(135deg, #1976d2, #42a5f5)",
+              color: "white",
+            }}
+          >
             <CardContent>
               <Typography variant="h5">Approved</Typography>
               <Typography variant="h3">{totalApproved}</Typography>
@@ -133,7 +193,14 @@ const SuperAdminDashboard = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #ff9800, #ffb74d)", color: "white" }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: 3,
+              background: "linear-gradient(135deg, #ff9800, #ffb74d)",
+              color: "white",
+            }}
+          >
             <CardContent>
               <Typography variant="h5">Pending</Typography>
               <Typography variant="h3">{totalPending}</Typography>
@@ -141,7 +208,14 @@ const SuperAdminDashboard = () => {
           </Card>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, background: "linear-gradient(135deg, #f44336, #e57373)", color: "white" }}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: 3,
+              background: "linear-gradient(135deg, #f44336, #e57373)",
+              color: "white",
+            }}
+          >
             <CardContent>
               <Typography variant="h5">Rejected</Typography>
               <Typography variant="h3">{totalRejected}</Typography>
@@ -154,12 +228,21 @@ const SuperAdminDashboard = () => {
       <Card sx={{ mb: 3, p: 2 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
-            <TextField fullWidth size="small" label="Search" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            <TextField
+              fullWidth
+              size="small"
+              label="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </Grid>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
-              <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
                 <MenuItem value="all">All</MenuItem>
                 <MenuItem value="pending">Pending</MenuItem>
                 <MenuItem value="approved">Approved</MenuItem>
@@ -168,14 +251,25 @@ const SuperAdminDashboard = () => {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
-            <Button variant="outlined" fullWidth startIcon={<RefreshIcon />} onClick={fetchTenants}>Refresh</Button>
+            <Button
+              variant="outlined"
+              fullWidth
+              startIcon={<RefreshIcon />}
+              onClick={fetchTenants}
+            >
+              Refresh
+            </Button>
           </Grid>
         </Grid>
       </Card>
 
       {/* Tabs */}
       <Card sx={{ borderRadius: 3, p: 2 }}>
-        <Tabs value={currentTab} onChange={(e,val)=>setCurrentTab(val)} variant="fullWidth">
+        <Tabs
+          value={currentTab}
+          onChange={(e, val) => setCurrentTab(val)}
+          variant="fullWidth"
+        >
           <Tab label={`All (${tenants.length})`} />
           <Tab label={`Pending (${totalPending})`} />
           <Tab label="Recent Activity" />
@@ -184,68 +278,122 @@ const SuperAdminDashboard = () => {
 
         {/* All Requests */}
         <TabPanel value={currentTab} index={0}>
-          {loading ? <CircularProgress /> : filteredTenants.length===0 ? <Typography>No tenants found.</Typography> :
+          {loading ? (
+            <CircularProgress />
+          ) : filteredTenants.length === 0 ? (
+            <Typography>No tenants found.</Typography>
+          ) : (
             <List>
-              {filteredTenants.map(t => (
-                <ListItem key={t.id} secondaryAction={
-                  <Stack direction="row" spacing={1}>
-                    {t.status==="pending" && <>
-                      <Button variant="contained" color="success" onClick={()=>handleStatusUpdate(t.id,"approved")}>Approve</Button>
-                      <Button variant="outlined" color="error" onClick={()=>handleStatusUpdate(t.id,"rejected")}>Reject</Button>
-                    </>}
-                    <IconButton onClick={()=>{setSelectedTenant(t); setDialogOpen(true);}}><VisibilityIcon/></IconButton>
-                  </Stack>
-                }>
+              {filteredTenants.map((t) => (
+                <ListItem
+                  key={t.id}
+                  secondaryAction={
+                    <Stack direction="row" spacing={1}>
+                      {t.status === "pending" && (
+                        <span style={{ color: "orange" }}>Pending </span>
+                      )}
+                      {t.status === "approved" && (
+                        <span style={{ color: "green" }}>Approved</span>
+                      )}
+                      {t.status === "rejected" && (
+                        <span style={{ color: "red" }}>Rejected</span>
+                      )}
+
+                      <IconButton
+                        onClick={() => {
+                          setSelectedTenant(t);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Stack>
+                  }
+                >
                   <ListItemAvatar>
-                    <Avatar sx={{ bgcolor:getStatusColor(t.status)}}>{getStatusIcon(t.status)}</Avatar>
+                    <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
+                      {getStatusIcon(t.status)}
+                    </Avatar>
                   </ListItemAvatar>
                   <ListItemText
                     primary={t.tenant_name || "-"}
-                    secondary={`Requester: ${t.requester.email || "-"} • Requested: ${formatDate(t.requested_at)} • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}`}
+                    secondary={`${t.requester?.email || "-"} — ${
+                      t.requested_at ? formatDate(t.requested_at) : "-"
+                    }`}
+                    // Reviewed by: ${t.reviewer?.email || "-"}
+                    //                <div><strong>Reviewed by:</strong> {t.reviewer?.email || "-"}</div>
+                    // <div><strong>Reviewed at:</strong> {t.reviewed_at ? formatDate(t.reviewed_at) : "-"}</div>
+                    // • Requested: ${formatDate(t.requested_at)} • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}`}
                   />
                 </ListItem>
               ))}
             </List>
-          }
+          )}
         </TabPanel>
 
         {/* Pending Requests */}
         <TabPanel value={currentTab} index={1}>
           <List>
-            {tenants.filter(t=>t.status==="pending").map(t=>(
-              <ListItem key={t.id} secondaryAction={
-                <Stack direction="row" spacing={1}>
-                  <Button variant="contained" color="success" onClick={()=>handleStatusUpdate(t.id,"approved")}>Approve</Button>
-                  <Button variant="outlined" color="error" onClick={()=>handleStatusUpdate(t.id,"rejected")}>Reject</Button>
-                  <IconButton onClick={()=>{setSelectedTenant(t); setDialogOpen(true);}}><VisibilityIcon/></IconButton>
-                </Stack>
-              }>
-                <ListItemAvatar>
-                  <Avatar sx={{ bgcolor:getStatusColor(t.status)}}>{getStatusIcon(t.status)}</Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={t.tenant_name || "-"}
-                  secondary={`Requester: ${t.requester.email || "-"} • Requested: ${formatDate(t.requested_at)}`}
-                />
-              </ListItem>
-            ))}
+            {tenants
+              .filter((t) => t.status === "pending")
+              .map((t) => (
+                <ListItem
+                  key={t.id}
+                  secondaryAction={
+                    <Stack direction="row" spacing={1}>
+                      {t.status === "pending" && (
+                        <span style={{ color: "orange" }}>Pending </span>
+                      )}
+                      <IconButton
+                        onClick={() => {
+                          setSelectedTenant(t);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Stack>
+                  }
+                >
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
+                      {getStatusIcon(t.status)}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={t.tenant_name || "-"}
+                    secondary={`${t.requester?.email || "-"} — ${
+                      t.requested_at ? formatDate(t.requested_at) : "-"
+                    }`}
+                  />
+                </ListItem>
+              ))}
           </List>
         </TabPanel>
 
         {/* Recent Activity */}
         <TabPanel value={currentTab} index={2}>
           <List>
-            {tenants.sort((a,b)=>new Date(b.reviewed_at)-new Date(a.reviewed_at)).map(t=>(
-              <ListItem key={t.id}>
-                <ListItemAvatar>
-                  <Avatar sx={{bgcolor:getStatusColor(t.status)}}>{getStatusIcon(t.status)}</Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={`${t.tenant_name || "-"} - ${t.status.toUpperCase()}`}
-                  secondary={`Requester: ${t.requester.email || "-"} • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}`}
-                />
-              </ListItem>
-            ))}
+            {tenants
+              .sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at))
+              .map((t) => (
+                <ListItem key={t.id}>
+                  <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
+                      {getStatusIcon(t.status)}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={`${
+                      t.tenant_name || "-"
+                    } - ${t.status.toUpperCase()}`}
+                    secondary={`${t.requester?.email || "-"} — ${
+                      t.requested_at ? formatDate(t.requested_at) : "-"
+                    }`}
+                    // • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}
+                  />
+                </ListItem>
+              ))}
           </List>
         </TabPanel>
 
@@ -253,20 +401,46 @@ const SuperAdminDashboard = () => {
         <TabPanel value={currentTab} index={3}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Card sx={{p:2}}>
+              <Card sx={{ p: 2 }}>
                 <Typography variant="h6">Request Trends</Typography>
-                <Typography variant="body2" color="textSecondary">Weekly request volume</Typography>
-                <Box sx={{mt:2,height:200,display:"flex",alignItems:"center",justifyContent:"center",bgcolor:"#f5f5f5"}}>
-                  <Typography color="textSecondary">Chart Placeholder</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Weekly request volume
+                </Typography>
+                <Box
+                  sx={{
+                    mt: 2,
+                    height: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "#f5f5f5",
+                  }}
+                >
+                  <Typography color="textSecondary">
+                    Chart Placeholder
+                  </Typography>
                 </Box>
               </Card>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Card sx={{p:2}}>
+              <Card sx={{ p: 2 }}>
                 <Typography variant="h6">Status Distribution</Typography>
-                <Typography variant="body2" color="textSecondary">Approved / Pending / Rejected</Typography>
-                <Box sx={{mt:2,height:200,display:"flex",alignItems:"center",justifyContent:"center",bgcolor:"#f5f5f5"}}>
-                  <Typography color="textSecondary">Chart Placeholder</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Approved / Pending / Rejected
+                </Typography>
+                <Box
+                  sx={{
+                    mt: 2,
+                    height: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "#f5f5f5",
+                  }}
+                >
+                  <Typography color="textSecondary">
+                    Chart Placeholder
+                  </Typography>
                 </Box>
               </Card>
             </Grid>
@@ -275,29 +449,53 @@ const SuperAdminDashboard = () => {
       </Card>
 
       {/* Tenant Details Modal */}
-      <Dialog open={dialogOpen} onClose={()=>setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{selectedTenant?.tenant_name || "-"}</DialogTitle>
         <DialogContent>
-          {selectedTenant && <Stack spacing={1}>
-            <Typography>Tenant Name: {selectedTenant.tenant_name || "-"}</Typography>
-            <Typography>Requester Email: {selectedTenant.requester.email || "-"}</Typography>
-            <Typography>Requested At: {formatDate(selectedTenant.requested_at)}</Typography>
-            <Typography>Status: {selectedTenant.status.toUpperCase()}</Typography>
-            <Typography>Reviewed At: {formatDate(selectedTenant.reviewed_at)}</Typography>
-            <Typography>Reviewer Email: {selectedTenant.reviewer?.email || "-"}</Typography>
-          </Stack>}
+          {selectedTenant && (
+            <Stack spacing={1}>
+              <Typography>
+                Tenant Name: {selectedTenant.tenant_name || "-"}
+              </Typography>
+              <Typography>
+                Requester Email: {selectedTenant.requester.email || "-"}
+              </Typography>
+              <Typography>
+                Requested At: {formatDate(selectedTenant.requested_at)}
+              </Typography>
+              <Typography>
+                Status: {selectedTenant.status.toUpperCase()}
+              </Typography>
+              <Typography>
+                Reviewed At: {formatDate(selectedTenant.reviewed_at)}
+              </Typography>
+              <Typography>
+                Reviewer Email: {selectedTenant.reviewer?.email || "-"}
+                
+              </Typography>
+            </Stack>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={()=>setDialogOpen(false)}>Close</Button>
-          {selectedTenant?.status==="pending" && <>
+          <Button onClick={() => setDialogOpen(false)}>Close</Button>
+          {/* {selectedTenant?.status==="pending" && <>
             <Button variant="contained" color="success" onClick={()=>{handleStatusUpdate(selectedTenant.id,"approved"); setDialogOpen(false)}}>Approve</Button>
             <Button variant="contained" color="error" onClick={()=>{handleStatusUpdate(selectedTenant.id,"rejected"); setDialogOpen(false)}}>Reject</Button>
-          </>}
+          </>} */}
         </DialogActions>
       </Dialog>
 
       {/* Snackbar */}
-      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={()=>setSnackbar({...snackbar, open:false})}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
@@ -426,8 +624,7 @@ export default SuperAdminDashboard;
 //   list: async (params = {}) => {
 //     // Simulate API delay
 //     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    
+
 //     const mockData = [
 //       {
 //         id: 1,
@@ -539,7 +736,7 @@ export default SuperAdminDashboard;
 //     }
 //     if (params.search) {
 //       const searchLower = params.search.toLowerCase();
-//       filtered = filtered.filter(item => 
+//       filtered = filtered.filter(item =>
 //         item.tenant_name.toLowerCase().includes(searchLower) ||
 //         item.email.toLowerCase().includes(searchLower) ||
 //         item.industry.toLowerCase().includes(searchLower)
@@ -575,7 +772,7 @@ export default SuperAdminDashboard;
 
 // const SuperAdminDashboard = () => {
 //   const theme = useTheme();
-  
+
 //   // Enhanced State Management
 //   const [tenants, setTenants] = useState([]);
 //   const [filteredTenants, setFilteredTenants] = useState([]);
@@ -590,8 +787,7 @@ export default SuperAdminDashboard;
 //   const [industryFilter, setIndustryFilter] = useState('all');
 //   const [priorityFilter, setPriorityFilter] = useState('all');
 //   const [sortBy, setSortBy] = useState('created_at');
-  
-  
+
 //   // New advanced states
 //   const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
 //   const [fullscreen, setFullscreen] = useState(false);
@@ -656,7 +852,7 @@ export default SuperAdminDashboard;
 //     try {
 //       if (showLoading && !refreshing) setLoading(true);
 //       if (!showLoading) setRefreshing(true);
-      
+
 //       const params = {
 //         search: searchTerm,
 //         status: statusFilter,
@@ -665,11 +861,11 @@ export default SuperAdminDashboard;
 //         page: page + 1,
 //         limit: rowsPerPage
 //       };
-      
+
 //       const response = await tenantApi.list(params);
 //       setTenants(response.data);
 //       setError(null);
-      
+
 //       if (!showLoading) {
 //         showSnackbar('Data refreshed successfully', 'success');
 //       }
@@ -701,11 +897,11 @@ export default SuperAdminDashboard;
 //   // Filter tenants based on search and status
 //   useEffect(() => {
 //     let filtered = [...tenants];
-    
+
 //     if (statusFilter !== 'all') {
 //       filtered = filtered.filter(tenant => tenant.status === statusFilter);
 //     }
-    
+
 //     if (searchTerm) {
 //       const searchLower = searchTerm.toLowerCase();
 //       filtered = filtered.filter(tenant =>
@@ -715,19 +911,19 @@ export default SuperAdminDashboard;
 //         tenant.contact_person.toLowerCase().includes(searchLower)
 //       );
 //     }
-    
+
 //     // Sort tenants
 //     filtered.sort((a, b) => {
 //       const aVal = a[sortBy];
 //       const bVal = b[sortBy];
-      
+
 //       if (sortOrder === 'asc') {
 //         return aVal > bVal ? 1 : -1;
 //       } else {
 //         return aVal < bVal ? 1 : -1;
 //       }
 //     });
-    
+
 //     setFilteredTenants(filtered);
 //   }, [tenants, searchTerm, statusFilter, sortBy, sortOrder]);
 
@@ -813,8 +1009,8 @@ export default SuperAdminDashboard;
 //   };
 
 //   const handleSelectTenant = (tenantId) => {
-//     setSelectedTenants(prev => 
-//       prev.includes(tenantId) 
+//     setSelectedTenants(prev =>
+//       prev.includes(tenantId)
 //         ? prev.filter(id => id !== tenantId)
 //         : [...prev, tenantId]
 //     );
@@ -890,38 +1086,38 @@ export default SuperAdminDashboard;
 
 //   return (
 //     <Box sx={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-//       {/* App Bar */} 
+//       {/* App Bar */}
 //       <AppBar position="sticky" sx={{ backgroundColor: 'white', boxShadow: 1 }}>
 //         <Toolbar>
 //           <DashboardIcon sx={{ mr: 2, color: 'primary.main' }} />
 //           <Typography variant="h6" sx={{ flexGrow: 1, color: 'text.primary', fontWeight: 'bold' }}>
 //             Super Admin Dashboard
 //           </Typography>
-          
+
 //           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
 //             <FormControlLabel
 //               control={
-//                 <Switch 
-//                   checked={autoRefresh} 
+//                 <Switch
+//                   checked={autoRefresh}
 //                   onChange={(e) => setAutoRefresh(e.target.checked)}
 //                   size="small"
 //                 />
 //               }
 //               label={<Typography variant="body2" color="text.secondary">Auto Refresh</Typography>}
 //             />
-            
+
 //             <Badge badgeContent={stats.pending} color="warning">
 //               <IconButton>
 //                 <NotificationsIcon />
 //               </IconButton>
 //             </Badge>
-            
+
 //             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
 //               <MoreVertIcon />
 //             </IconButton>
 //           </Box>
 //         </Toolbar>
-        
+
 //         {refreshing && <LinearProgress />}
 //       </AppBar>
 
@@ -955,7 +1151,7 @@ export default SuperAdminDashboard;
 //               gradient="linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)"
 //             />
 //           </Grid>
-          
+
 //           <Grid item xs={12} sm={6} md={2}>
 //             <StatCard
 //               title="Pending"
@@ -965,7 +1161,7 @@ export default SuperAdminDashboard;
 //               badgeCount={stats.highPriority}
 //             />
 //           </Grid>
-          
+
 //           <Grid item xs={12} sm={6} md={2}>
 //             <StatCard
 //               title="Approved"
@@ -974,7 +1170,7 @@ export default SuperAdminDashboard;
 //               gradient="linear-gradient(135deg, #4caf50 0%, #81c784 100%)"
 //             />
 //           </Grid>
-          
+
 //           <Grid item xs={12} sm={6} md={2}>
 //             <StatCard
 //               title="Rejected"
@@ -983,7 +1179,7 @@ export default SuperAdminDashboard;
 //               gradient="linear-gradient(135deg, #f44336 0%, #e57373 100%)"
 //             />
 //           </Grid>
-          
+
 //           <Grid item xs={12} sm={6} md={2}>
 //             <StatCard
 //               title="This Week"
@@ -992,7 +1188,7 @@ export default SuperAdminDashboard;
 //               gradient="linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)"
 //             />
 //           </Grid>
-          
+
 //           <Grid item xs={12} sm={6} md={2}>
 //             <StatCard
 //               title="High Priority"
@@ -1020,7 +1216,7 @@ export default SuperAdminDashboard;
 //                   }}
 //                 />
 //               </Grid>
-              
+
 //               <Grid item xs={12} md={2}>
 //                 <FormControl fullWidth size="small">
 //                   <InputLabel>Status</InputLabel>
@@ -1036,7 +1232,7 @@ export default SuperAdminDashboard;
 //                   </Select>
 //                 </FormControl>
 //               </Grid>
-              
+
 //               <Grid item xs={12} md={2}>
 //                 <FormControl fullWidth size="small">
 //                   <InputLabel>Sort By</InputLabel>
@@ -1052,7 +1248,7 @@ export default SuperAdminDashboard;
 //                   </Select>
 //                 </FormControl>
 //               </Grid>
-              
+
 //               <Grid item xs={12} md={2}>
 //                 <Button
 //                   fullWidth
@@ -1064,7 +1260,7 @@ export default SuperAdminDashboard;
 //                   Refresh
 //                 </Button>
 //               </Grid>
-              
+
 //               <Grid item xs={12} md={2}>
 //                 <Button
 //                   fullWidth
@@ -1077,7 +1273,7 @@ export default SuperAdminDashboard;
 //                 </Button>
 //               </Grid>
 //             </Grid>
-            
+
 //             {selectedTenants.length > 0 && (
 //               <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.1), borderRadius: 1 }}>
 //                 <Typography variant="body2" sx={{ mb: 1 }}>
@@ -1121,22 +1317,22 @@ export default SuperAdminDashboard;
 //             variant="fullWidth"
 //             sx={{ borderBottom: 1, borderColor: 'divider' }}
 //           >
-//             <Tab 
-//               label={`All Requests (${filteredTenants.length})`} 
+//             <Tab
+//               label={`All Requests (${filteredTenants.length})`}
 //               icon={<AssignmentIcon />}
 //               iconPosition="start"
 //             />
-//             <Tab 
+//             <Tab
 //               label={`Pending (${filteredTenants.filter(t => t.status === 'pending').length})`}
 //               icon={<PendingIcon />}
 //               iconPosition="start"
 //             />
-//             <Tab 
+//             <Tab
 //               label="Analytics"
 //               icon={<AnalyticsIcon />}
 //               iconPosition="start"
 //             />
-//             <Tab 
+//             <Tab
 //               label="Activity Log"
 //               icon={<TimelineIcon />}
 //               iconPosition="start"
@@ -1192,8 +1388,8 @@ export default SuperAdminDashboard;
 //                       {filteredTenants
 //                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 //                         .map((tenant) => (
-//                         <TableRow 
-//                           key={tenant.id} 
+//                         <TableRow
+//                           key={tenant.id}
 //                           hover
 //                           selected={selectedTenants.includes(tenant.id)}
 //                         >
@@ -1205,9 +1401,9 @@ export default SuperAdminDashboard;
 //                           </TableCell>
 //                           <TableCell>
 //                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                               <Avatar 
-//                                 sx={{ 
-//                                   mr: 2, 
+//                               <Avatar
+//                                 sx={{
+//                                   mr: 2,
 //                                   bgcolor: 'primary.main',
 //                                   width: 40,
 //                                   height: 40
@@ -1278,9 +1474,9 @@ export default SuperAdminDashboard;
 //                                   mr: 1
 //                                 }}
 //                               />
-//                               <Typography 
-//                                 variant="body2" 
-//                                 sx={{ 
+//                               <Typography
+//                                 variant="body2"
+//                                 sx={{
 //                                   textTransform: 'capitalize',
 //                                   color: getPriorityColor(tenant.priority),
 //                                   fontWeight: 'medium'
@@ -1305,7 +1501,7 @@ export default SuperAdminDashboard;
 //                                   <VisibilityIcon fontSize="small" />
 //                                 </IconButton>
 //                               </Tooltip>
-                              
+
 //                               {tenant.status === 'pending' && (
 //                                 <>
 //                                   <Tooltip title="Approve">
@@ -1317,7 +1513,7 @@ export default SuperAdminDashboard;
 //                                       <CheckCircleIcon fontSize="small" />
 //                                     </IconButton>
 //                                   </Tooltip>
-                                  
+
 //                                   <Tooltip title="Reject">
 //                                     <IconButton
 //                                       size="small"
@@ -1329,7 +1525,7 @@ export default SuperAdminDashboard;
 //                                   </Tooltip>
 //                                 </>
 //                               )}
-                              
+
 //                               <Tooltip title="More Actions">
 //                                 <IconButton
 //                                   size="small"
@@ -1348,7 +1544,7 @@ export default SuperAdminDashboard;
 //                     </TableBody>
 //                   </Table>
 //                 </TableContainer>
-                
+
 //                 <TablePagination
 //                   component="div"
 //                   count={filteredTenants.length}
@@ -1373,8 +1569,8 @@ export default SuperAdminDashboard;
 //                 .map((tenant) => (
 //                   <Card
 //                     key={tenant.id}
-//                     sx={{ 
-//                       borderLeft: 4, 
+//                     sx={{
+//                       borderLeft: 4,
 //                       borderLeftColor: getPriorityColor(tenant.priority),
 //                       '&:hover': { boxShadow: 4 }
 //                     }}
@@ -1397,14 +1593,14 @@ export default SuperAdminDashboard;
 //                             <Chip
 //                               label={tenant.priority}
 //                               size="small"
-//                               sx={{ 
+//                               sx={{
 //                                 ml: 'auto',
 //                                 bgcolor: alpha(getPriorityColor(tenant.priority), 0.1),
 //                                 color: getPriorityColor(tenant.priority)
 //                               }}
 //                             />
 //                           </Box>
-                          
+
 //                           <Grid container spacing={2} sx={{ mb: 2 }}>
 //                             <Grid item xs={6}>
 //                               <Typography variant="body2" color="text.secondary">Contact</Typography>
@@ -1421,7 +1617,7 @@ export default SuperAdminDashboard;
 //                               </Typography>
 //                             </Grid>
 //                           </Grid>
-                          
+
 //                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
 //                             {tenant.requested_features?.map((feature, index) => (
 //                               <Chip
@@ -1432,12 +1628,12 @@ export default SuperAdminDashboard;
 //                               />
 //                             ))}
 //                           </Box>
-                          
+
 //                           <Typography variant="body2" color="text.secondary">
 //                             Requested: {formatDate(tenant.created_at)}
 //                           </Typography>
 //                         </Grid>
-                        
+
 //                         <Grid item xs={12} md={4}>
 //                           <CardActions sx={{ flexDirection: 'column', gap: 1, p: 0 }}>
 //                             <Button
@@ -1449,7 +1645,7 @@ export default SuperAdminDashboard;
 //                             >
 //                               Approve Request
 //                             </Button>
-                            
+
 //                             <Button
 //                               fullWidth
 //                               variant="outlined"
@@ -1459,7 +1655,7 @@ export default SuperAdminDashboard;
 //                             >
 //                               Reject Request
 //                             </Button>
-                            
+
 //                             <Button
 //                               fullWidth
 //                               variant="text"
@@ -1474,7 +1670,7 @@ export default SuperAdminDashboard;
 //                     </CardContent>
 //                   </Card>
 //                 ))}
-              
+
 //               {filteredTenants.filter(t => t.status === 'pending').length === 0 && (
 //                 <Box sx={{ textAlign: 'center', py: 6 }}>
 //                   <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
@@ -1506,34 +1702,34 @@ export default SuperAdminDashboard;
 //                           {stats.pending} ({((stats.pending / stats.total) * 100).toFixed(1)}%)
 //                         </Typography>
 //                       </Box>
-//                       <LinearProgress 
-//                         variant="determinate" 
+//                       <LinearProgress
+//                         variant="determinate"
 //                         value={(stats.pending / stats.total) * 100}
 //                         color="warning"
 //                         sx={{ height: 8, borderRadius: 4 }}
 //                       />
-                      
+
 //                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 //                         <Typography variant="body2">Approved</Typography>
 //                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
 //                           {stats.approved} ({((stats.approved / stats.total) * 100).toFixed(1)}%)
 //                         </Typography>
 //                       </Box>
-//                       <LinearProgress 
-//                         variant="determinate" 
+//                       <LinearProgress
+//                         variant="determinate"
 //                         value={(stats.approved / stats.total) * 100}
 //                         color="success"
 //                         sx={{ height: 8, borderRadius: 4 }}
 //                       />
-                      
+
 //                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 //                         <Typography variant="body2">Rejected</Typography>
 //                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
 //                           {stats.rejected} ({((stats.rejected / stats.total) * 100).toFixed(1)}%)
 //                         </Typography>
 //                       </Box>
-//                       <LinearProgress 
-//                         variant="determinate" 
+//                       <LinearProgress
+//                         variant="determinate"
 //                         value={(stats.rejected / stats.total) * 100}
 //                         color="error"
 //                         sx={{ height: 8, borderRadius: 4 }}
@@ -1542,7 +1738,7 @@ export default SuperAdminDashboard;
 //                   </Box>
 //                 </Card>
 //               </Grid>
-              
+
 //               <Grid item xs={12} md={6}>
 //                 <Card sx={{ p: 3, height: '100%' }}>
 //                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1554,7 +1750,7 @@ export default SuperAdminDashboard;
 //                       {[...new Set(tenants.map(t => t.industry))].map(industry => {
 //                         const count = tenants.filter(t => t.industry === industry).length;
 //                         const percentage = (count / tenants.length) * 100;
-                        
+
 //                         return (
 //                           <Box key={industry}>
 //                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1563,8 +1759,8 @@ export default SuperAdminDashboard;
 //                                 {count} ({percentage.toFixed(1)}%)
 //                               </Typography>
 //                             </Box>
-//                             <LinearProgress 
-//                               variant="determinate" 
+//                             <LinearProgress
+//                               variant="determinate"
 //                               value={percentage}
 //                               sx={{ height: 6, borderRadius: 3, mt: 0.5 }}
 //                             />
@@ -1575,7 +1771,7 @@ export default SuperAdminDashboard;
 //                   </Box>
 //                 </Card>
 //               </Grid>
-              
+
 //               <Grid item xs={12}>
 //                 <Card sx={{ p: 3 }}>
 //                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1593,7 +1789,7 @@ export default SuperAdminDashboard;
 //                         </Typography>
 //                       </Box>
 //                     </Grid>
-                    
+
 //                     <Grid item xs={12} sm={6} md={3}>
 //                       <Box sx={{ textAlign: 'center' }}>
 //                         <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
@@ -1604,7 +1800,7 @@ export default SuperAdminDashboard;
 //                         </Typography>
 //                       </Box>
 //                     </Grid>
-                    
+
 //                     <Grid item xs={12} sm={6} md={3}>
 //                       <Box sx={{ textAlign: 'center' }}>
 //                         <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
@@ -1615,7 +1811,7 @@ export default SuperAdminDashboard;
 //                         </Typography>
 //                       </Box>
 //                     </Grid>
-                    
+
 //                     <Grid item xs={12} sm={6} md={3}>
 //                       <Box sx={{ textAlign: 'center' }}>
 //                         <Typography variant="h4" color="info.main" sx={{ fontWeight: 'bold' }}>
@@ -1643,7 +1839,7 @@ export default SuperAdminDashboard;
 //                     <ListItemAvatar>
 //                       <Avatar
 //                         sx={{
-//                           bgcolor: 
+//                           bgcolor:
 //                             tenant.status === 'approved' ? 'success.main' :
 //                             tenant.status === 'pending' ? 'warning.main' :
 //                             'error.main'
@@ -1652,7 +1848,7 @@ export default SuperAdminDashboard;
 //                         {getStatusIcon(tenant.status)}
 //                       </Avatar>
 //                     </ListItemAvatar>
-                    
+
 //                     <ListItemText
 //                       primary={
 //                         <Typography>
@@ -1672,12 +1868,12 @@ export default SuperAdminDashboard;
 //                         </Box>
 //                       }
 //                     />
-                    
+
 //                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
 //                       <Chip
 //                         label={tenant.priority}
 //                         size="small"
-//                         sx={{ 
+//                         sx={{
 //                           bgcolor: alpha(getPriorityColor(tenant.priority), 0.1),
 //                           color: getPriorityColor(tenant.priority)
 //                         }}
@@ -1731,7 +1927,7 @@ export default SuperAdminDashboard;
 //             </IconButton>
 //           </Box>
 //         </DialogTitle>
-        
+
 //         <DialogContent>
 //           {selectedTenant && (
 //             <Grid container spacing={3}>
@@ -1769,7 +1965,7 @@ export default SuperAdminDashboard;
 //                       </Stack>
 //                     </CardContent>
 //                   </Card>
-                  
+
 //                   <Card variant="outlined">
 //                     <CardContent>
 //                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
@@ -1798,7 +1994,7 @@ export default SuperAdminDashboard;
 //                   </Card>
 //                 </Stack>
 //               </Grid>
-              
+
 //               <Grid item xs={12} md={6}>
 //                 <Stack spacing={3}>
 //                   <Card variant="outlined">
@@ -1810,7 +2006,7 @@ export default SuperAdminDashboard;
 //                       <Stack spacing={1}>
 //                         <Box>
 //                           <Typography variant="body2" color="text.secondary">Plan</Typography>
-//                           <Chip 
+//                           <Chip
 //                             label={selectedTenant.subscription_plan}
 //                             color={
 //                               selectedTenant.subscription_plan === 'Enterprise' ? 'primary' :
@@ -1872,7 +2068,7 @@ export default SuperAdminDashboard;
 //           </ListItemIcon>
 //           <ListItemText>View Details</ListItemText>
 //         </MenuItem>
-        
+
 //         {selectedTenant?.status === 'pending' && (
 //           <>
 //             <MenuItem onClick={() => {
@@ -1884,7 +2080,7 @@ export default SuperAdminDashboard;
 //               </ListItemIcon>
 //               <ListItemText>Approve</ListItemText>
 //             </MenuItem>
-            
+
 //             <MenuItem onClick={() => {
 //               setAnchorEl(null);
 //               openActionDialog('reject', selectedTenant);
@@ -1896,9 +2092,9 @@ export default SuperAdminDashboard;
 //             </MenuItem>
 //           </>
 //         )}
-        
+
 //         <Divider />
-        
+
 //         <MenuItem onClick={() => {
 //           setAnchorEl(null);
 //           // Add edit functionality here
@@ -1908,7 +2104,7 @@ export default SuperAdminDashboard;
 //           </ListItemIcon>
 //           <ListItemText>Edit Details</ListItemText>
 //         </MenuItem>
-        
+
 //         <MenuItem onClick={() => {
 //           setAnchorEl(null);
 //           // Add delete functionality here
@@ -1935,7 +2131,7 @@ export default SuperAdminDashboard;
 //           </ListItemIcon>
 //           <ListItemText>Export as CSV</ListItemText>
 //         </MenuItem>
-        
+
 //         <MenuItem onClick={() => {
 //           setBulkActionAnchor(null);
 //           handleExportData('xlsx');
@@ -1945,7 +2141,7 @@ export default SuperAdminDashboard;
 //           </ListItemIcon>
 //           <ListItemText>Export as Excel</ListItemText>
 //         </MenuItem>
-        
+
 //         <MenuItem onClick={() => {
 //           setBulkActionAnchor(null);
 //           handleExportData('pdf');
@@ -1968,8 +2164,7 @@ export default SuperAdminDashboard;
 //           {snackbar.message}
 //         </Alert>
 //       </Snackbar>
-    
- 
+
 //                         <Box>
 //                           <Typography variant="body2" color="text.secondary">Estimated Users</Typography>
 //                           <Typography variant="body1">{selectedTenant.estimated_users}</Typography>
@@ -1994,15 +2189,14 @@ export default SuperAdminDashboard;
 //                           <Chip
 //                             label={selectedTenant.priority}
 //                             size="small"
-//                             sx={{ 
+//                             sx={{
 //                               mt: 0.5,
 //                               bgcolor: alpha(getPriorityColor(selectedTenant.priority), 0.1),
 //                               color: getPriorityColor(selectedTenant.priority)
 //                             }}
 //                           />
 //                         </Box>
-                      
-                  
+
 //                   <Card variant="outlined">
 //                     <CardContent>
 //                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
@@ -2021,7 +2215,7 @@ export default SuperAdminDashboard;
 //                       </Box>
 //                     </CardContent>
 //                   </Card>
-                  
+
 //                   <Card variant="outlined">
 //                     <CardContent>
 //                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
@@ -2048,12 +2242,12 @@ export default SuperAdminDashboard;
 //                       </Stack>
 //                     </CardContent>
 //                   </Card>
-                
+
 //               </Grid>
 //             </Grid>
 //           )}
 //         </DialogContent>
-        
+
 //         <DialogActions sx={{ p: 3, pt: 1 }}>
 //           <Button onClick={() => setDialogOpen(false)}>
 //             Close
@@ -2102,7 +2296,7 @@ export default SuperAdminDashboard;
 //             Are you sure you want to {actionDialog.type} the request from{' '}
 //             <strong>{actionDialog.tenant?.tenant_name}</strong>?
 //           </Typography>
-          
+
 //           {actionDialog.type === 'reject' && (
 //             <TextField
 //               fullWidth
