@@ -618,6 +618,37 @@ export const softDeleteTenant = async (req, res) => {
   }
 };
 
+export const getTenantsWithUserCount = async (req, res) => {
+  try {
+    const tenants = await sequelize.query(
+      `
+      SELECT 
+          t."id",
+          t."name",
+          t."is_active",
+          tr."email",
+          (
+              SELECT COUNT(*) 
+              FROM "users" u
+              JOIN "user_roles" ur ON ur."user_id" = u."id"
+              WHERE u."tenant_id" = t."id"
+                AND ur."role_id" = 3  -- only normal users
+          ) AS "userCount"
+      FROM "tenants" t
+      LEFT JOIN "tenant_requests" tr
+          ON tr."tenant_name" = t."name"
+      `,
+      { type: sequelize.QueryTypes.SELECT }
+    );
 
-
-
+    return res.status(200).json({
+      message: "Tenants fetched successfully",
+      tenants,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error fetching tenant request",
+      error: error.message,
+    });
+  }
+};
