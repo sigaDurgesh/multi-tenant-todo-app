@@ -8,6 +8,7 @@ import { sequelize } from "../models/index.js";
 import generateSecurePassword from "../middlewares/genarateSecurePassword.js";
 import bcrypt from "bcrypt";
 import { Op } from "sequelize";
+import {formatDate} from "../utlis/dateFormatter.js";
 
 import transporter from "../config/nodemailer.js";
 import { generateEmailTemplate } from "../utlis/emailTemplate.js";
@@ -576,6 +577,47 @@ export const addUserUnderTenant = async (req, res) => {
     });
   }
 };
+
+export const softDeleteTenant = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ✅ Check if user is super admin
+    if (!req.user || req.user.roles[0] !== "superAdmin") {
+      return res.status(403).json({ message: "Forbidden: Only super admins can delete tenants." });
+    }
+
+    // 1. Find tenant
+    const tenant = await Tenant.findOne({ where: { id: id, is_deleted: false } });
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found or already deleted." });
+    }
+    const newDate = formatDate(new Date()).toString();
+    // 2. Soft delete tenant
+    await tenant.update({
+      is_deleted: true,
+      deleted_at: newDate,
+      deleted_at_formatted: formatDate(new Date())
+    });
+
+    return res.status(200).json({
+      message: "Tenant soft deleted successfully",
+      tenant: {
+        id: tenant.id,
+        name: tenant.name,
+        is_deleted: tenant.is_deleted,
+        deleted_at: newDate,
+      }
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error soft deleting tenant",
+      error: error.message,
+    });
+  }
+};
+
 
 
 

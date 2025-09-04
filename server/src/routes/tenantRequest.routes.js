@@ -7,8 +7,10 @@ import {
   registerUserUnderTenant,
   getUsersByTenant,
   createTenantWithAdmin,
-  addUserUnderTenant
+  addUserUnderTenant,
+  softDeleteTenant
 } from "../controllers/tenant.controller.js";
+import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 const router = express.Router();
 
 // Normal user creates request
@@ -34,5 +36,8 @@ router.post("/create-tenant", createTenantWithAdmin);
 
 // Add tenant user by tenant admin
 router.post("/add-tenant-user", addUserUnderTenant);
+
+// Soft delete tenant by super admin
+router.delete("/:id", authenticateJWT , softDeleteTenant);
 
 export default router;
