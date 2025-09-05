@@ -55,17 +55,15 @@ const Sidebar = () => {
   const handleMenuClose = () => setMenuAnchor(null);
 
  const handleLogout = () => {
-  const confirmLogout = window.confirm("Are you sure you want to logout?");
-  if (confirmLogout) {
+  
     logout();
-    navigate("/login");
-  }
+    
   handleMenuClose();
 };
 
 
   const handleInvitePeople = () => {
-    navigate("/tenant-admin/createuser");
+    navigate("superAdmin/create");
     handleMenuClose();
   };
 
@@ -156,73 +154,92 @@ const Sidebar = () => {
       }}
     >
       {/* Header / User Info */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: collapsed ? "center" : "space-between",
-          p: 2,
-          bgcolor: "#b144faff",
-          color: "white",
-          cursor: "pointer",
-        }}
-        onClick={handleMenuOpen}
-      >
-        {!collapsed  && (
-          <Box display="flex" alignItems="center">
-            <Avatar sx={{ bgcolor: "primary.main", mr: 1 }}>
-              {user?.tenant_name ? user.tenant_name[0].toUpperCase() : "?"}
-            </Avatar>
-            <Box>
-              <Typography variant="subtitle2" fontWeight="bold">
-                {user?.tenant_name || user?.name || "Tenant Admin"}
-              </Typography>
+<Box
+  sx={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: collapsed ? "center" : "space-between",
+    p: 2,
+    bgcolor: "#b144faff",
+    color: "white",
+    cursor: "pointer",
+  }}
+  onClick={handleMenuOpen}
+>
+  {!collapsed && (
+    <Box display="flex" alignItems="center">
+      <Avatar sx={{ bgcolor: "primary.main", mr: 1 }}>
+        {user?.tenant_name ? user.tenant_name[0].toUpperCase() : "?"}
+      </Avatar>
 
-              <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                {role}
-              </Typography>
-            </Box>
-            {  user.roles[0]=="tenanAdmin" && 
-              <KeyboardArrowDownIcon fontSize="small" />} 
-          </Box>
-        )}
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleCollapse();
-          }}
-        >
-          <MenuIcon sx={{ color: "white" }} />
-        </IconButton>
+      <Box>
+        <Typography variant="subtitle2" fontWeight="bold">
+          {user?.tenant_name || user?.name || "Tenant Admin"}
+        </Typography>
+        <Typography variant="caption" sx={{ opacity: 0.8 }}>
+          {role}
+        </Typography>
       </Box>
 
-      {/* Dropdown Menu */}
+      {(user.roles[0] === "tenantAdmin" || user.roles[0] === "superAdmin") && (
+        <KeyboardArrowDownIcon fontSize="small" />
+      )}
+    </Box>
+  )}
 
-      {
-        user.roles[0]=="tenanAdmin" && 
+  <IconButton
+    size="small"
+    onClick={(e) => {
+      e.stopPropagation();
+      toggleCollapse();
+    }}
+  >
+    <MenuIcon sx={{ color: "white" }} />
+  </IconButton>
+</Box>
 
-        <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={handleMenuClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-      >
-        <MenuItem onClick={handleInvitePeople}>
-          <PersonAddIcon fontSize="small" sx={{ mr: 1 }} />
-          Invite People
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
-          <AddBusinessIcon fontSize="small" sx={{ mr: 1 }} />
-          Upgrade Tenant
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleLogout}>
-          <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
-          Logout
-        </MenuItem>
-      </Menu>}
+{/* Dropdown Menu */}
+{(user.roles[0] === "tenantAdmin" || user.roles[0] === "superAdmin") && (
+  <Menu
+    anchorEl={menuAnchor}
+    open={Boolean(menuAnchor)}
+    onClose={handleMenuClose}
+    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+    transformOrigin={{ vertical: "top", horizontal: "left" }}
+  >
+    <MenuItem
+      onClick={() => {
+        handleMenuClose();
+        if (user.roles[0] === "tenantAdmin") {
+          navigate("tenant-admin/createuser");
+        } else if (user.roles[0] === "superAdmin") {
+          navigate("/superAdmin/create");
+        }
+      }}
+    >
+      <PersonAddIcon fontSize="small" sx={{ mr: 1 }} />
+      Invite People
+    </MenuItem>
+
+    <MenuItem onClick={handleMenuClose}>
+      <AddBusinessIcon fontSize="small" sx={{ mr: 1 }} />
+      Upgrade Tenant
+    </MenuItem>
+
+    <Divider />
+
+    <MenuItem
+      onClick={() => {
+        handleMenuClose();
+        handleLogout();
+      }}
+    >
+      <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+      Logout
+    </MenuItem>
+  </Menu>
+)}
+
 
       {/* Role-based Menu */}
       <List sx={{ flexGrow: 1 }}>

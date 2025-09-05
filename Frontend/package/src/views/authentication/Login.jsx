@@ -8,10 +8,14 @@ import {
   Stack,
   CircularProgress,
   Paper,
+  InputAdornment,
+  IconButton
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+
 import { AuthContext } from "../../context/AuthContext";
 import { authApi } from "../../services/api";
 import CustomTextField from "../../components/forms/theme-elements/CustomTextField";
@@ -30,6 +34,8 @@ const Login = () => {
   const navigate = useNavigate();
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  
 
   const formik = useFormik({
     initialValues: { tenantName: "", email: "", password: "" },
@@ -189,7 +195,8 @@ const Login = () => {
                     fullWidth
                     id="password"
                     name="password"
-                    type="password"
+                    
+                  type={showPassword ? "text" : "password"}
                     value={formik.values.password}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -197,6 +204,15 @@ const Login = () => {
                       formik.touched.password && Boolean(formik.errors.password)
                     }
                     helperText={formik.touched.password && formik.errors.password}
+                    InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                   />
                 </Box>
 

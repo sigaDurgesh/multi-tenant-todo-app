@@ -9,6 +9,8 @@ import {
   Paper,
   CircularProgress,
   Stack,
+    InputAdornment,
+  IconButton
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -18,6 +20,9 @@ import LockIcon from "@mui/icons-material/Lock";
 import InfoIcon from "@mui/icons-material/Info";
 import { TenantRequestContext } from "../context/TenantRequestContext";
 import { useNavigate } from "react-router-dom";
+
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+
 
 const BecomeTenant = () => {
   const navigate = useNavigate();
@@ -29,6 +34,8 @@ const BecomeTenant = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  
 
   const handleSubmit = async () => {
     if (!tenantName.trim() || !email.trim() || !password.trim()) {
@@ -159,16 +166,20 @@ const BecomeTenant = () => {
                     fullWidth
                     label="Password"
                     variant="outlined"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     error={!!error && !password.trim()}
                     helperText={!!error && !password.trim() ? error : ""}
                     InputProps={{
-                      startAdornment: (
-                        <LockIcon sx={{ mr: 1, color: "#5e35b1" }} />
-                      ),
-                    }}
+                                        endAdornment: (
+                                          <InputAdornment position="end">
+                                            <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                          </InputAdornment>
+                                        ),
+                                      }}
                     sx={{ mb: 4 }}
                   />
 
