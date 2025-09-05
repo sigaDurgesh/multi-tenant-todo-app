@@ -15,6 +15,7 @@ import * as Yup from "yup";
 import { AuthContext } from "../../context/AuthContext";
 import { authApi } from "../../services/api";
 import CustomTextField from "../../components/forms/theme-elements/CustomTextField";
+import loginimage from "../../assets/loginimage.jpg"; 
 
 const validationSchema = Yup.object({
   tenantName: Yup.string(),
@@ -284,14 +285,15 @@ const Login = () => {
             }}
           >
             <img
-              src="https://getwallpapers.com/wallpaper/full/a/f/0/1160349-top-tech-hd-wallpapers-1920x1080.jpg"
-              alt="Login Illustration"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
+  src={loginimage}
+  alt="Login Illustration"
+  loading="lazy"
+  style={{
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  }}
+/>
           </Grid>
         </Grid>
       </Paper>

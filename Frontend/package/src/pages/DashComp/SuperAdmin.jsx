@@ -247,6 +247,7 @@ const SuperAdminDashboard = () => {
                 <MenuItem value="pending">Pending</MenuItem>
                 <MenuItem value="approved">Approved</MenuItem>
                 <MenuItem value="rejected">Rejected</MenuItem>
+                 
               </Select>
             </FormControl>
           </Grid>
@@ -372,30 +373,76 @@ const SuperAdminDashboard = () => {
         </TabPanel>
 
         {/* Recent Activity */}
-        <TabPanel value={currentTab} index={2}>
-          <List>
-            {tenants
-              .sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at))
-              .map((t) => (
-                <ListItem key={t.id}>
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
-                      {getStatusIcon(t.status)}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={`${
-                      t.tenant_name || "-"
-                    } - ${t.status.toUpperCase()}`}
-                    secondary={`${t.requester?.email || "-"} — ${
-                      t.requested_at ? formatDate(t.requested_at) : "-"
-                    }`}
-                    // • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}
+       <TabPanel value={currentTab} index={2}>
+  {tenants && tenants.length > 0 ? (
+    <List>
+      {tenants
+        .slice()
+        .sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at)) // recent first
+        .map((t) => (
+          <ListItem
+            key={t.id}
+            sx={{
+              borderBottom: "1px solid #f0f0f0",
+              alignItems: "flex-start",
+              py: 2,
+            }}
+          >
+            {/* Status Avatar */}
+            <ListItemAvatar>
+              <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
+                {getStatusIcon(t.status)}
+              </Avatar>
+            </ListItemAvatar>
+
+            {/* Tenant Info */}
+            <ListItemText
+              primary={
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {t.tenant_name || "Unnamed Tenant"}{" "}
+                  <Chip
+                    label={t.status?.toUpperCase() || "UNKNOWN"}
+                    size="small"
+                    sx={{
+                      ml: 1,
+                      fontSize: "0.7rem",
+                      fontWeight: "bold",
+                      bgcolor: getStatusColor(t.status),
+                      color: "#fff",
+                    }}
                   />
-                </ListItem>
-              ))}
-          </List>
-        </TabPanel>
+                </Typography>
+              }
+              secondary={
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Requested By:</strong>{" "}
+                    {t.requester?.email || "-"} •{" "}
+                    {t.requested_at ? formatDate(t.requested_at) : "N/A"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Reviewed:</strong>{" "}
+                    {t.reviewed_at ? formatDate(t.reviewed_at) : "Pending"} •{" "}
+                    <strong>Reviewer:</strong>{" "}
+                    {t.reviewer?.email || "Not Assigned"}
+                  </Typography>
+                </>
+              }
+            />
+          </ListItem>
+        ))}
+    </List>
+  ) : (
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      sx={{ textAlign: "center", mt: 3 }}
+    >
+      No tenants reviewed yet.
+    </Typography>
+  )}
+</TabPanel>
+
 
         {/* Analytics */}
         <TabPanel value={currentTab} index={3}>
@@ -471,13 +518,13 @@ const SuperAdminDashboard = () => {
               <Typography>
                 Status: {selectedTenant.status.toUpperCase()}
               </Typography>
-              <Typography>
+              {/* <Typography>
                 Reviewed At: {formatDate(selectedTenant.reviewed_at)}
               </Typography>
               <Typography>
                 Reviewer Email: {selectedTenant.reviewer?.email || "-"}
                 
-              </Typography>
+              </Typography> */}
             </Stack>
           )}
         </DialogContent>

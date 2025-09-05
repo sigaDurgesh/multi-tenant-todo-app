@@ -129,7 +129,7 @@ const LandingPage = () => {
     {
       title: "Collaboration",
       description:
-        "Communicate in countless ways from one place. Slack is built for bringing people and information together. Type things out. Talk things through. Invite external organisations into the conversation. A GIF shows how people collaborate using channels in Slack. 80% of the Fortune 100 use Slack Connect to work with partners and customers.",
+        "Communicate in countless ways from one place. Tenant is built for bringing people and information together. Type things out. Talk things through. Invite external organisations into the conversation. A GIF shows how people collaborate using channels in Slack. 80% of the Fortune 100 use TenantConnect to work with partners and customers.",
       imageUrl:
         "https://a.slack-edge.com/b5bbfef/marketing/img/homepage/revamped-24/mobile/value-props/image-collaboration.en-GB@2x.png",
     },
@@ -620,7 +620,7 @@ const LandingPage = () => {
                   maxWidth: { md: "220px" },
                 }}
               >
-                of users say that Slack helps them stay more connected
+                of users say that Tenant helps them stay more connected
               </Typography>
             </Grid>
 
@@ -660,7 +660,7 @@ const LandingPage = () => {
                   maxWidth: { md: "220px" },
                 }}
               >
-                of users say that Slack improves communication
+                of users say that Tenant improves communication
               </Typography>
             </Grid>
 

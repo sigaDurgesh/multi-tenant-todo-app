@@ -103,6 +103,14 @@ useEffect(() => {
         user.email?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // At the very top of your TenantAdminDashboard.js file
+if (!sessionStorage.getItem("tenantAdminReloaded")) {
+  sessionStorage.setItem("tenantAdminReloaded", "true");
+  window.location.reload();
+}
+
+
+
   return (
     <Box sx={{ p: 4 }}>
       <Typography variant="h5" gutterBottom>
