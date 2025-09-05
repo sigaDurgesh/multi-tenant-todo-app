@@ -361,7 +361,7 @@ export const getUsersByTenant = async (req, res) => {
 
     // 2. Fetch users excluding tenantAdmin
     const users = await User.findAll({
-      where: { tenant_id: tenant.id, is_deleted: false },
+      where: { tenant_id: tenant.id},
       attributes: ["id", "email","is_active", "is_deleted"],
       include: [
         {
@@ -663,7 +663,7 @@ export const activateUser = async (req, res) => {
       return res.status(403).json({ message: "Only tenant admins can activate users" });
     }
 
-    const user = await User.findOne({ where: { id: userId, tenant_id: tenantAdmin.tenant_id, is_deleted: false } });
+    const user = await User.findOne({ where: { id: userId, tenant_id: tenantAdmin.tenant_id } });
     if (!user) {
       return res.status(404).json({ message: "User not found in your tenant" });
     }
@@ -713,12 +713,12 @@ export const softDeleteUser = async (req, res) => {
       return res.status(403).json({ message: "Only tenant admins can delete users" });
     }
 
-    const user = await User.findOne({ where: { id: userId, tenant_id: tenantAdmin.tenant_id, is_deleted: false } });
+    const user = await User.findOne({ where: { id: userId, tenant_id: tenantAdmin.tenant_id } });
     if (!user) {
       return res.status(404).json({ message: "User not found in your tenant" });
     }
 
-    await user.update({ is_deleted: true , is_active: false, deleted_at: formatDate(new Date()).toString()});
+    await user.update({ is_deleted: true , is_active: false});
 
     return res.status(200).json({ message: "User deleted successfully (soft delete)", user });
   } catch (error) {
