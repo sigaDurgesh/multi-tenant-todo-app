@@ -14,6 +14,9 @@ const CommonDashboard = () => {
   if (!user) {
     return <Typography variant="h6" color="textSecondary">Please login to view the dashboard.</Typography>;
   }
+  if (!user.token) {
+    return <Typography variant="h6" color="textSecondary">Please login.</Typography>;
+  }
 
   switch (user.role) {
     case "superAdmin":

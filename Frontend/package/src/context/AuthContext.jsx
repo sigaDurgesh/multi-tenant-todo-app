@@ -1,9 +1,13 @@
 // src/context/AuthContext.js
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 import React, { createContext, useState, useEffect } from "react";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+
+    // Logout dialog state
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [user, setUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem("user");
@@ -32,14 +36,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-  const confirmLogout = window.confirm("Are you sure you want to logout?");
-  if (!confirmLogout) {
-    return;
-  }  setUser(null);
+  // const confirmLogout = window.confirm("Are you sure you want to logout?");
+  // if (!confirmLogout) {
+  //   return;
+  // }  
+  setUser(null);
   // localStorage.removeItem("tenantId");
   localStorage.removeItem("user");
   localStorage.removeItem("token");
 };
+
+// Control dialog
+  const openLogoutDialog = () => setLogoutDialogOpen(true);
+  const closeLogoutDialog = () => setLogoutDialogOpen(false);
+
+  // Confirm logout
+  const confirmLogout = () => {
+    logout();
+    closeLogoutDialog();
+  };
 
 
   return (
@@ -49,9 +64,33 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         setUser,
+         openLogoutDialog, // 👈 expose
       }}
     >
       {children}
+
+      {/* ✅ Global Logout Dialog */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={closeLogoutDialog}
+      >
+        <DialogTitle>Confirm Logout</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to logout? You’ll need to log in again to access your account.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLogoutDialog} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={confirmLogout} color="error" variant="contained">
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
     </AuthContext.Provider>
   );
 };

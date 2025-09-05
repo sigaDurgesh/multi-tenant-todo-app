@@ -56,7 +56,7 @@ const GradientButton = styled(Button)(() => ({
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
+  const { user ,openLogoutDialog } = useContext(AuthContext);
 
   // ✅ State for animations
   const [statsVisible, setStatsVisible] = useState(false);
@@ -409,9 +409,18 @@ const LandingPage = () => {
                 Go to Workspace
               </GradientButton>
             ) : (
+              
+              <>
+
               <GradientButton onClick={() => navigate("/dashboard")}>
                 Go to Dashboard
               </GradientButton>
+              <GradientButton onClick={openLogoutDialog}>
+                Logout
+              </GradientButton>
+              
+              </>
+              
             )}
           </Stack>
 
