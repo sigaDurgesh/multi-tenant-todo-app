@@ -38,7 +38,7 @@ import AddTaskIcon from "@mui/icons-material/AddTask";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 
 const Sidebar = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user ,openLogoutDialog } = useContext(AuthContext);
   const { requestCounts, userStats } = useContext(TenantRequestContext);
   const location = useLocation();
   const navigate = useNavigate();
@@ -229,10 +229,7 @@ const Sidebar = () => {
     <Divider />
 
     <MenuItem
-      onClick={() => {
-        handleMenuClose();
-        handleLogout();
-      }}
+      onClick={openLogoutDialog}
     >
       <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
       Logout

@@ -23,7 +23,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const Layout = () => {
-  const {user , setUser} = useContext(AuthContext);
+  const {user , setUser ,openLogoutDialog} = useContext(AuthContext);
   const role = typeof user.role === "string" ? user.role : user.role?.takerole || "user";
 
   const navigate = useNavigate();
@@ -38,15 +38,6 @@ const Layout = () => {
 
   const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
-
-  // Logout
-const handleLogout = () => {
-  setUser(null);
-  sessionStorage.clear();
-  localStorage.removeItem("tenantId");
-  localStorage.removeItem("tenantRequestId");
-  navigate("/login");
-};
 
 
   // Notifications dropdown
@@ -148,7 +139,7 @@ const handleLogout = () => {
                 <MenuItem onClick={() => navigate("/change-pass")}>
                   Change password
                 </MenuItem>
-                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                <MenuItem onClick={openLogoutDialog}>Logout</MenuItem>
               </Menu>
             </Box>
           </Toolbar>
