@@ -34,8 +34,13 @@ export const superAdmin = {
       action, // "approved" or "rejected"
       reviewerId, // super admin user ID
     }),
+
+    
+    // Get total tenant count
+  totalTenantCount: () => apiRequest("/tenant-requests/all-tenant", "GET"),
+
   // Soft delete a tenant request
   softDelete: (id) => apiRequest(`/tenant-requests/${id}`, "DELETE"),
   // Restore a soft-deleted tenant request
-  restore: (id) => apiRequest(`/tenant-requests/${id}/restore`, "PATCH"),
+  // restore: (id) => apiRequest(`/tenant-requests/${id}/restore`, "PATCH"),
 };

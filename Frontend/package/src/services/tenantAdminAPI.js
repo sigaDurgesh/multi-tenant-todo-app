@@ -23,7 +23,7 @@ async function apiRequest(endpoint, method = "GET", body = null, headers = {}) {
 export const tenantApi = {
   list: () => apiRequest("/tenant-requests", "GET"),
   getById: (id) => apiRequest(`/tenant-requests/${id}`, "GET"),
-  getUsers: (id) => apiRequest(`/tenant-requests/users/${id}`, "GET"),
+  c: (id) => apiRequest(`/tenant-requests/users/${id}`, "GET"),
   // ✅ Invite / Add a tenant user
   addTenantUser: (tenantId, email) =>
     apiRequest(`/tenant-requests/add-tenant-user`, "POST", {
@@ -36,7 +36,5 @@ export const tenantApi = {
       requestId,
       action,
       reviewerId,
-    }),
-  softDelete: (id) => apiRequest(`/tenant-requests/${id}`, "DELETE"),
-  restore: (id) => apiRequest(`/tenant-requests/${id}/restore`, "PATCH"),
+    })
 };

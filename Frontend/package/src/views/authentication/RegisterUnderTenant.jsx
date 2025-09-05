@@ -17,6 +17,7 @@ import * as Yup from "yup";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import PageContainer from "src/components/container/PageContainer";
 import CustomTextField from "../../components/forms/theme-elements/CustomTextField";
+import registerimage from "../../assets/registerimage.jpg"; 
 
 const RegisterUnderTenant = () => {
   const navigate = useNavigate();
@@ -209,23 +210,28 @@ const RegisterUnderTenant = () => {
           </Box>
 
           {/* Right side - Illustration */}
-          <Box
-            sx={{
-              flex: 1,
-              display: { xs: "none", md: "flex" },
-              alignItems: "center",
-              justifyContent: "center",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              p: 4,
-            }}
-          >
-            <Box
-              component="img"
-              src="https://wallpaperaccess.com/full/210938.jpg"
-              alt="Register Illustration"
-              sx={{ width: "100%", height: "auto", maxWidth: 500 , borderRadius: 2}}
-            />
-          </Box>
+         <Box
+  sx={{
+    flex: 1,
+    display: { xs: "none", md: "flex" },
+    alignItems: "center",
+    justifyContent: "center",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    p: 0, // remove padding so image fills container
+    height: "65vh", // or parent container height
+    width: "100%",
+    position: "relative",
+    overflow: "hidden",
+  }}
+>
+  <Box
+    component="img"
+    src={registerimage}
+    alt="Register Illustration"
+    loading="lazy" // fast loading
+    sx={{ width: "100%", height: "65vh", objectFit: "cover" }}
+  />
+</Box>
         </Card>
       </Box>
     </PageContainer>

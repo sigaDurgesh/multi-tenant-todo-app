@@ -34,6 +34,8 @@ import ApartmentIcon from '@mui/icons-material/Apartment';
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../../context/AuthContext";
 import TenantRequestContext from "../../../context/TenantRequestContext";
+import AddTaskIcon from "@mui/icons-material/AddTask";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 
 const Sidebar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -120,6 +122,19 @@ const Sidebar = () => {
         items: [{ text: "Profile", icon: <PersonIcon />, path: "/profile" }],
       },
     ],
+    user: [
+    {
+      section: "Main",
+      items: [
+        
+        { text: "Add Todo", icon: <AddTaskIcon />, path: "/user/addtodos" },
+        { text: "My Todos", icon: <AssignmentIcon />, path: "/user/todos" },
+      ],
+    },
+   {
+        section: "Account",
+        items: [{ text: "Profile", icon: <PersonIcon />, path: "/profile" }],
+      },]
   };
 
   const role = user?.roles?.[0] || "guest";
@@ -153,7 +168,7 @@ const Sidebar = () => {
         }}
         onClick={handleMenuOpen}
       >
-        {!collapsed && (
+        {!collapsed  && (
           <Box display="flex" alignItems="center">
             <Avatar sx={{ bgcolor: "primary.main", mr: 1 }}>
               {user?.tenant_name ? user.tenant_name[0].toUpperCase() : "?"}
@@ -167,7 +182,8 @@ const Sidebar = () => {
                 {role}
               </Typography>
             </Box>
-            <KeyboardArrowDownIcon fontSize="small" /> {/* ✅ Down arrow */}
+            {  user.roles[0]=="tenanAdmin" && 
+              <KeyboardArrowDownIcon fontSize="small" />} 
           </Box>
         )}
         <IconButton
@@ -182,7 +198,11 @@ const Sidebar = () => {
       </Box>
 
       {/* Dropdown Menu */}
-      <Menu
+
+      {
+        user.roles[0]=="tenanAdmin" && 
+
+        <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
@@ -202,7 +222,7 @@ const Sidebar = () => {
           <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
           Logout
         </MenuItem>
-      </Menu>
+      </Menu>}
 
       {/* Role-based Menu */}
       <List sx={{ flexGrow: 1 }}>

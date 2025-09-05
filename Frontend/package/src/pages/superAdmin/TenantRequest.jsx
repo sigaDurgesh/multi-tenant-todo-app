@@ -140,7 +140,6 @@ const TenantRequest = () => {
 
   const handleDeleteRow = async (id) => {
     setActing(true);
-    alert("API not integrating for soft delete please check once...")
     try {
       await tenantApi.softDelete(id);
       setRows((prev) => prev.map((r) => (r.id === id ? { ...r, deleted: true } : r)));
@@ -200,32 +199,10 @@ const TenantRequest = () => {
                 </Button>
                 {row.status === "pending" && (
                   <>
-                    {/* <Button
-                      size="small"
-                      color="success"
-                      onClick={() => doStatusUpdate(row.id, "approved")}
-                      disabled={acting}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() => doStatusUpdate(row.id, "rejected")}
-                      disabled={acting}
-                    >
-                      Reject
-                    </Button> */}
+                   
                   </>
                 )}
-                {/* <Button
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteRow(row.id)}
-                  disabled={acting}
-                >
-                  Delete
-                </Button> */}
+                
               </>
             )}
             {row.deleted && (
