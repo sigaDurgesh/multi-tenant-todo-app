@@ -9,39 +9,66 @@ import {
   createTenantWithAdmin,
   addUserUnderTenant,
   softDeleteTenant,
-  getTenantsWithUserCount
+  getTenantsWithUserCount,
+  activateUser,
+  deactivateUser,
+  softDeleteUser
 } from "../controllers/tenant.controller.js";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 const router = express.Router();
 
-// Normal user creates request
+/**
+ * ============================
+ * ROUTES FOR NORMAL USERS
+ * ============================
+ */
+
+// User creates a tenant request
 router.post("/", createTenantRequest);
-
-// Super admin reviews request
-router.put("/review-request", reviewTenantRequest);
-
-// Super admin lists requests
-router.get("/", listReviewedTenantRequests);
-
-// Get tenants with user count (for super admin)
-router.get("/all-tenant", authenticateJWT , getTenantsWithUserCount);
-
-// Get request by ID
-router.get("/:id", getTenantRequestById);
 
 // Register user under tenant after approval
 router.post("/register-user", registerUserUnderTenant);
 
-// Get users by tenant
-router.get("/users/:tenantId", getUsersByTenant);
+/**
+ * ============================
+ * ROUTES FOR TENANT ADMIN
+ * ============================
+ */
 
-// Super admin creates tenant directly
-router.post("/create-tenant", createTenantWithAdmin);
+// Add a user under their own tenant
+router.post("/add-tenant-user", authenticateJWT, addUserUnderTenant);
 
-// Add tenant user by tenant admin
-router.post("/add-tenant-user", addUserUnderTenant);
+// Get users belonging to a tenant
+router.get("/users/:tenantId", authenticateJWT, getUsersByTenant);
 
-// Soft delete tenant by super admin
-router.delete("/:id", authenticateJWT , softDeleteTenant);
+// Tenant admin user management
+router.put("/tenant-users/:userId/activate", authenticateJWT, activateUser);
+router.put("/tenant-users/:userId/deactivate", authenticateJWT, deactivateUser);
+router.delete("/tenant-users/:userId", authenticateJWT, softDeleteUser);
+
+
+/**
+ * ============================
+ * ROUTES FOR SUPER ADMIN
+ * ============================
+ */
+
+// Review tenant requests
+router.put("/review-request", authenticateJWT, reviewTenantRequest);
+
+// List all reviewed tenant requests
+router.get("/", authenticateJWT, listReviewedTenantRequests);
+
+// Get tenants with user count
+router.get("/all-tenant", authenticateJWT, getTenantsWithUserCount);
+
+// Create tenant directly
+router.post("/create-tenant", authenticateJWT, createTenantWithAdmin);
+
+// Soft delete tenant
+router.delete("/:id", authenticateJWT, softDeleteTenant);
+
+// Get a tenant request by ID
+router.get("/:id", authenticateJWT, getTenantRequestById);
 
 export default router;

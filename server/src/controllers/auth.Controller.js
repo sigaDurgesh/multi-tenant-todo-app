@@ -86,7 +86,7 @@ if (roles.length === 0 || (!roles.includes("superAdmin") && !roles.includes("ten
       }
 
       if (user.tenant_id !== tenant.id) {
-        return res.status(403).json({ message: "User does not belong to this tenant" });
+        return res.status(403).json({ message: "Invalid tenant name." });
       }
     }
 

@@ -652,3 +652,76 @@ export const getTenantsWithUserCount = async (req, res) => {
     });
   }
 };
+
+export const activateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const tenantAdmin = req.user; // coming from authenticateJWT
+
+    // Ensure tenant admin role
+    if (!tenantAdmin.roles.includes("tenantAdmin")) {
+      return res.status(403).json({ message: "Only tenant admins can activate users" });
+    }
+
+    const user = await User.findOne({ where: { id: userId, tenant_id: tenantAdmin.tenant_id, is_deleted: false } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found in your tenant" });
+    }
+
+    await user.update({ is_active: true });
+
+    return res.status(200).json({ message: "User activated successfully", user });
+  } catch (error) {
+    return res.status(500).json({ message: "Error activating user", error: error.message });
+  }
+};
+
+/**
+ * Deactivate a user (tenant admin only)
+ */
+export const deactivateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const tenantAdmin = req.user;
+
+    if (!tenantAdmin.roles.includes("tenantAdmin")) {
+      return res.status(403).json({ message: "Only tenant admins can deactivate users" });
+    }
+
+    const user = await User.findOne({ where: { id: userId, tenant_id: tenantAdmin.tenant_id, is_deleted: false } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found in your tenant" });
+    }
+
+    await user.update({ is_active: false });
+
+    return res.status(200).json({ message: "User deactivated successfully", user });
+  } catch (error) {
+    return res.status(500).json({ message: "Error deactivating user", error: error.message });
+  }
+};
+
+/**
+ * Soft delete a user (tenant admin only)
+ */
+export const softDeleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const tenantAdmin = req.user;
+
+    if (!tenantAdmin.roles.includes("tenantAdmin")) {
+      return res.status(403).json({ message: "Only tenant admins can delete users" });
+    }
+
+    const user = await User.findOne({ where: { id: userId, tenant_id: tenantAdmin.tenant_id, is_deleted: false } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found in your tenant" });
+    }
+
+    await user.update({ is_deleted: true });
+
+    return res.status(200).json({ message: "User deleted successfully (soft delete)", user });
+  } catch (error) {
+    return res.status(500).json({ message: "Error deleting user", error: error.message });
+  }
+};

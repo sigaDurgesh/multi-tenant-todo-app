@@ -31,6 +31,10 @@ const User = sequelize.define("User", {
   deleted_at: {
     type: DataTypes.DATE,
   },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
 }, {
   timestamps: true,
   tableName: "users",
