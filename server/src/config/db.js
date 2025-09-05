@@ -31,6 +31,12 @@ const sequelize = new Sequelize(
         rejectUnauthorized: false, // Supabase requires SSL
       },
     },
+    pool: {
+      max: 5,    // keep small, Supabase session pooler is limited
+      min: 2,
+      idle: 10000,
+      acquire: 30000,
+    },
   }
 );
 
