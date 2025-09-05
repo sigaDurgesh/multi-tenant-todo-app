@@ -20,76 +20,151 @@ import {
   Alert,
   Stack,
   Tooltip,
-
+  Tabs,
+  Tab,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
+
+import BlockIcon from "@mui/icons-material/Block";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { TenantRequestContext } from "../../context/TenantRequestContext";
-import { Box } from "@mui/system";
+import RestoreIcon from "@mui/icons-material/Restore";
 import { useNavigate } from "react-router";
+import { TenantRequestContext } from "../../context/TenantRequestContext";
+import { AuthContext } from "../../context/AuthContext";
+import { tenantApi } from "../../services/tenantAdminAPI";
 
 const UsersList = () => {
   const {
     tenantUsers,
     tenantDetails,
-    userStats,
     fetchTenantUsers,
     tenantId,
     loadingUsers,
     errorUsers,
   } = useContext(TenantRequestContext);
+  const { user } = useContext(AuthContext);
 
-  const [open, setOpen] = useState(false);
-  const [newEmail, setNewEmail] = useState("");
-  const [newTenantId, setNewTenantId] = useState("");
-  const [errors, setErrors] = useState({});
-  const [snack, setSnack] = useState({ open: false, type: "", msg: "" });
-  const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [snack, setSnack] = useState({ open: false, type: "", msg: "" });
+  const [tabValue, setTabValue] = useState("active");
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Confirm delete state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  // View modal state
+  const [viewOpen, setViewOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const navigate = useNavigate();
-  useEffect(() => {
-    if (tenantId) {
-      fetchTenantUsers(tenantId);
-      setNewTenantId(tenantId);
-    }
-  }, [tenantId]);
 
-  const validate = () => {
-    let temp = {};
-    if (!newTenantId.trim()) temp.tenantId = "Tenant ID is required";
-    if (!newEmail.trim()) temp.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(newEmail)) temp.email = "Enter a valid email";
-    setErrors(temp);
-    return Object.keys(temp).length === 0;
-  };
+  useEffect(() => {
+    if (tenantId) fetchTenantUsers(tenantId);
+  }, [tenantId]);
 
   const handleCloseSnack = () => setSnack({ open: false, type: "", msg: "" });
 
-  const getStatusColor = (status) => {
-    switch ((status || "Active").toLowerCase()) {
-      case "active":
-        return "success";
-      case "pending":
-        return "warning";
-      case "blocked":
-        return "error";
-      default:
-        return "default";
+  // ✅ Deactivate → move to inactive
+  const handleDeactivate = async (userId) => {
+    if (!user?.token) return;
+    try {
+      setActionLoading(true);
+      await tenantApi.deactivateUser(userId, user.token);
+      setSnack({
+        open: true,
+        type: "success",
+        msg: "User deactivated successfully!",
+      });
+      fetchTenantUsers(tenantId);
+    } catch (err) {
+      setSnack({
+        open: true,
+        type: "error",
+        msg: err.message || "Failed to deactivate user",
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const filteredUsers = tenantUsers.filter(
-    (u) =>
-      (statusFilter === "all" ||
-        u.status?.toLowerCase() === statusFilter.toLowerCase()) &&
-      (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // ✅ Restore → move back to active
+  const handleRestore = async (userId) => {
+    if (!user?.token) return;
+    try {
+      setActionLoading(true);
+      await tenantApi.activateUser(userId, user.token);
+      setSnack({
+        open: true,
+        type: "success",
+        msg: "User restored successfully!",
+      });
+      fetchTenantUsers(tenantId);
+    } catch (err) {
+      setSnack({
+        open: true,
+        type: "error",
+        msg: err.message || "Failed to restore user",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ✅ Confirm delete
+  const confirmDelete = (userId) => {
+    setSelectedUserId(userId);
+    setConfirmOpen(true);
+  };
+
+  // ✅ Actual delete
+  const handleDelete = async () => {
+    if (!user?.token || !selectedUserId) return;
+    try {
+      setActionLoading(true);
+      await tenantApi.softDeleteUser(selectedUserId, user.token);
+      setSnack({
+        open: true,
+        type: "success",
+        msg: "User deleted successfully!",
+      });
+      fetchTenantUsers(tenantId);
+    } catch (err) {
+      setSnack({
+        open: true,
+        type: "error",
+        msg: err.message || "Failed to delete user",
+      });
+    } finally {
+      setActionLoading(false);
+      setConfirmOpen(false);
+      setSelectedUserId(null);
+    }
+  };
+
+  // ✅ Filter users for each tab
+  const filteredUsers = tenantUsers
+    .filter((u) => {
+      if (tabValue === "active") return u.is_active === true && !u.is_deleted;
+      if (tabValue === "inactive") return u.is_active === false && !u.is_deleted;
+      if (tabValue === "deleted") return u.is_deleted === true;
+      return true;
+    })
+    .filter(
+      (u) =>
+        u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   return (
     <Box>
-      {/* Header + Stats */}
+      {/* Header */}
       <Grid
         container
         justifyContent="space-between"
@@ -101,8 +176,7 @@ const UsersList = () => {
             Users Management
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            {tenantDetails ? `Tenant: ${tenantDetails.name}` : ""} | Total
-            Users: <strong>{userStats.totalUsers || 0}</strong>
+            {tenantDetails ? `Tenant: ${tenantDetails.name}` : ""}
           </Typography>
         </Box>
         <Button
@@ -114,31 +188,30 @@ const UsersList = () => {
         </Button>
       </Grid>
 
-      {/* Filters */}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={6}>
-          <TextField
-            label="Search by name/email"
-            fullWidth
-            size="small"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </Grid>
-        {/* <Grid item xs={12} md={3}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Status Filter</InputLabel>
-            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="blocked">Blocked</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid> */}
-      </Grid>
+      {/* Tabs */}
+      <Tabs
+        value={tabValue}
+        onChange={(e, newVal) => setTabValue(newVal)}
+        sx={{ mb: 2 }}
+        indicatorColor="primary"
+        textColor="primary"
+      >
+        <Tab label="Active Users" value="active" />
+        <Tab label="Inactive Users" value="inactive" />
+        <Tab label="Deleted Users" value="deleted" />
+      </Tabs>
 
-      {/* Loading/Error */}
+      {/* Search */}
+      <TextField
+        label="Search by name/email"
+        fullWidth
+        size="small"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        sx={{ mb: 2 }}
+      />
+
+      {/* Loader / Error */}
       {loadingUsers ? (
         <Grid container justifyContent="center" sx={{ mt: 5 }}>
           <CircularProgress />
@@ -150,58 +223,107 @@ const UsersList = () => {
       ) : (
         <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
-              Tenant Users
-            </Typography>
             <TableContainer component={Paper}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>
-                      <strong>Name</strong>
-                    </TableCell>
-                    <TableCell>
-                      <strong>Email</strong>
-                    </TableCell>
-                    <TableCell>
-                      <strong>Status</strong>
-                    </TableCell>
-                    <TableCell align="right">
-                      <strong>Actions</strong>
-                    </TableCell>
+                    <TableCell><strong>Name</strong></TableCell>
+                    <TableCell><strong>Email</strong></TableCell>
+                    <TableCell><strong>Status</strong></TableCell>
+                    <TableCell align="right"><strong>Actions</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          {user.name || user.email.split("@")[0]}
-                        </TableCell>
-                        <TableCell>{user.email}</TableCell>
+                    filteredUsers.map((u) => (
+                      <TableRow key={u.id}>
+                        <TableCell>{u.name || u.email.split("@")[0]}</TableCell>
+                        <TableCell>{u.email}</TableCell>
                         <TableCell>
                           <Chip
-                            label={user.status || "Active"}
-                            color={getStatusColor(user.status)}
+                            label={
+                              u.is_deleted
+                                ? "Deleted"
+                                : u.is_active
+                                ? "Active"
+                                : "Inactive"
+                            }
+                            color={
+                              u.is_deleted
+                                ? "default"
+                                : u.is_active
+                                ? "success"
+                                : "error"
+                            }
                             size="small"
                           />
                         </TableCell>
                         <TableCell align="right">
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            justifyContent="flex-end"
-                          >
-                            <Tooltip title="Edit User">
-                              <IconButton color="primary">
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete User">
-                              <IconButton color="error">
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            {/* Active Users → Deactivate */}
+                            {u.is_active && !u.is_deleted && (
+                              <>
+                                <Tooltip title="View User">
+                                  <IconButton
+                                    color="info"
+                                    onClick={() => {
+                                      setSelectedUser(u);
+                                      setViewOpen(true);
+                                    }}
+                                  >
+                                    <VisibilityIcon />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Deactivate User">
+                                  <IconButton
+                                    color="warning"
+                                    disabled={actionLoading}
+                                    onClick={() => handleDeactivate(u.id)}
+                                  >
+                                    <BlockIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              </>
+                            )}
+
+                            {/* Inactive Users → Restore or Delete */}
+                            {!u.is_active && !u.is_deleted && (
+                              <>
+                                <Tooltip title="Restore User">
+                                  <IconButton
+                                    color="success"
+                                    disabled={actionLoading}
+                                    onClick={() => handleRestore(u.id)}
+                                  >
+                                    <RestoreIcon />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Delete User">
+                                  <IconButton
+                                    color="error"
+                                    disabled={actionLoading}
+                                    onClick={() => confirmDelete(u.id)}
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </Tooltip>
+                              </>
+                            )}
+
+                            {/* Deleted Users → Only View (no actions) */}
+                            {u.is_deleted && (
+                              <Tooltip title="View User">
+                                <IconButton
+                                  color="info"
+                                  onClick={() => {
+                                    setSelectedUser(u);
+                                    setViewOpen(true);
+                                  }}
+                                >
+                                  <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                           </Stack>
                         </TableCell>
                       </TableRow>
@@ -235,6 +357,55 @@ const UsersList = () => {
           {snack.msg}
         </Alert>
       </Snackbar>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to permanently delete this user? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            disabled={actionLoading}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View User Modal */}
+      <Dialog open={viewOpen} onClose={() => setViewOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>User Details</DialogTitle>
+        <DialogContent dividers>
+          {selectedUser ? (
+            <>
+              <Typography><strong>Name:</strong> {selectedUser.name || "N/A"}</Typography>
+              <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
+              <Typography>
+                <strong>Status:</strong>{" "}
+                {selectedUser.is_deleted
+                  ? "Deleted"
+                  : selectedUser.is_active
+                  ? "Active"
+                  : "Inactive"}
+              </Typography>
+            </>
+          ) : (
+            <Typography>No user details available</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setViewOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
