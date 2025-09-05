@@ -362,7 +362,7 @@ export const getUsersByTenant = async (req, res) => {
     // 2. Fetch users excluding tenantAdmin
     const users = await User.findAll({
       where: { tenant_id: tenant.id, is_deleted: false },
-      attributes: ["id", "email"],
+      attributes: ["id", "email","is_active", "is_deleted"],
       include: [
         {
           model: Role,
@@ -718,7 +718,7 @@ export const softDeleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found in your tenant" });
     }
 
-    await user.update({ is_deleted: true });
+    await user.update({ is_deleted: true , is_active: false, deleted_at: formatDate(new Date()).toString()});
 
     return res.status(200).json({ message: "User deleted successfully (soft delete)", user });
   } catch (error) {
