@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }) => {
   if (!confirmLogout) {
     return;
   }  setUser(null);
+  // localStorage.removeItem("tenantId");
   localStorage.removeItem("user");
   localStorage.removeItem("token");
 };
