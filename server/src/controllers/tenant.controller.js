@@ -636,7 +636,8 @@ export const activateTenant = async (req, res) => {
     const newDate = formatDate(new Date()).toString();
     await tenant.update({
       is_active: true,
-      updatedAt: newDate
+      updatedAt: newDate,
+      is_deleted: false
     });
 
     return res.status(200).json({
@@ -673,7 +674,8 @@ export const deactivateTenant = async (req, res) => {
     const newDate = formatDate(new Date()).toString();
     await tenant.update({
       is_active: false,
-      updatedAt: newDate
+      updatedAt: newDate,
+      is_deleted: false
     });
 
     return res.status(200).json({
