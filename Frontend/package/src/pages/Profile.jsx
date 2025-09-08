@@ -1,22 +1,4 @@
 import React, { useContext, useState } from "react";
-import {
-  Typography,
-  Card,
-  CardContent,
-  Grid,
-  Avatar,
-  Divider,
-  Button,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Stack,
-  Alert,
-  Box,
-} from "@mui/material";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -24,8 +6,6 @@ const Profile = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [openDialog, setOpenDialog] = useState(false);
-  const [tenantRequest, setTenantRequest] = useState({ tenantName: "", description: "" });
   const [editMode, setEditMode] = useState(false);
   const [successMsg, setSuccessMsg] = useState(null);
 
@@ -44,175 +24,203 @@ const Profile = () => {
     setEditMode(false);
   };
 
-  const handleSubmitRequest = () => {
-    alert("Request sent to Super Admin!");
-    setTenantRequest({ tenantName: "", description: "" });
-    setOpenDialog(false);
-  };
-
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1000, mx: "auto" }}>
+    <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
-      <Typography variant="h4" fontWeight={700} gutterBottom>
-        My Profile
-      </Typography>
-      <Typography variant="body1" color="text.secondary" gutterBottom>
-        Manage your account details, preferences, and tenant requests.
-      </Typography>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+        <p className="text-gray-500 mt-1">
+          Manage your account details, security, and preferences.
+        </p>
+      </div>
 
+      {/* Success Banner */}
       {successMsg && (
-        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMsg(null)}>
-          {successMsg}
-        </Alert>
+        <div className="mt-4 rounded-lg bg-green-50 border border-green-200 p-4 flex justify-between items-center">
+          <span className="text-green-700 text-sm">{successMsg}</span>
+          <button
+            onClick={() => setSuccessMsg(null)}
+            className="text-sm text-green-600 hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
       )}
 
       {/* Profile Card */}
-      <Card sx={{ borderRadius: 3, boxShadow: 6, mt: 3 }}>
-        <CardContent>
-          <Grid container spacing={4}>
-            {/* Left - Avatar & Basic Info */}
-            <Grid item xs={12} md={4} sx={{ textAlign: "center" }}>
-              <Avatar sx={{ width: 120, height: 120, bgcolor: "primary.main", fontSize: 40 }}>
-                {profileData.name.charAt(0)}
-              </Avatar>
-              <Typography variant="h6" mt={2}>
-                {profileData.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {profileData.email}
-              </Typography>
-              <Chip
-                label={profileData.role.toUpperCase()}
-                color={
-                  profileData.role === "superAdmin"
-                    ? "error"
-                    : profileData.role === "tenantAdmin"
-                    ? "secondary"
-                    : "primary"
-                }
-                size="small"
-                sx={{ mt: 1, px: 1.5, py: 0.5 }}
-              />
-            </Grid>
+      <div className="mt-6 bg-white rounded-2xl shadow-md p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Left Column - Avatar + Info */}
+          <div className="flex flex-col items-center md:border-r md:pr-6">
+            <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center text-3xl font-bold shadow-md">
+              {profileData.name.charAt(0)}
+            </div>
+            <h2 className="mt-3 text-xl font-semibold text-gray-900">
+              {profileData.name}
+            </h2>
+            <p className="text-gray-500">{profileData.email}</p>
 
-            {/* Right - Details & Actions */}
-            <Grid item xs={12} md={8}>
-              {editMode ? (
-                <Stack spacing={2}>
-                  <TextField
-                    label="Name"
-                    fullWidth
+            <span
+              className={`mt-3 px-3 py-1 rounded-full text-xs font-semibold tracking-wide ${
+                profileData.role === "superAdmin"
+                  ? "bg-red-100 text-red-700"
+                  : profileData.role === "tenantAdmin"
+                  ? "bg-purple-100 text-purple-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}
+            >
+              {profileData.role.toUpperCase()}
+            </span>
+          </div>
+
+          {/* Right Column - Details */}
+          <div className="md:col-span-2">
+            {editMode ? (
+              <div className="space-y-5">
+                {/* Editable fields */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Name
+                  </label>
+                  <input
+                    type="text"
                     value={profileData.name}
-                    onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, name: e.target.value })
+                    }
+                    className="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
                   />
-                  <TextField
-                    label="Phone"
-                    fullWidth
-                    value={profileData.phone}
-                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                  />
-                  <Stack direction="row" spacing={2} justifyContent="flex-end">
-                    <Button variant="outlined" onClick={() => setEditMode(false)}>
-                      Cancel
-                    </Button>
-                    <Button variant="contained" onClick={handleSaveProfile}>
-                      Save
-                    </Button>
-                  </Stack>
-                </Stack>
-              ) : (
-                <Stack spacing={2}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Phone
-                      </Typography>
-                      <Typography variant="body1">{profileData.phone}</Typography>
-                    </Grid>
-                    {user.role !== "superAdmin" && (
-                      <Grid item xs={6}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Tenant
-                        </Typography>
-                        <Typography variant="body1">{profileData.tenant}</Typography>
-                      </Grid>
-                    )}
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Joined
-                      </Typography>
-                      <Typography variant="body1">{profileData.joined}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Status
-                      </Typography>
-                      <Chip
-                        label={profileData.status}
-                        color={profileData.status === "Active" ? "success" : "default"}
-                        size="small"
-                      />
-                    </Grid>
-                  </Grid>
+                </div>
 
-                  <Stack direction="row" spacing={2} justifyContent="flex-end" mt={1}>
-                    <Button variant="outlined" onClick={() => setEditMode(true)}>
-                      Edit Profile
-                    </Button>
-                    <Button variant="outlined" onClick={() => navigate("/change-pass")}>
-                      Change Password
-                    </Button>
-                    
-                  </Stack>
-                </Stack>
-              )}
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.phone}
+                    onChange={(e) =>
+                      setProfileData({ ...profileData, phone: e.target.value })
+                    }
+                    className="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setEditMode(false)}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                  <div>
+                    <dt className="text-sm text-gray-500">Phone</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {profileData.phone}
+                    </dd>
+                  </div>
+
+                  {user.role !== "superAdmin" && (
+                    <div>
+                      <dt className="text-sm text-gray-500">Tenant</dt>
+                      <dd className="text-sm font-medium text-gray-900">
+                        {profileData.tenant}
+                      </dd>
+                    </div>
+                  )}
+
+                  <div>
+                    <dt className="text-sm text-gray-500">Joined</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {profileData.joined}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt className="text-sm text-gray-500">Status</dt>
+                    <dd>
+                      <span
+                        className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                          profileData.status === "Active"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {profileData.status}
+                      </span>
+                    </dd>
+                  </div>
+                </dl>
+
+                {/* Action buttons */}
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={() => setEditMode(true)}
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-medium"
+                  >
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => navigate("/change-pass")}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium"
+                  >
+                    Change Password
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Role-specific Info Cards */}
-      <Stack spacing={2} mt={3}>
+      <div className="mt-6 grid gap-4">
         {user.role === "superAdmin" && (
-          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Super Admin Privileges
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Full control over all tenants, users, and system-wide settings.
-              </Typography>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-xl shadow p-5">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Super Admin Privileges
+            </h3>
+            <p className="text-gray-600 text-sm mt-1">
+              Full control over all tenants, users, and system-wide settings.
+            </p>
+          </div>
         )}
-        {user.role === "tenantAdmin" && (
-          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Tenant Admin Info
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Manage users, assign roles, and configure settings for your tenant.
-              </Typography>
-            </CardContent>
-          </Card>
-        )}
-        {user.role === "user" && (
-          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                User Information
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                View your tasks, update profile, and request to become a tenant.
-              </Typography>
-            </CardContent>
-          </Card>
-        )}
-      </Stack>
 
-      
-    </Box>
+        {user.role === "tenantAdmin" && (
+          <div className="bg-white rounded-xl shadow p-5">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Tenant Admin Information
+            </h3>
+            <p className="text-gray-600 text-sm mt-1">
+              Manage users, assign roles, and configure tenant-level settings.
+            </p>
+          </div>
+        )}
+
+        {user.role === "user" && (
+          <div className="bg-white rounded-xl shadow p-5">
+            <h3 className="text-lg font-semibold text-gray-900">
+              User Information
+            </h3>
+            <p className="text-gray-600 text-sm mt-1">
+              View your tasks, update your profile, and request tenant access.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

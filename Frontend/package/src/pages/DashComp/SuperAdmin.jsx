@@ -1,49 +1,290 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
-import {
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  LinearProgress,
-  CircularProgress,
-  Avatar,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Tabs,
-  Tab,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Snackbar,
-  Alert,
-  Chip,
-} from "@mui/material";
-import {
-  Dashboard as DashboardIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Pending as PendingIcon,
-  Visibility as VisibilityIcon,
-  Refresh as RefreshIcon,
-  Business as BusinessIcon,
-} from "@mui/icons-material";
 import { AuthContext } from "../../context/AuthContext";
-import { format } from "date-fns";
-
 import { tenantApi } from "../../services/tenantAdminAPI";
+import {
+  MdDashboard,
+  MdCheckCircle,
+  MdCancel,
+  MdPending,
+  MdVisibility,
+  MdRefresh,
+  MdBusiness,
+  MdSearch,
+  MdClose,
+  MdTrendingUp,
+  MdGroup,
+  MdNotifications,
+  MdSettings,
+  MdMoreVert,
+  MdFilterList,
+  MdDownload,
+  MdAdd,
+  MdEdit,
+  MdDelete,
+  MdInfo,
+  MdWarning,
+  MdError
+} from 'react-icons/md';
 
+// Custom Modal Component
+const Modal = ({ isOpen, onClose, title, children, actions }) => {
+  if (!isOpen) return null;
+
+  return (
+<div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto relative transform transition-all">
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <MdClose size={20} className="text-gray-500" />
+            </button>
+          </div>
+        </div>
+        <div className="p-6 max-h-96 overflow-y-auto">
+          {children}
+        </div>
+        {actions && (
+          <div className="p-6 border-t border-gray-100 flex justify-end space-x-3">
+            {actions}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Toast Notification Component
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const getToastStyles = () => {
+    switch (type) {
+      case 'success':
+        return 'bg-green-500 text-white';
+      case 'error':
+        return 'bg-red-500 text-white';
+      case 'warning':
+        return 'bg-yellow-500 text-white';
+      default:
+        return 'bg-blue-500 text-white';
+    }
+  };
+
+  const getToastIcon = () => {
+    switch (type) {
+      case 'success':
+        return <MdCheckCircle size={20} />;
+      case 'error':
+        return <MdError size={20} />;
+      case 'warning':
+        return <MdWarning size={20} />;
+      default:
+        return <MdInfo size={20} />;
+    }
+  };
+
+  return (
+    <div className={`fixed bottom-4 right-4 ${getToastStyles()} px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-3 transform transition-all animate-slide-in-right max-w-sm`}>
+      {getToastIcon()}
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="text-white hover:text-gray-200">
+        <MdClose size={16} />
+      </button>
+    </div>
+  );
+};
+
+// Stats Card Component
+const StatsCard = ({ title, value, icon: Icon, gradient, change, changeType }) => (
+  <div className={`${gradient} rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-white/80 text-sm font-medium">{title}</p>
+        <p className="text-3xl font-bold mt-2">{value}</p>
+        {change && (
+          <div className={`flex items-center mt-2 text-sm ${changeType === 'increase' ? 'text-green-200' : 'text-red-200'}`}>
+            <MdTrendingUp size={16} className="mr-1" />
+            <span>{change}% from last month</span>
+          </div>
+        )}
+      </div>
+      <div className="bg-white/20 rounded-2xl p-4">
+        <Icon size={32} />
+      </div>
+    </div>
+  </div>
+);
+
+// Status Badge Component
+const StatusBadge = ({ status }) => {
+  const getStatusStyles = () => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800 border border-green-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'approved':
+        return <MdCheckCircle size={14} />;
+      case 'pending':
+        return <MdPending size={14} />;
+      case 'rejected':
+        return <MdCancel size={14} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusStyles()}`}>
+      {getStatusIcon()}
+      <span className="ml-1 capitalize">{status}</span>
+    </span>
+  );
+};
+
+// Tenant Card Component
+const TenantCard = ({ tenant, onView, onStatusUpdate }) => {
+  const [showActions, setShowActions] = useState(false);
+
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    const d = new Date(date);
+    return isNaN(d) ? "N/A" : d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 p-6 relative">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            {tenant.tenant_name || "Unnamed Tenant"}
+          </h3>
+          <p className="text-sm text-gray-600 mb-2">{tenant.requester?.email}</p>
+          <StatusBadge status={tenant.status} />
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowActions(!showActions)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <MdMoreVert size={20} className="text-gray-600" />
+          </button>
+          
+          {showActions && (
+            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+              <button
+                onClick={() => {
+                  onView(tenant);
+                  setShowActions(false);
+                }}
+                className="w-full flex items-center px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+              >
+                <MdVisibility size={16} className="mr-3 text-blue-600" />
+                <span className="text-sm font-medium">View Details</span>
+              </button>
+              
+              {tenant.status === 'pending' && (
+                <>
+                  <button
+                    onClick={() => {
+                      onStatusUpdate(tenant.id, 'approved');
+                      setShowActions(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 hover:bg-green-50 transition-colors text-left"
+                  >
+                    <MdCheckCircle size={16} className="mr-3 text-green-600" />
+                    <span className="text-sm font-medium">Approve</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onStatusUpdate(tenant.id, 'rejected');
+                      setShowActions(false);
+                    }}
+                    className="w-full flex items-center px-4 py-3 hover:bg-red-50 transition-colors text-left"
+                  >
+                    <MdCancel size={16} className="mr-3 text-red-600" />
+                    <span className="text-sm font-medium">Reject</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          
+          {showActions && (
+            <div 
+              className="fixed inset-0 z-5" 
+              onClick={() => setShowActions(false)}
+            />
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2 text-sm text-gray-600">
+        <div className="flex justify-between">
+          <span>Requested:</span>
+          <span className="font-medium">{formatDate(tenant.requested_at)}</span>
+        </div>
+        {tenant.reviewed_at && (
+          <div className="flex justify-between">
+            <span>Reviewed:</span>
+            <span className="font-medium">{formatDate(tenant.reviewed_at)}</span>
+          </div>
+        )}
+        {tenant.reviewer?.email && (
+          <div className="flex justify-between">
+            <span>Reviewer:</span>
+            <span className="font-medium">{tenant.reviewer.email}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Tab Component
+const TabButton = ({ active, onClick, children, count }) => (
+  <button
+    onClick={onClick}
+    className={`px-6 py-3 font-medium text-sm rounded-lg transition-all duration-200 flex items-center space-x-2 ${
+      active
+        ? 'bg-blue-600 text-white shadow-lg'
+        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+    }`}
+  >
+    <span>{children}</span>
+    {count !== undefined && (
+      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+        active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+      }`}>
+        {count}
+      </span>
+    )}
+  </button>
+);
+
+// Main Dashboard Component
 const SuperAdminDashboard = () => {
   const { user } = useContext(AuthContext);
 
@@ -55,16 +296,22 @@ const SuperAdminDashboard = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   const formatDate = (date) => {
-    if (!date) return "-";
+    if (!date) return "N/A";
     const d = new Date(date);
-    return isNaN(d) ? "-" : format(d, "MMM dd, yyyy HH:mm");
+    return isNaN(d) ? "N/A" : d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const fetchTenants = useCallback(async () => {
@@ -74,6 +321,7 @@ const SuperAdminDashboard = () => {
       setTenants(res.data || []);
     } catch (err) {
       console.error(err);
+      showToast("Failed to fetch tenants", 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,2278 +337,361 @@ const SuperAdminDashboard = () => {
   const filteredTenants = tenants.filter(
     (t) =>
       (statusFilter === "all" || t.status === statusFilter) &&
-      (t.tenant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.requester.email.toLowerCase().includes(searchTerm.toLowerCase()))
+      (t.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.requester?.email?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "pending":
-        return "warning";
-      case "approved":
-        return "success";
-      case "rejected":
-        return "error";
-      default:
-        return "default";
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "pending":
-        return <PendingIcon />;
-      case "approved":
-        return <CheckCircleIcon />;
-      case "rejected":
-        return <CancelIcon />;
-      default:
-        return null;
-    }
-  };
 
   const handleStatusUpdate = async (tenantId, newStatus) => {
     if (!window.confirm(`Are you sure you want to ${newStatus} this tenant?`))
       return;
     try {
       await tenantApi.updateStatus(tenantId, newStatus);
-      setSnackbar({
-        open: true,
-        message: `Tenant ${newStatus}`,
-        severity: "success",
-      });
+      showToast(`Tenant ${newStatus} successfully`);
       fetchTenants();
     } catch (err) {
-      setSnackbar({ open: true, message: "Update failed", severity: "error" });
+      showToast("Update failed", 'error');
     }
   };
-
-  const TabPanel = ({ children, value, index }) => (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
-    </div>
-  );
 
   const totalApproved = tenants.filter((t) => t.status === "approved").length;
   const totalPending = tenants.filter((t) => t.status === "pending").length;
   const totalRejected = tenants.filter((t) => t.status === "rejected").length;
 
+  const getTabContent = () => {
+    switch (currentTab) {
+      case 0: // All Tenants
+        return filteredTenants;
+      case 1: // Pending Requests
+        return tenants.filter((t) => t.status === "pending");
+      case 2: // Recent Activity
+        return tenants
+          .slice()
+          .sort((a, b) => new Date(b.reviewed_at || b.requested_at) - new Date(a.reviewed_at || a.requested_at))
+          .slice(0, 10);
+      default:
+        return filteredTenants;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Box sx={{ p: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: "bold", color: "#1976d2" }}>
-          <DashboardIcon sx={{ mr: 1 }} />
-          Super Admin Dashboard
-        </Typography>
-        <Typography variant="body1" color="textSecondary">
-          Welcome back, {user?.name || "Admin"}! Monitor tenant requests in
-          real-time.
-        </Typography>
-      </Box>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-600 rounded-2xl p-3">
+                <MdDashboard size={32} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Super Admin Dashboard</h1>
+                <p className="text-gray-600">Welcome back, {user?.name || "Admin"}! Monitor tenant requests in real-time.</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button className="p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                <MdNotifications size={20} className="text-gray-600" />
+              </button>
+              <button className="p-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                <MdSettings size={20} className="text-gray-600" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {refreshing && <LinearProgress sx={{ mb: 2 }} />}
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Progress Bar */}
+        {refreshing && (
+          <div className="mb-6">
+            <div className="w-full bg-gray-200 rounded-full h-1">
+              <div className="bg-blue-600 h-1 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+            </div>
+          </div>
+        )}
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #4caf50, #81c784)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Typography variant="h5">Total Tenants</Typography>
-              <Typography variant="h3">{tenants.length}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #1976d2, #42a5f5)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Typography variant="h5">Approved</Typography>
-              <Typography variant="h3">{totalApproved}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #ff9800, #ffb74d)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Typography variant="h5">Pending</Typography>
-              <Typography variant="h3">{totalPending}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card
-            sx={{
-              borderRadius: 3,
-              boxShadow: 3,
-              background: "linear-gradient(135deg, #f44336, #e57373)",
-              color: "white",
-            }}
-          >
-            <CardContent>
-              <Typography variant="h5">Rejected</Typography>
-              <Typography variant="h3">{totalRejected}</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatsCard
+            title="Total Tenants"
+            value={tenants.length}
+            icon={MdBusiness}
+            gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+            change="12"
+            changeType="increase"
+          />
+          <StatsCard
+            title="Approved"
+            value={totalApproved}
+            icon={MdCheckCircle}
+            gradient="bg-gradient-to-br from-green-500 to-green-600"
+            change="8"
+            changeType="increase"
+          />
+          <StatsCard
+            title="Pending"
+            value={totalPending}
+            icon={MdPending}
+            gradient="bg-gradient-to-br from-yellow-500 to-yellow-600"
+            change="5"
+            changeType="decrease"
+          />
+          <StatsCard
+            title="Rejected"
+            value={totalRejected}
+            icon={MdCancel}
+            gradient="bg-gradient-to-br from-red-500 to-red-600"
+            change="3"
+            changeType="decrease"
+          />
+        </div>
 
-      {/* Filters */}
-      <Card sx={{ mb: 3, p: 2 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Search"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+        {/* Search and Filters */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0 lg:space-x-4">
+            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MdSearch className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search tenants..."
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <div className="relative">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                  <MdFilterList className="h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={fetchTenants}
+                className="inline-flex items-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="approved">Approved</MenuItem>
-                <MenuItem value="rejected">Rejected</MenuItem>
-                 
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
-            <Button
-              variant="outlined"
-              fullWidth
-              startIcon={<RefreshIcon />}
-              onClick={fetchTenants}
-            >
-              Refresh
-            </Button>
-          </Grid>
-        </Grid>
-      </Card>
+                <MdRefresh size={18} className="mr-2" />
+                Refresh
+              </button>
+              <button className="inline-flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                <MdDownload size={18} className="mr-2" />
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
 
-      {/* Tabs */}
-      <Card sx={{ borderRadius: 3, p: 2 }}>
-        <Tabs
-          value={currentTab}
-          onChange={(e, val) => setCurrentTab(val)}
-          variant="fullWidth"
-        >
-          <Tab label={`All (${tenants.length})`} />
-          <Tab label={`Pending (${totalPending})`} />
-          <Tab label="Recent Activity" />
-          <Tab label="Analytics" />
-        </Tabs>
+        {/* Tabs */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <div className="flex flex-wrap gap-2">
+              <TabButton
+                active={currentTab === 0}
+                onClick={() => setCurrentTab(0)}
+                count={tenants.length}
+              >
+                All Tenants
+              </TabButton>
+              <TabButton
+                active={currentTab === 1}
+                onClick={() => setCurrentTab(1)}
+                count={totalPending}
+              >
+                Pending Requests
+              </TabButton>
+              <TabButton
+                active={currentTab === 2}
+                onClick={() => setCurrentTab(2)}
+              >
+                Recent Activity
+              </TabButton>
+              <TabButton
+                active={currentTab === 3}
+                onClick={() => setCurrentTab(3)}
+              >
+                Analytics
+              </TabButton>
+            </div>
+          </div>
 
-        {/* All Requests */}
-        <TabPanel value={currentTab} index={0}>
-          {loading ? (
-            <CircularProgress />
-          ) : filteredTenants.length === 0 ? (
-            <Typography>No tenants found.</Typography>
-          ) : (
-            <List>
-              {filteredTenants.map((t) => (
-                <ListItem
-                  key={t.id}
-                  secondaryAction={
-                    <Stack direction="row" spacing={1}>
-                      {t.status === "pending" && (
-                        <span style={{ color: "orange" }}>Pending </span>
-                      )}
-                      {t.status === "approved" && (
-                        <span style={{ color: "green" }}>Approved</span>
-                      )}
-                      {t.status === "rejected" && (
-                        <span style={{ color: "red" }}>Rejected</span>
-                      )}
-
-                      <IconButton
-                        onClick={() => {
+          <div className="p-6">
+            {currentTab === 3 ? (
+              // Analytics Tab
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <MdTrendingUp size={48} className="text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Trends</h3>
+                  <p className="text-gray-600">Weekly request volume analytics</p>
+                  <div className="mt-4 p-4 bg-white rounded-lg">
+                    <p className="text-sm text-gray-500">Chart visualization will be implemented here</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <MdGroup size={48} className="text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Status Distribution</h3>
+                  <p className="text-gray-600">Approved / Pending / Rejected breakdown</p>
+                  <div className="mt-4 p-4 bg-white rounded-lg">
+                    <p className="text-sm text-gray-500">Pie chart will be implemented here</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Tenant Grid
+              <div>
+                {getTabContent().length === 0 ? (
+                  <div className="text-center py-16">
+                    <MdBusiness size={64} className="text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No tenants found</h3>
+                    <p className="text-gray-600">
+                      {searchTerm || statusFilter !== 'all' 
+                        ? 'Try adjusting your search or filter criteria' 
+                        : 'No tenant requests available'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {getTabContent().map((tenant) => (
+                      <TenantCard
+                        key={tenant.id}
+                        tenant={tenant}
+                        onView={(t) => {
                           setSelectedTenant(t);
                           setDialogOpen(true);
                         }}
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Stack>
-                  }
-                >
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
-                      {getStatusIcon(t.status)}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={t.tenant_name || "-"}
-                    secondary={`${t.requester?.email || "-"} — ${
-                      t.requested_at ? formatDate(t.requested_at) : "-"
-                    }`}
-                    // Reviewed by: ${t.reviewer?.email || "-"}
-                    //                <div><strong>Reviewed by:</strong> {t.reviewer?.email || "-"}</div>
-                    // <div><strong>Reviewed at:</strong> {t.reviewed_at ? formatDate(t.reviewed_at) : "-"}</div>
-                    // • Requested: ${formatDate(t.requested_at)} • Reviewed: ${formatDate(t.reviewed_at)} • Reviewer: ${t.reviewer?.email || "-"}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </TabPanel>
-
-        {/* Pending Requests */}
-        <TabPanel value={currentTab} index={1}>
-          <List>
-            {tenants
-              .filter((t) => t.status === "pending")
-              .map((t) => (
-                <ListItem
-                  key={t.id}
-                  secondaryAction={
-                    <Stack direction="row" spacing={1}>
-                      {t.status === "pending" && (
-                        <span style={{ color: "orange" }}>Pending </span>
-                      )}
-                      <IconButton
-                        onClick={() => {
-                          setSelectedTenant(t);
-                          setDialogOpen(true);
-                        }}
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Stack>
-                  }
-                >
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
-                      {getStatusIcon(t.status)}
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={t.tenant_name || "-"}
-                    secondary={`${t.requester?.email || "-"} — ${
-                      t.requested_at ? formatDate(t.requested_at) : "-"
-                    }`}
-                  />
-                </ListItem>
-              ))}
-          </List>
-        </TabPanel>
-
-        {/* Recent Activity */}
-       <TabPanel value={currentTab} index={2}>
-  {tenants && tenants.length > 0 ? (
-    <List>
-      {tenants
-        .slice()
-        .sort((a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at)) // recent first
-        .map((t) => (
-          <ListItem
-            key={t.id}
-            sx={{
-              borderBottom: "1px solid #f0f0f0",
-              alignItems: "flex-start",
-              py: 2,
-            }}
-          >
-            {/* Status Avatar */}
-            <ListItemAvatar>
-              <Avatar sx={{ bgcolor: getStatusColor(t.status) }}>
-                {getStatusIcon(t.status)}
-              </Avatar>
-            </ListItemAvatar>
-
-            {/* Tenant Info */}
-            <ListItemText
-              primary={
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {t.tenant_name || "Unnamed Tenant"}{" "}
-                  <Chip
-                    label={t.status?.toUpperCase() || "UNKNOWN"}
-                    size="small"
-                    sx={{
-                      ml: 1,
-                      fontSize: "0.7rem",
-                      fontWeight: "bold",
-                      bgcolor: getStatusColor(t.status),
-                      color: "#fff",
-                    }}
-                  />
-                </Typography>
-              }
-              secondary={
-                <>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Requested By:</strong>{" "}
-                    {t.requester?.email || "-"} •{" "}
-                    {t.requested_at ? formatDate(t.requested_at) : "N/A"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Reviewed:</strong>{" "}
-                    {t.reviewed_at ? formatDate(t.reviewed_at) : "Pending"} •{" "}
-                    <strong>Reviewer:</strong>{" "}
-                    {t.reviewer?.email || "Not Assigned"}
-                  </Typography>
-                </>
-              }
-            />
-          </ListItem>
-        ))}
-    </List>
-  ) : (
-    <Typography
-      variant="body2"
-      color="text.secondary"
-      sx={{ textAlign: "center", mt: 3 }}
-    >
-      No tenants reviewed yet.
-    </Typography>
-  )}
-</TabPanel>
-
-
-        {/* Analytics */}
-        <TabPanel value={currentTab} index={3}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="h6">Request Trends</Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Weekly request volume
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 2,
-                    height: 200,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: "#f5f5f5",
-                  }}
-                >
-                  <Typography color="textSecondary">
-                    Chart Placeholder
-                  </Typography>
-                </Box>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Card sx={{ p: 2 }}>
-                <Typography variant="h6">Status Distribution</Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Approved / Pending / Rejected
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 2,
-                    height: 200,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: "#f5f5f5",
-                  }}
-                >
-                  <Typography color="textSecondary">
-                    Chart Placeholder
-                  </Typography>
-                </Box>
-              </Card>
-            </Grid>
-          </Grid>
-        </TabPanel>
-      </Card>
+                        onStatusUpdate={handleStatusUpdate}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Tenant Details Modal */}
-      <Dialog
-        open={dialogOpen}
+      <Modal
+        isOpen={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
+        title="Tenant Details"
+        actions={
+          <>
+            <button
+              onClick={() => setDialogOpen(false)}
+              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              Close
+            </button>
+            {selectedTenant?.status === "pending" && (
+              <>
+                <button
+                  onClick={() => {
+                    handleStatusUpdate(selectedTenant.id, "approved");
+                    setDialogOpen(false);
+                  }}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => {
+                    handleStatusUpdate(selectedTenant.id, "rejected");
+                    setDialogOpen(false);
+                  }}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  Reject
+                </button>
+              </>
+            )}
+          </>
+        }
       >
-        <DialogTitle>{selectedTenant?.tenant_name || "-"}</DialogTitle>
-        <DialogContent>
-          {selectedTenant && (
-            <Stack spacing={1}>
-              <Typography>
-                Tenant Name: {selectedTenant.tenant_name || "-"}
-              </Typography>
-              <Typography>
-                Requester Email: {selectedTenant.requester.email || "-"}
-              </Typography>
-              <Typography>
-                Requested At: {formatDate(selectedTenant.requested_at)}
-              </Typography>
-              <Typography>
-                Status: {selectedTenant.status.toUpperCase()}
-              </Typography>
-              {/* <Typography>
-                Reviewed At: {formatDate(selectedTenant.reviewed_at)}
-              </Typography>
-              <Typography>
-                Reviewer Email: {selectedTenant.reviewer?.email || "-"}
-                
-              </Typography> */}
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Close</Button>
-          {/* {selectedTenant?.status==="pending" && <>
-            <Button variant="contained" color="success" onClick={()=>{handleStatusUpdate(selectedTenant.id,"approved"); setDialogOpen(false)}}>Approve</Button>
-            <Button variant="contained" color="error" onClick={()=>{handleStatusUpdate(selectedTenant.id,"rejected"); setDialogOpen(false)}}>Reject</Button>
-          </>} */}
-        </DialogActions>
-      </Dialog>
+        {selectedTenant && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {selectedTenant.tenant_name || "Unnamed Tenant"}
+              </h2>
+              <StatusBadge status={selectedTenant.status} />
+            </div>
 
-      {/* Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
-      </Snackbar>
-    </Box>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Requester Email</label>
+                  <p className="text-gray-900 mt-1">{selectedTenant.requester?.email || "N/A"}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Request Date</label>
+                  <p className="text-gray-900 mt-1">{formatDate(selectedTenant.requested_at)}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {selectedTenant.reviewed_at && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600">Review Date</label>
+                    <p className="text-gray-900 mt-1">{formatDate(selectedTenant.reviewed_at)}</p>
+                  </div>
+                )}
+                {selectedTenant.reviewer?.email && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600">Reviewed By</label>
+                    <p className="text-gray-900 mt-1">{selectedTenant.reviewer.email}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {selectedTenant.description && (
+              <div>
+                <label className="text-sm font-semibold text-gray-600">Description</label>
+                <p className="text-gray-900 mt-1 bg-gray-50 p-4 rounded-lg">
+                  {selectedTenant.description}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </div>
   );
 };
 
 export default SuperAdminDashboard;
-
-
-
-
-
-
-
-// import React, { useState, useEffect, useCallback } from 'react';
-// import {
-//   Box,
-//   Grid,
-//   Card,
-//   CardContent,
-//   Typography,
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableContainer,
-//   TableHead,
-//   TableRow,
-//   Paper,
-//   CircularProgress,
-//   Chip,
-//   Avatar,
-//   IconButton,
-//   Dialog,
-//   DialogTitle,
-//   DialogContent,
-//   DialogActions,
-//   Button,
-//   TextField,
-//   Alert,
-//   Tabs,
-//   Tab,
-//   LinearProgress,
-//   Tooltip,
-//   Badge,
-//   Stack,
-//   FormControl,
-//   InputLabel,
-//   Select,
-//   MenuItem,
-//   List,
-//   ListItem,
-//   ListItemIcon,
-//   ListItemText,
-//   ListItemAvatar,
-//   AppBar,
-//   Toolbar,
-//   Menu,
-//   Divider,
-//   Snackbar,
-//   TablePagination,
-//   Checkbox,
-//   FormGroup,
-//   FormControlLabel,
-//   Switch,
-//   CardActions,
-//   Collapse,
-//   Fab,
-//   SpeedDial,
-//   SpeedDialAction,
-//   SpeedDialIcon,
-//   Breadcrumbs,
-//   Link,
-//   Container,
-//   useTheme,
-//   alpha
-// } from '@mui/material';
-// import {
-//   Dashboard as DashboardIcon,
-//   Business as BusinessIcon,
-//   People as PeopleIcon,
-//   TrendingUp as TrendingUpIcon,
-//   AccessTime as AccessTimeIcon,
-//   CheckCircle as CheckCircleIcon,
-//   Cancel as CancelIcon,
-//   Pending as PendingIcon,
-//   Visibility as VisibilityIcon,
-//   FilterList as FilterListIcon,
-//   Refresh as RefreshIcon,
-//   Notifications as NotificationsIcon,
-//   ExpandMore as ExpandMoreIcon,
-//   Email as EmailIcon,
-//   Phone as PhoneIcon,
-//   LocationOn as LocationOnIcon,
-//   CalendarToday as CalendarTodayIcon,
-//   AttachMoney as AttachMoneyIcon,
-//   Storage as StorageIcon,
-//   CloudUpload as CloudUploadIcon,
-//   NoteAdd as NoteAddIcon,
-//   Search as SearchIcon,
-//   Download as DownloadIcon,
-//   Upload as UploadIcon,
-//   Settings as SettingsIcon,
-//   MoreVert as MoreVertIcon,
-//   Edit as EditIcon,
-//   Delete as DeleteIcon,
-//   FileUpload as FileUploadIcon,
-//   Assignment as AssignmentIcon,
-//   Analytics as AnalyticsIcon,
-//   Security as SecurityIcon,
-//   Group as GroupIcon,
-//   Domain as DomainIcon,
-//   Timeline as TimelineIcon,
-//   PieChart as PieChartIcon,
-//   BarChart as BarChartIcon,
-//   Home as HomeIcon,
-//   ChevronRight as ChevronRightIcon,
-//   Warning as WarningIcon,
-//   Info as InfoIcon,
-//   Close as CloseIcon,
-//   Add as AddIcon,
-//   Send as SendIcon
-// } from '@mui/icons-material';
-
-// // Mock API Service
-// const tenantApi = {
-//   list: async (params = {}) => {
-//     // Simulate API delay
-//     await new Promise(resolve => setTimeout(resolve, 1000));
-
-//     const mockData = [
-//       {
-//         id: 1,
-//         tenant_name: "TechCorp Solutions",
-//         email: "admin@techcorp.com",
-//         phone: "+1-555-0123",
-//         address: "123 Tech Street, Silicon Valley, CA 94025",
-//         industry: "Technology",
-//         company_size: "100-500",
-//         estimated_users: 150,
-//         subscription_plan: "Enterprise",
-//         status: "pending",
-//         created_at: "2024-12-15T10:30:00Z",
-//         updated_at: "2024-12-15T10:30:00Z",
-//         requested_features: ["Multi-tenant", "API Access", "Custom Branding"],
-//         monthly_budget: 5000,
-//         contact_person: "John Smith",
-//         website: "https://techcorp.com",
-//         tax_id: "123-456-789",
-//         priority: "high"
-//       },
-//       {
-//         id: 2,
-//         tenant_name: "Global Manufacturing Inc",
-//         email: "it@globalmanuf.com",
-//         phone: "+1-555-0124",
-//         address: "456 Industrial Blvd, Detroit, MI 48201",
-//         industry: "Manufacturing",
-//         company_size: "500+",
-//         estimated_users: 300,
-//         subscription_plan: "Premium",
-//         status: "approved",
-//         created_at: "2024-12-14T15:45:00Z",
-//         updated_at: "2024-12-16T09:20:00Z",
-//         requested_features: ["Inventory Management", "Analytics", "Mobile App"],
-//         monthly_budget: 3000,
-//         contact_person: "Sarah Johnson",
-//         website: "https://globalmanuf.com",
-//         tax_id: "987-654-321",
-//         priority: "medium"
-//       },
-//       {
-//         id: 3,
-//         tenant_name: "HealthCare Plus",
-//         email: "admin@healthcareplus.com",
-//         phone: "+1-555-0125",
-//         address: "789 Medical Center Dr, Boston, MA 02115",
-//         industry: "Healthcare",
-//         company_size: "50-100",
-//         estimated_users: 75,
-//         subscription_plan: "Standard",
-//         status: "rejected",
-//         created_at: "2024-12-13T08:15:00Z",
-//         updated_at: "2024-12-14T16:30:00Z",
-//         requested_features: ["HIPAA Compliance", "Patient Portal", "Reporting"],
-//         monthly_budget: 1500,
-//         contact_person: "Dr. Michael Brown",
-//         website: "https://healthcareplus.com",
-//         tax_id: "456-789-123",
-//         priority: "low",
-//         rejection_reason: "Incomplete documentation"
-//       },
-//       {
-//         id: 4,
-//         tenant_name: "EduLearn Platform",
-//         email: "contact@edulearn.edu",
-//         phone: "+1-555-0126",
-//         address: "321 University Ave, Stanford, CA 94305",
-//         industry: "Education",
-//         company_size: "10-50",
-//         estimated_users: 500,
-//         subscription_plan: "Enterprise",
-//         status: "pending",
-//         created_at: "2024-12-16T11:00:00Z",
-//         updated_at: "2024-12-16T11:00:00Z",
-//         requested_features: ["LMS Integration", "Video Streaming", "Assessment Tools"],
-//         monthly_budget: 2000,
-//         contact_person: "Prof. Lisa Davis",
-//         website: "https://edulearn.edu",
-//         tax_id: "789-123-456",
-//         priority: "high"
-//       },
-//       {
-//         id: 5,
-//         tenant_name: "RetailMax Chain",
-//         email: "tech@retailmax.com",
-//         phone: "+1-555-0127",
-//         address: "555 Commerce St, New York, NY 10001",
-//         industry: "Retail",
-//         company_size: "500+",
-//         estimated_users: 200,
-//         subscription_plan: "Premium",
-//         status: "approved",
-//         created_at: "2024-12-12T14:20:00Z",
-//         updated_at: "2024-12-15T10:45:00Z",
-//         requested_features: ["POS Integration", "Inventory", "Customer Analytics"],
-//         monthly_budget: 4000,
-//         contact_person: "Alex Wilson",
-//         website: "https://retailmax.com",
-//         tax_id: "321-654-987",
-//         priority: "medium"
-//       }
-//     ];
-
-//     // Apply filters
-//     let filtered = [...mockData];
-//     if (params.status && params.status !== 'all') {
-//       filtered = filtered.filter(item => item.status === params.status);
-//     }
-//     if (params.search) {
-//       const searchLower = params.search.toLowerCase();
-//       filtered = filtered.filter(item =>
-//         item.tenant_name.toLowerCase().includes(searchLower) ||
-//         item.email.toLowerCase().includes(searchLower) ||
-//         item.industry.toLowerCase().includes(searchLower)
-//       );
-//     }
-
-//     return {
-//       data: filtered,
-//       total: filtered.length,
-//       page: params.page || 1,
-//       limit: params.limit || 10
-//     };
-//   },
-
-//   updateStatus: async (id, status, reason = '') => {
-//     await new Promise(resolve => setTimeout(resolve, 500));
-//     console.log(`Updating tenant ${id} to ${status}`, reason);
-//     return { success: true };
-//   },
-
-//   bulkUpdate: async (ids, status) => {
-//     await new Promise(resolve => setTimeout(resolve, 1000));
-//     console.log(`Bulk updating tenants ${ids.join(', ')} to ${status}`);
-//     return { success: true };
-//   },
-
-//   exportData: async (format = 'csv') => {
-//     await new Promise(resolve => setTimeout(resolve, 2000));
-//     console.log(`Exporting data in ${format} format`);
-//     return { success: true, downloadUrl: '#' };
-//   }
-// };
-
-// const SuperAdminDashboard = () => {
-//   const theme = useTheme();
-
-//   // Enhanced State Management
-//   const [tenants, setTenants] = useState([]);
-//   const [filteredTenants, setFilteredTenants] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [refreshing, setRefreshing] = useState(false);
-//   const [error, setError] = useState(null);
-//   const [selectedTenant, setSelectedTenant] = useState(null);
-//   const [dialogOpen, setDialogOpen] = useState(false);
-//   const [currentTab, setCurrentTab] = useState(0);
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [statusFilter, setStatusFilter] = useState('all');
-//   const [industryFilter, setIndustryFilter] = useState('all');
-//   const [priorityFilter, setPriorityFilter] = useState('all');
-//   const [sortBy, setSortBy] = useState('created_at');
-
-//   // New advanced states
-//   const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
-//   const [fullscreen, setFullscreen] = useState(false);
-//   const [dateFilter, setDateFilter] = useState({ from: '', to: '' });
-//   const [analytics, setAnalytics] = useState(null);
-//   const [systemHealth, setSystemHealth] = useState(null);
-//   const [assignDialog, setAssignDialog] = useState({ open: false, tenant: null });
-//   const [noteDialog, setNoteDialog] = useState({ open: false, tenant: null });
-//   const [newNote, setNewNote] = useState('');
-//   const [selectedAssignee, setSelectedAssignee] = useState('');
-//   const [exportDialog, setExportDialog] = useState({ open: false, format: 'csv' });
-//   const [notificationDialog, setNotificationDialog] = useState({ open: false, type: 'email' });
-//   const [notificationMessage, setNotificationMessage] = useState('');
-//   const [compactMode, setCompactMode] = useState(false);
-//   const [showArchivedTenants, setShowArchivedTenants] = useState(false);
-//   const [favoritesTenants, setFavoritesTenants] = useState([]);
-//   const [recentActivity, setRecentActivity] = useState([]);
-//   const [onlineStatus, setOnlineStatus] = useState(true);
-//   const [sortOrder, setSortOrder] = useState('desc');
-//   const [page, setPage] = useState(0);
-//   const [rowsPerPage, setRowsPerPage] = useState(10);
-//   const [selectedTenants, setSelectedTenants] = useState([]);
-//   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-//   const [anchorEl, setAnchorEl] = useState(null);
-//   const [bulkActionAnchor, setBulkActionAnchor] = useState(null);
-//   const [autoRefresh, setAutoRefresh] = useState(true);
-//   const [expandedCard, setExpandedCard] = useState(null);
-//   const [actionDialog, setActionDialog] = useState({ open: false, type: '', tenant: null });
-//   const [actionReason, setActionReason] = useState('');
-
-//   // Statistics
-//  const stats = React.useMemo(() => {
-//   if (!Array.isArray(tenants)) return {
-//     total: 0,
-//     pending: 0,
-//     approved: 0,
-//     rejected: 0,
-//     thisWeek: 0,
-//     highPriority: 0
-//   };
-
-//   const total = tenants.length;
-//   const pending = tenants.filter(t => t.status === 'pending').length;
-//   const approved = tenants.filter(t => t.status === 'approved').length;
-//   const rejected = tenants.filter(t => t.status === 'rejected').length;
-
-//   const weekAgo = new Date();
-//   weekAgo.setDate(weekAgo.getDate() - 7);
-
-//   const thisWeek = tenants.filter(t => {
-//     const created = new Date(t.created_at);
-//     return created > weekAgo;
-//   }).length;
-
-//   const highPriority = tenants.filter(t => t.priority === 'high').length;
-
-//   return { total, pending, approved, rejected, thisWeek, highPriority };
-// }, [tenants]);
-
-//   // Fetch tenants with error handling and retry logic
-//   const fetchTenants = useCallback(async (showLoading = true) => {
-//     try {
-//       if (showLoading && !refreshing) setLoading(true);
-//       if (!showLoading) setRefreshing(true);
-
-//       const params = {
-//         search: searchTerm,
-//         status: statusFilter,
-//         sortBy,
-//         sortOrder,
-//         page: page + 1,
-//         limit: rowsPerPage
-//       };
-
-//       const response = await tenantApi.list(params);
-//       setTenants(response.data);
-//       setError(null);
-
-//       if (!showLoading) {
-//         showSnackbar('Data refreshed successfully', 'success');
-//       }
-//     } catch (err) {
-//       console.error('Failed to fetch tenants:', err);
-//       setError(err.message || 'Failed to load tenant data');
-//       showSnackbar('Failed to load data', 'error');
-//     } finally {
-//       setLoading(false);
-//       setRefreshing(false);
-//     }
-//   }, [searchTerm, statusFilter, sortBy, sortOrder, page, rowsPerPage, refreshing]);
-
-//   // Auto-refresh functionality
-//   useEffect(() => {
-//     fetchTenants();
-//   }, [fetchTenants]);
-
-//   useEffect(() => {
-//     let interval;
-//     if (autoRefresh) {
-//       interval = setInterval(() => {
-//         fetchTenants(false);
-//       }, 30000); // Refresh every 30 seconds
-//     }
-//     return () => clearInterval(interval);
-//   }, [autoRefresh, fetchTenants]);
-
-//   // Filter tenants based on search and status
-//   useEffect(() => {
-//     let filtered = [...tenants];
-
-//     if (statusFilter !== 'all') {
-//       filtered = filtered.filter(tenant => tenant.status === statusFilter);
-//     }
-
-//     if (searchTerm) {
-//       const searchLower = searchTerm.toLowerCase();
-//       filtered = filtered.filter(tenant =>
-//         tenant.tenant_name.toLowerCase().includes(searchLower) ||
-//         tenant.email.toLowerCase().includes(searchLower) ||
-//         tenant.industry.toLowerCase().includes(searchLower) ||
-//         tenant.contact_person.toLowerCase().includes(searchLower)
-//       );
-//     }
-
-//     // Sort tenants
-//     filtered.sort((a, b) => {
-//       const aVal = a[sortBy];
-//       const bVal = b[sortBy];
-
-//       if (sortOrder === 'asc') {
-//         return aVal > bVal ? 1 : -1;
-//       } else {
-//         return aVal < bVal ? 1 : -1;
-//       }
-//     });
-
-//     setFilteredTenants(filtered);
-//   }, [tenants, searchTerm, statusFilter, sortBy, sortOrder]);
-
-//   // Utility functions
-//   const showSnackbar = (message, severity = 'success') => {
-//     setSnackbar({ open: true, message, severity });
-//   };
-
-//   const handleCloseSnackbar = () => {
-//     setSnackbar(prev => ({ ...prev, open: false }));
-//   };
-
-//   const formatDate = (dateString) => {
-//     return new Date(dateString).toLocaleDateString('en-US', {
-//       year: 'numeric',
-//       month: 'short',
-//       day: 'numeric',
-//       hour: '2-digit',
-//       minute: '2-digit',
-//     });
-//   };
-
-//   const getStatusColor = (status) => {
-//     switch (status) {
-//       case 'pending': return 'warning';
-//       case 'approved': return 'success';
-//       case 'rejected': return 'error';
-//       default: return 'default';
-//     }
-//   };
-
-//   const getStatusIcon = (status) => {
-//     switch (status) {
-//       case 'pending': return <PendingIcon />;
-//       case 'approved': return <CheckCircleIcon />;
-//       case 'rejected': return <CancelIcon />;
-//       default: return null;
-//     }
-//   };
-
-//   const getPriorityColor = (priority) => {
-//     switch (priority) {
-//       case 'high': return '#f44336';
-//       case 'medium': return '#ff9800';
-//       case 'low': return '#4caf50';
-//       default: return '#9e9e9e';
-//     }
-//   };
-
-//   // Event handlers
-//   const handleViewTenant = (tenant) => {
-//     setSelectedTenant(tenant);
-//     setDialogOpen(true);
-//   };
-
-//   const handleStatusUpdate = async (tenantId, newStatus, reason = '') => {
-//     try {
-//       await tenantApi.updateStatus(tenantId, newStatus, reason);
-//       await fetchTenants(false);
-//       showSnackbar(`Tenant ${newStatus} successfully`, 'success');
-//       setActionDialog({ open: false, type: '', tenant: null });
-//       setActionReason('');
-//     } catch (err) {
-//       showSnackbar('Failed to update tenant status', 'error');
-//     }
-//   };
-
-//   const handleBulkAction = async (action) => {
-//     if (selectedTenants.length === 0) {
-//       showSnackbar('Please select tenants first', 'warning');
-//       return;
-//     }
-
-//     try {
-//       await tenantApi.bulkUpdate(selectedTenants, action);
-//       await fetchTenants(false);
-//       setSelectedTenants([]);
-//       showSnackbar(`${selectedTenants.length} tenants ${action} successfully`, 'success');
-//       setBulkActionAnchor(null);
-//     } catch (err) {
-//       showSnackbar('Failed to perform bulk action', 'error');
-//     }
-//   };
-
-//   const handleSelectTenant = (tenantId) => {
-//     setSelectedTenants(prev =>
-//       prev.includes(tenantId)
-//         ? prev.filter(id => id !== tenantId)
-//         : [...prev, tenantId]
-//     );
-//   };
-
-//   const handleSelectAllTenants = (event) => {
-//     if (event.target.checked) {
-//       setSelectedTenants(filteredTenants.map(t => t.id));
-//     } else {
-//       setSelectedTenants([]);
-//     }
-//   };
-
-//   const handleExportData = async (format) => {
-//     try {
-//       setLoading(true);
-//       await tenantApi.exportData(format);
-//       showSnackbar(`Data exported successfully as ${format.toUpperCase()}`, 'success');
-//     } catch (err) {
-//       showSnackbar('Failed to export data', 'error');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const openActionDialog = (type, tenant) => {
-//     setActionDialog({ open: true, type, tenant });
-//   };
-
-//   const StatCard = ({ title, value, icon, gradient, badgeCount }) => (
-//     <Card
-//       sx={{
-//         borderRadius: 3,
-//         boxShadow: 3,
-//         background: gradient,
-//         color: 'white',
-//         position: 'relative',
-//         overflow: 'visible'
-//       }}
-//     >
-//       <CardContent>
-//         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-//           <Box>
-//             <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-//               {value}
-//             </Typography>
-//             <Typography variant="body2" sx={{ opacity: 0.9 }}>
-//               {title}
-//             </Typography>
-//           </Box>
-//           <Box sx={{ position: 'relative' }}>
-//             {badgeCount > 0 && (
-//               <Badge
-//                 badgeContent={badgeCount}
-//                 color="error"
-//                 sx={{ position: 'absolute', top: -8, right: -8 }}
-//               >
-//                 {icon}
-//               </Badge>
-//             )}
-//             {badgeCount === 0 && icon}
-//           </Box>
-//         </Box>
-//       </CardContent>
-//     </Card>
-//   );
-
-//   const TabPanel = ({ children, value, index }) => (
-//     <div hidden={value !== index}>
-//       {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
-//     </div>
-//   );
-
-//   return (
-//     <Box sx={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
-//       {/* App Bar */}
-//       <AppBar position="sticky" sx={{ backgroundColor: 'white', boxShadow: 1 }}>
-//         <Toolbar>
-//           <DashboardIcon sx={{ mr: 2, color: 'primary.main' }} />
-//           <Typography variant="h6" sx={{ flexGrow: 1, color: 'text.primary', fontWeight: 'bold' }}>
-//             Super Admin Dashboard
-//           </Typography>
-
-//           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-//             <FormControlLabel
-//               control={
-//                 <Switch
-//                   checked={autoRefresh}
-//                   onChange={(e) => setAutoRefresh(e.target.checked)}
-//                   size="small"
-//                 />
-//               }
-//               label={<Typography variant="body2" color="text.secondary">Auto Refresh</Typography>}
-//             />
-
-//             <Badge badgeContent={stats.pending} color="warning">
-//               <IconButton>
-//                 <NotificationsIcon />
-//               </IconButton>
-//             </Badge>
-
-//             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-//               <MoreVertIcon />
-//             </IconButton>
-//           </Box>
-//         </Toolbar>
-
-//         {refreshing && <LinearProgress />}
-//       </AppBar>
-
-//       <Container maxWidth="xl" sx={{ py: 3 }}>
-//         {/* Breadcrumbs */}
-//         <Breadcrumbs sx={{ mb: 2 }}>
-//           <Link color="inherit" href="#" onClick={() => {}} sx={{ display: 'flex', alignItems: 'center' }}>
-//             <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
-//             Dashboard
-//           </Link>
-//           <Typography color="text.primary">Tenant Management</Typography>
-//         </Breadcrumbs>
-
-//         {/* Header */}
-//         <Box sx={{ mb: 4 }}>
-//           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-//             Tenant Management Dashboard
-//           </Typography>
-//           <Typography variant="body1" color="text.secondary">
-//             Monitor and manage tenant requests in real-time with advanced analytics and bulk operations.
-//           </Typography>
-//         </Box>
-
-//         {/* Statistics Cards */}
-//         <Grid container spacing={3} sx={{ mb: 4 }}>
-//           <Grid item xs={12} sm={6} md={2}>
-//             <StatCard
-//               title="Total Requests"
-//               value={stats.total}
-//               icon={<BusinessIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
-//               gradient="linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)"
-//             />
-//           </Grid>
-
-//           <Grid item xs={12} sm={6} md={2}>
-//             <StatCard
-//               title="Pending"
-//               value={stats.pending}
-//               icon={<PendingIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
-//               gradient="linear-gradient(135deg, #ff9800 0%, #ffb74d 100%)"
-//               badgeCount={stats.highPriority}
-//             />
-//           </Grid>
-
-//           <Grid item xs={12} sm={6} md={2}>
-//             <StatCard
-//               title="Approved"
-//               value={stats.approved}
-//               icon={<CheckCircleIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
-//               gradient="linear-gradient(135deg, #4caf50 0%, #81c784 100%)"
-//             />
-//           </Grid>
-
-//           <Grid item xs={12} sm={6} md={2}>
-//             <StatCard
-//               title="Rejected"
-//               value={stats.rejected}
-//               icon={<CancelIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
-//               gradient="linear-gradient(135deg, #f44336 0%, #e57373 100%)"
-//             />
-//           </Grid>
-
-//           <Grid item xs={12} sm={6} md={2}>
-//             <StatCard
-//               title="This Week"
-//               value={stats.thisWeek}
-//               icon={<TrendingUpIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
-//               gradient="linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%)"
-//             />
-//           </Grid>
-
-//           <Grid item xs={12} sm={6} md={2}>
-//             <StatCard
-//               title="High Priority"
-//               value={stats.highPriority}
-//               icon={<WarningIcon sx={{ fontSize: 40, opacity: 0.8 }} />}
-//               gradient="linear-gradient(135deg, #e91e63 0%, #f06292 100%)"
-//             />
-//           </Grid>
-//         </Grid>
-
-//         {/* Filters and Controls */}
-//         <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 2 }}>
-//           <CardContent>
-//             <Grid container spacing={2} alignItems="center">
-//               <Grid item xs={12} md={4}>
-//                 <TextField
-//                   fullWidth
-//                   label="Search tenants..."
-//                   variant="outlined"
-//                   size="small"
-//                   value={searchTerm}
-//                   onChange={(e) => setSearchTerm(e.target.value)}
-//                   InputProps={{
-//                     startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-//                   }}
-//                 />
-//               </Grid>
-
-//               <Grid item xs={12} md={2}>
-//                 <FormControl fullWidth size="small">
-//                   <InputLabel>Status</InputLabel>
-//                   <Select
-//                     value={statusFilter}
-//                     label="Status"
-//                     onChange={(e) => setStatusFilter(e.target.value)}
-//                   >
-//                     <MenuItem value="all">All Status</MenuItem>
-//                     <MenuItem value="pending">Pending</MenuItem>
-//                     <MenuItem value="approved">Approved</MenuItem>
-//                     <MenuItem value="rejected">Rejected</MenuItem>
-//                   </Select>
-//                 </FormControl>
-//               </Grid>
-
-//               <Grid item xs={12} md={2}>
-//                 <FormControl fullWidth size="small">
-//                   <InputLabel>Sort By</InputLabel>
-//                   <Select
-//                     value={sortBy}
-//                     label="Sort By"
-//                     onChange={(e) => setSortBy(e.target.value)}
-//                   >
-//                     <MenuItem value="created_at">Date Created</MenuItem>
-//                     <MenuItem value="tenant_name">Company Name</MenuItem>
-//                     <MenuItem value="priority">Priority</MenuItem>
-//                     <MenuItem value="estimated_users">Users</MenuItem>
-//                   </Select>
-//                 </FormControl>
-//               </Grid>
-
-//               <Grid item xs={12} md={2}>
-//                 <Button
-//                   fullWidth
-//                   variant="outlined"
-//                   startIcon={<RefreshIcon />}
-//                   onClick={() => fetchTenants(false)}
-//                   disabled={refreshing}
-//                 >
-//                   Refresh
-//                 </Button>
-//               </Grid>
-
-//               <Grid item xs={12} md={2}>
-//                 <Button
-//                   fullWidth
-//                   variant="contained"
-//                   startIcon={<DownloadIcon />}
-//                   onClick={(e) => setBulkActionAnchor(e.currentTarget)}
-//                   disabled={loading}
-//                 >
-//                   Export
-//                 </Button>
-//               </Grid>
-//             </Grid>
-
-//             {selectedTenants.length > 0 && (
-//               <Box sx={{ mt: 2, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.1), borderRadius: 1 }}>
-//                 <Typography variant="body2" sx={{ mb: 1 }}>
-//                   {selectedTenants.length} tenant(s) selected
-//                 </Typography>
-//                 <Stack direction="row" spacing={1}>
-//                   <Button
-//                     size="small"
-//                     variant="contained"
-//                     color="success"
-//                     onClick={() => handleBulkAction('approved')}
-//                   >
-//                     Bulk Approve
-//                   </Button>
-//                   <Button
-//                     size="small"
-//                     variant="contained"
-//                     color="error"
-//                     onClick={() => handleBulkAction('rejected')}
-//                   >
-//                     Bulk Reject
-//                   </Button>
-//                   <Button
-//                     size="small"
-//                     variant="outlined"
-//                     onClick={() => setSelectedTenants([])}
-//                   >
-//                     Clear Selection
-//                   </Button>
-//                 </Stack>
-//               </Box>
-//             )}
-//           </CardContent>
-//         </Card>
-
-//         {/* Main Content */}
-//         <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-//           <Tabs
-//             value={currentTab}
-//             onChange={(e, newValue) => setCurrentTab(newValue)}
-//             variant="fullWidth"
-//             sx={{ borderBottom: 1, borderColor: 'divider' }}
-//           >
-//             <Tab
-//               label={`All Requests (${filteredTenants.length})`}
-//               icon={<AssignmentIcon />}
-//               iconPosition="start"
-//             />
-//             <Tab
-//               label={`Pending (${filteredTenants.filter(t => t.status === 'pending').length})`}
-//               icon={<PendingIcon />}
-//               iconPosition="start"
-//             />
-//             <Tab
-//               label="Analytics"
-//               icon={<AnalyticsIcon />}
-//               iconPosition="start"
-//             />
-//             <Tab
-//               label="Activity Log"
-//               icon={<TimelineIcon />}
-//               iconPosition="start"
-//             />
-//           </Tabs>
-
-//           {/* Tab 1: All Requests */}
-//           <TabPanel value={currentTab} index={0}>
-//             {loading ? (
-//               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-//                 <CircularProgress />
-//               </Box>
-//             ) : error ? (
-//               <Alert severity="error" sx={{ m: 2 }}>
-//                 {error}
-//                 <Button onClick={() => fetchTenants()} sx={{ ml: 2 }}>
-//                   Retry
-//                 </Button>
-//               </Alert>
-//             ) : filteredTenants.length === 0 ? (
-//               <Box sx={{ textAlign: 'center', p: 4 }}>
-//                 <BusinessIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-//                 <Typography variant="h6" color="text.secondary" gutterBottom>
-//                   No tenant requests found
-//                 </Typography>
-//                 <Typography variant="body2" color="text.secondary">
-//                   Try adjusting your search criteria or filters
-//                 </Typography>
-//               </Box>
-//             ) : (
-//               <>
-//                 <TableContainer>
-//                   <Table>
-//                     <TableHead>
-//                       <TableRow>
-//                         <TableCell padding="checkbox">
-//                           <Checkbox
-//                             indeterminate={selectedTenants.length > 0 && selectedTenants.length < filteredTenants.length}
-//                             checked={selectedTenants.length === filteredTenants.length && filteredTenants.length > 0}
-//                             onChange={handleSelectAllTenants}
-//                           />
-//                         </TableCell>
-//                         <TableCell>Company</TableCell>
-//                         <TableCell>Contact</TableCell>
-//                         <TableCell>Plan & Users</TableCell>
-//                         <TableCell>Status</TableCell>
-//                         <TableCell>Priority</TableCell>
-//                         <TableCell>Created</TableCell>
-//                         <TableCell>Actions</TableCell>
-//                       </TableRow>
-//                     </TableHead>
-//                     <TableBody>
-//                       {filteredTenants
-//                         .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-//                         .map((tenant) => (
-//                         <TableRow
-//                           key={tenant.id}
-//                           hover
-//                           selected={selectedTenants.includes(tenant.id)}
-//                         >
-//                           <TableCell padding="checkbox">
-//                             <Checkbox
-//                               checked={selectedTenants.includes(tenant.id)}
-//                               onChange={() => handleSelectTenant(tenant.id)}
-//                             />
-//                           </TableCell>
-//                           <TableCell>
-//                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                               <Avatar
-//                                 sx={{
-//                                   mr: 2,
-//                                   bgcolor: 'primary.main',
-//                                   width: 40,
-//                                   height: 40
-//                                 }}
-//                               >
-//                                 {tenant.tenant_name.charAt(0)}
-//                               </Avatar>
-//                               <Box>
-//                                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-//                                   {tenant.tenant_name}
-//                                 </Typography>
-//                                 <Typography variant="body2" color="text.secondary">
-//                                   {tenant.industry} • {tenant.company_size}
-//                                 </Typography>
-//                                 <Typography variant="caption" color="text.secondary">
-//                                   {tenant.contact_person}
-//                                 </Typography>
-//                               </Box>
-//                             </Box>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Stack spacing={0.5}>
-//                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                                 <EmailIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
-//                                 <Typography variant="body2">{tenant.email}</Typography>
-//                               </Box>
-//                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                                 <PhoneIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
-//                                 <Typography variant="body2">{tenant.phone}</Typography>
-//                               </Box>
-//                             </Stack>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Chip
-//                               label={tenant.subscription_plan}
-//                               size="small"
-//                               variant="outlined"
-//                               color={
-//                                 tenant.subscription_plan === 'Enterprise' ? 'primary' :
-//                                 tenant.subscription_plan === 'Premium' ? 'secondary' : 'default'
-//                               }
-//                               sx={{ mb: 0.5 }}
-//                             />
-//                             <Typography variant="body2" color="text.secondary">
-//                               {tenant.estimated_users} users
-//                             </Typography>
-//                             <Typography variant="caption" color="text.secondary">
-//                               ${tenant.monthly_budget}/month
-//                             </Typography>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Chip
-//                               icon={getStatusIcon(tenant.status)}
-//                               label={tenant.status.toUpperCase()}
-//                               color={getStatusColor(tenant.status)}
-//                               size="small"
-//                               sx={{ fontWeight: 'bold' }}
-//                             />
-//                           </TableCell>
-//                           <TableCell>
-//                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                               <Box
-//                                 sx={{
-//                                   width: 8,
-//                                   height: 8,
-//                                   borderRadius: '50%',
-//                                   bgcolor: getPriorityColor(tenant.priority),
-//                                   mr: 1
-//                                 }}
-//                               />
-//                               <Typography
-//                                 variant="body2"
-//                                 sx={{
-//                                   textTransform: 'capitalize',
-//                                   color: getPriorityColor(tenant.priority),
-//                                   fontWeight: 'medium'
-//                                 }}
-//                               >
-//                                 {tenant.priority}
-//                               </Typography>
-//                             </Box>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Typography variant="body2">
-//                               {formatDate(tenant.created_at)}
-//                             </Typography>
-//                           </TableCell>
-//                           <TableCell>
-//                             <Stack direction="row" spacing={0.5}>
-//                               <Tooltip title="View Details">
-//                                 <IconButton
-//                                   size="small"
-//                                   onClick={() => handleViewTenant(tenant)}
-//                                 >
-//                                   <VisibilityIcon fontSize="small" />
-//                                 </IconButton>
-//                               </Tooltip>
-
-//                               {tenant.status === 'pending' && (
-//                                 <>
-//                                   <Tooltip title="Approve">
-//                                     <IconButton
-//                                       size="small"
-//                                       color="success"
-//                                       onClick={() => openActionDialog('approve', tenant)}
-//                                     >
-//                                       <CheckCircleIcon fontSize="small" />
-//                                     </IconButton>
-//                                   </Tooltip>
-
-//                                   <Tooltip title="Reject">
-//                                     <IconButton
-//                                       size="small"
-//                                       color="error"
-//                                       onClick={() => openActionDialog('reject', tenant)}
-//                                     >
-//                                       <CancelIcon fontSize="small" />
-//                                     </IconButton>
-//                                   </Tooltip>
-//                                 </>
-//                               )}
-
-//                               <Tooltip title="More Actions">
-//                                 <IconButton
-//                                   size="small"
-//                                   onClick={(e) => {
-//                                     setAnchorEl(e.currentTarget);
-//                                     setSelectedTenant(tenant);
-//                                   }}
-//                                 >
-//                                   <MoreVertIcon fontSize="small" />
-//                                 </IconButton>
-//                               </Tooltip>
-//                             </Stack>
-//                           </TableCell>
-//                         </TableRow>
-//                       ))}
-//                     </TableBody>
-//                   </Table>
-//                 </TableContainer>
-
-//                 <TablePagination
-//                   component="div"
-//                   count={filteredTenants.length}
-//                   page={page}
-//                   onPageChange={(e, newPage) => setPage(newPage)}
-//                   rowsPerPage={rowsPerPage}
-//                   onRowsPerPageChange={(e) => {
-//                     setRowsPerPage(parseInt(e.target.value, 10));
-//                     setPage(0);
-//                   }}
-//                   rowsPerPageOptions={[5, 10, 25, 50]}
-//                 />
-//               </>
-//             )}
-//           </TabPanel>
-
-//           {/* Tab 2: Pending Requests */}
-//           <TabPanel value={currentTab} index={1}>
-//             <Stack spacing={2} sx={{ p: 2 }}>
-//               {filteredTenants
-//                 .filter(t => t.status === 'pending')
-//                 .map((tenant) => (
-//                   <Card
-//                     key={tenant.id}
-//                     sx={{
-//                       borderLeft: 4,
-//                       borderLeftColor: getPriorityColor(tenant.priority),
-//                       '&:hover': { boxShadow: 4 }
-//                     }}
-//                   >
-//                     <CardContent>
-//                       <Grid container spacing={2}>
-//                         <Grid item xs={12} md={8}>
-//                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-//                             <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
-//                               {tenant.tenant_name.charAt(0)}
-//                             </Avatar>
-//                             <Box>
-//                               <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-//                                 {tenant.tenant_name}
-//                               </Typography>
-//                               <Typography variant="body2" color="text.secondary">
-//                                 {tenant.contact_person} • {tenant.industry}
-//                               </Typography>
-//                             </Box>
-//                             <Chip
-//                               label={tenant.priority}
-//                               size="small"
-//                               sx={{
-//                                 ml: 'auto',
-//                                 bgcolor: alpha(getPriorityColor(tenant.priority), 0.1),
-//                                 color: getPriorityColor(tenant.priority)
-//                               }}
-//                             />
-//                           </Box>
-
-//                           <Grid container spacing={2} sx={{ mb: 2 }}>
-//                             <Grid item xs={6}>
-//                               <Typography variant="body2" color="text.secondary">Contact</Typography>
-//                               <Typography variant="body2">{tenant.email}</Typography>
-//                               <Typography variant="body2">{tenant.phone}</Typography>
-//                             </Grid>
-//                             <Grid item xs={6}>
-//                               <Typography variant="body2" color="text.secondary">Details</Typography>
-//                               <Typography variant="body2">
-//                                 {tenant.subscription_plan} • {tenant.estimated_users} users
-//                               </Typography>
-//                               <Typography variant="body2">
-//                                 Budget: ${tenant.monthly_budget}/month
-//                               </Typography>
-//                             </Grid>
-//                           </Grid>
-
-//                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-//                             {tenant.requested_features?.map((feature, index) => (
-//                               <Chip
-//                                 key={index}
-//                                 label={feature}
-//                                 size="small"
-//                                 variant="outlined"
-//                               />
-//                             ))}
-//                           </Box>
-
-//                           <Typography variant="body2" color="text.secondary">
-//                             Requested: {formatDate(tenant.created_at)}
-//                           </Typography>
-//                         </Grid>
-
-//                         <Grid item xs={12} md={4}>
-//                           <CardActions sx={{ flexDirection: 'column', gap: 1, p: 0 }}>
-//                             <Button
-//                               fullWidth
-//                               variant="contained"
-//                               color="success"
-//                               startIcon={<CheckCircleIcon />}
-//                               onClick={() => openActionDialog('approve', tenant)}
-//                             >
-//                               Approve Request
-//                             </Button>
-
-//                             <Button
-//                               fullWidth
-//                               variant="outlined"
-//                               color="error"
-//                               startIcon={<CancelIcon />}
-//                               onClick={() => openActionDialog('reject', tenant)}
-//                             >
-//                               Reject Request
-//                             </Button>
-
-//                             <Button
-//                               fullWidth
-//                               variant="text"
-//                               startIcon={<VisibilityIcon />}
-//                               onClick={() => handleViewTenant(tenant)}
-//                             >
-//                               View Full Details
-//                             </Button>
-//                           </CardActions>
-//                         </Grid>
-//                       </Grid>
-//                     </CardContent>
-//                   </Card>
-//                 ))}
-
-//               {filteredTenants.filter(t => t.status === 'pending').length === 0 && (
-//                 <Box sx={{ textAlign: 'center', py: 6 }}>
-//                   <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
-//                   <Typography variant="h6" color="text.secondary" gutterBottom>
-//                     No Pending Requests
-//                   </Typography>
-//                   <Typography variant="body2" color="text.secondary">
-//                     All tenant requests have been processed
-//                   </Typography>
-//                 </Box>
-//               )}
-//             </Stack>
-//           </TabPanel>
-
-//           {/* Tab 3: Analytics */}
-//           <TabPanel value={currentTab} index={2}>
-//             <Grid container spacing={3} sx={{ p: 2 }}>
-//               <Grid item xs={12} md={6}>
-//                 <Card sx={{ p: 3, height: '100%' }}>
-//                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-//                     <PieChartIcon sx={{ mr: 1 }} />
-//                     Status Distribution
-//                   </Typography>
-//                   <Box sx={{ mt: 3 }}>
-//                     <Stack spacing={2}>
-//                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-//                         <Typography variant="body2">Pending</Typography>
-//                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-//                           {stats.pending} ({((stats.pending / stats.total) * 100).toFixed(1)}%)
-//                         </Typography>
-//                       </Box>
-//                       <LinearProgress
-//                         variant="determinate"
-//                         value={(stats.pending / stats.total) * 100}
-//                         color="warning"
-//                         sx={{ height: 8, borderRadius: 4 }}
-//                       />
-
-//                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-//                         <Typography variant="body2">Approved</Typography>
-//                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-//                           {stats.approved} ({((stats.approved / stats.total) * 100).toFixed(1)}%)
-//                         </Typography>
-//                       </Box>
-//                       <LinearProgress
-//                         variant="determinate"
-//                         value={(stats.approved / stats.total) * 100}
-//                         color="success"
-//                         sx={{ height: 8, borderRadius: 4 }}
-//                       />
-
-//                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-//                         <Typography variant="body2">Rejected</Typography>
-//                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-//                           {stats.rejected} ({((stats.rejected / stats.total) * 100).toFixed(1)}%)
-//                         </Typography>
-//                       </Box>
-//                       <LinearProgress
-//                         variant="determinate"
-//                         value={(stats.rejected / stats.total) * 100}
-//                         color="error"
-//                         sx={{ height: 8, borderRadius: 4 }}
-//                       />
-//                     </Stack>
-//                   </Box>
-//                 </Card>
-//               </Grid>
-
-//               <Grid item xs={12} md={6}>
-//                 <Card sx={{ p: 3, height: '100%' }}>
-//                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-//                     <BarChartIcon sx={{ mr: 1 }} />
-//                     Industry Breakdown
-//                   </Typography>
-//                   <Box sx={{ mt: 3 }}>
-//                     <Stack spacing={2}>
-//                       {[...new Set(tenants.map(t => t.industry))].map(industry => {
-//                         const count = tenants.filter(t => t.industry === industry).length;
-//                         const percentage = (count / tenants.length) * 100;
-
-//                         return (
-//                           <Box key={industry}>
-//                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-//                               <Typography variant="body2">{industry}</Typography>
-//                               <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-//                                 {count} ({percentage.toFixed(1)}%)
-//                               </Typography>
-//                             </Box>
-//                             <LinearProgress
-//                               variant="determinate"
-//                               value={percentage}
-//                               sx={{ height: 6, borderRadius: 3, mt: 0.5 }}
-//                             />
-//                           </Box>
-//                         );
-//                       })}
-//                     </Stack>
-//                   </Box>
-//                 </Card>
-//               </Grid>
-
-//               <Grid item xs={12}>
-//                 <Card sx={{ p: 3 }}>
-//                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-//                     <TimelineIcon sx={{ mr: 1 }} />
-//                     Key Metrics
-//                   </Typography>
-//                   <Grid container spacing={3} sx={{ mt: 2 }}>
-//                     <Grid item xs={12} sm={6} md={3}>
-//                       <Box sx={{ textAlign: 'center' }}>
-//                         <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
-//                           {Math.round(tenants.reduce((acc, t) => acc + t.estimated_users, 0) / tenants.length)}
-//                         </Typography>
-//                         <Typography variant="body2" color="text.secondary">
-//                           Avg Users per Tenant
-//                         </Typography>
-//                       </Box>
-//                     </Grid>
-
-//                     <Grid item xs={12} sm={6} md={3}>
-//                       <Box sx={{ textAlign: 'center' }}>
-//                         <Typography variant="h4" color="success.main" sx={{ fontWeight: 'bold' }}>
-//                           ${Math.round(tenants.reduce((acc, t) => acc + t.monthly_budget, 0) / 1000)}K
-//                         </Typography>
-//                         <Typography variant="body2" color="text.secondary">
-//                           Total Monthly Revenue
-//                         </Typography>
-//                       </Box>
-//                     </Grid>
-
-//                     <Grid item xs={12} sm={6} md={3}>
-//                       <Box sx={{ textAlign: 'center' }}>
-//                         <Typography variant="h4" color="warning.main" sx={{ fontWeight: 'bold' }}>
-//                           {Math.round((stats.approved / stats.total) * 100)}%
-//                         </Typography>
-//                         <Typography variant="body2" color="text.secondary">
-//                           Approval Rate
-//                         </Typography>
-//                       </Box>
-//                     </Grid>
-
-//                     <Grid item xs={12} sm={6} md={3}>
-//                       <Box sx={{ textAlign: 'center' }}>
-//                         <Typography variant="h4" color="info.main" sx={{ fontWeight: 'bold' }}>
-//                           {Math.round(stats.thisWeek / 7 * 10) / 10}
-//                         </Typography>
-//                         <Typography variant="body2" color="text.secondary">
-//                           Avg Daily Requests
-//                         </Typography>
-//                       </Box>
-//                     </Grid>
-//                   </Grid>
-//                 </Card>
-//               </Grid>
-//             </Grid>
-//           </TabPanel>
-
-//           {/* Tab 4: Activity Log */}
-//           <TabPanel value={currentTab} index={3}>
-//             <List sx={{ p: 2 }}>
-//               {tenants
-//                 .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-//                 .slice(0, 20)
-//                 .map((tenant, index) => (
-//                   <ListItem key={`${tenant.id}-${index}`} sx={{ mb: 1 }}>
-//                     <ListItemAvatar>
-//                       <Avatar
-//                         sx={{
-//                           bgcolor:
-//                             tenant.status === 'approved' ? 'success.main' :
-//                             tenant.status === 'pending' ? 'warning.main' :
-//                             'error.main'
-//                         }}
-//                       >
-//                         {getStatusIcon(tenant.status)}
-//                       </Avatar>
-//                     </ListItemAvatar>
-
-//                     <ListItemText
-//                       primary={
-//                         <Typography>
-//                           <strong>{tenant.tenant_name}</strong> - {tenant.status.toUpperCase()}
-//                         </Typography>
-//                       }
-//                       secondary={
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">
-//                             {formatDate(tenant.updated_at)} • {tenant.subscription_plan} Plan
-//                           </Typography>
-//                           {tenant.status === 'rejected' && tenant.rejection_reason && (
-//                             <Typography variant="body2" color="error.main" sx={{ mt: 0.5 }}>
-//                               Reason: {tenant.rejection_reason}
-//                             </Typography>
-//                           )}
-//                         </Box>
-//                       }
-//                     />
-
-//                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                       <Chip
-//                         label={tenant.priority}
-//                         size="small"
-//                         sx={{
-//                           bgcolor: alpha(getPriorityColor(tenant.priority), 0.1),
-//                           color: getPriorityColor(tenant.priority)
-//                         }}
-//                       />
-//                     </Box>
-//                   </ListItem>
-//                 ))}
-//             </List>
-//           </TabPanel>
-//         </Card>
-//       </Container>
-
-//       {/* Floating Action Button */}
-//       <SpeedDial
-//         ariaLabel="Quick Actions"
-//         sx={{ position: 'fixed', bottom: 16, right: 16 }}
-//         icon={<SpeedDialIcon />}
-//       >
-//         <SpeedDialAction
-//           icon={<RefreshIcon />}
-//           tooltipTitle="Refresh Data"
-//           onClick={() => fetchTenants(false)}
-//         />
-//         <SpeedDialAction
-//           icon={<DownloadIcon />}
-//           tooltipTitle="Export Data"
-//           onClick={(e) => setBulkActionAnchor(e.currentTarget)}
-//         />
-//         <SpeedDialAction
-//           icon={<AnalyticsIcon />}
-//           tooltipTitle="View Analytics"
-//           onClick={() => setCurrentTab(2)}
-//         />
-//       </SpeedDial>
-
-//       {/* Tenant Details Dialog */}
-//       <Dialog
-//         open={dialogOpen}
-//         onClose={() => setDialogOpen(false)}
-//         maxWidth="lg"
-//         fullWidth
-//         PaperProps={{ sx: { borderRadius: 3 } }}
-//       >
-//         <DialogTitle sx={{ pb: 1 }}>
-//           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-//             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-//               {selectedTenant?.tenant_name} - Detailed Information
-//             </Typography>
-//             <IconButton onClick={() => setDialogOpen(false)}>
-//               <CloseIcon />
-//             </IconButton>
-//           </Box>
-//         </DialogTitle>
-
-//         <DialogContent>
-//           {selectedTenant && (
-//             <Grid container spacing={3}>
-//               <Grid item xs={12} md={6}>
-//                 <Stack spacing={3}>
-//                   <Card variant="outlined">
-//                     <CardContent>
-//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-//                         <BusinessIcon sx={{ mr: 1 }} />
-//                         Company Information
-//                       </Typography>
-//                       <Stack spacing={1}>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Company Name</Typography>
-//                           <Typography variant="body1">{selectedTenant.tenant_name}</Typography>
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Industry</Typography>
-//                           <Typography variant="body1">{selectedTenant.industry}</Typography>
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Company Size</Typography>
-//                           <Typography variant="body1">{selectedTenant.company_size}</Typography>
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Website</Typography>
-//                           <Link href={selectedTenant.website} target="_blank" rel="noopener">
-//                             {selectedTenant.website}
-//                           </Link>
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Tax ID</Typography>
-//                           <Typography variant="body1">{selectedTenant.tax_id}</Typography>
-//                         </Box>
-//                       </Stack>
-//                     </CardContent>
-//                   </Card>
-
-//                   <Card variant="outlined">
-//                     <CardContent>
-//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-//                         <PeopleIcon sx={{ mr: 1 }} />
-//                         Contact Information
-//                       </Typography>
-//                       <Stack spacing={1}>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Contact Person</Typography>
-//                           <Typography variant="body1">{selectedTenant.contact_person}</Typography>
-//                         </Box>
-//                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                           <EmailIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
-//                           <Typography variant="body1">{selectedTenant.email}</Typography>
-//                         </Box>
-//                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-//                           <PhoneIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
-//                           <Typography variant="body1">{selectedTenant.phone}</Typography>
-//                         </Box>
-//                         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-//                           <LocationOnIcon sx={{ mr: 1, fontSize: 16, color: 'text.secondary', mt: 0.5 }} />
-//                           <Typography variant="body1">{selectedTenant.address}</Typography>
-//                         </Box>
-//                       </Stack>
-//                     </CardContent>
-//                   </Card>
-//                 </Stack>
-//               </Grid>
-
-//               <Grid item xs={12} md={6}>
-//                 <Stack spacing={3}>
-//                   <Card variant="outlined">
-//                     <CardContent>
-//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-//                         <AttachMoneyIcon sx={{ mr: 1 }} />
-//                         Subscription Details
-//                       </Typography>
-//                       <Stack spacing={1}>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Plan</Typography>
-//                           <Chip
-//                             label={selectedTenant.subscription_plan}
-//                             color={
-//                               selectedTenant.subscription_plan === 'Enterprise' ? 'primary' :
-//                               selectedTenant.subscription_plan === 'Premium' ? 'secondary' : 'default'
-//                             }
-//                             sx={{ mt: 2 }}
-//             />
-//             </Box>
-//             </Stack>
-//             </CardContent>
-//             </Card>
-//           </Stack>
-
-//             <DialogContent>
-//               {actionDialog.type === 'reject' && (
-//                 <TextField
-//                   fullWidth
-//                   multiline
-//                   rows={4}
-//                   variant="outlined"
-//                   label="Reason for Rejection"
-//                   value={actionReason}
-//                   onChange={(e) => setActionReason(e.target.value)}
-//                 />
-//               )}
-//             </DialogContent>
-//           <DialogActions>
-//             <Button onClick={() => setActionDialog({ open: false, type: '', tenant: null })}>
-//               Cancel
-//             </Button>
-//             <Button
-//               variant="contained"
-//               color={actionDialog.type === 'approve' ? 'success' : 'error'}
-//               onClick={() => handleStatusUpdate(actionDialog.tenant?.id, actionDialog.type === 'approve' ? 'approved' : 'rejected', actionReason)}
-//             >
-//               {actionDialog.type === 'approve' ? 'Approve' : 'Reject'}
-//             </Button>
-//           </DialogActions>
-//             <Button onClick={() => setActionDialog({ open: false, type: '', tenant: null })}>
-//               Cancel
-//             </Button>
-//             <Button
-//             variant="contained"
-//             color={actionDialog.type === 'approve' ? 'success' : 'error'}
-//             onClick={() => handleStatusUpdate(actionDialog.tenant?.id, actionDialog.type === 'approve' ? 'approved' : 'rejected', actionReason)}
-//           >
-//             {actionDialog.type === 'approve' ? 'Approve' : 'Reject'}
-//           </Button>
-
-//       {/* Context Menu */}
-//       <Menu
-//         anchorEl={anchorEl}
-//         open={Boolean(anchorEl)}
-//         onClose={() => setAnchorEl(null)}
-//       >
-//         <MenuItem onClick={() => handleViewTenant(selectedTenant)}>
-//           <ListItemIcon>
-//             <VisibilityIcon fontSize="small" />
-//           </ListItemIcon>
-//           <ListItemText>View Details</ListItemText>
-//         </MenuItem>
-
-//         {selectedTenant?.status === 'pending' && (
-//           <>
-//             <MenuItem onClick={() => {
-//               setAnchorEl(null);
-//               openActionDialog('approve', selectedTenant);
-//             }}>
-//               <ListItemIcon>
-//                 <CheckCircleIcon fontSize="small" />
-//               </ListItemIcon>
-//               <ListItemText>Approve</ListItemText>
-//             </MenuItem>
-
-//             <MenuItem onClick={() => {
-//               setAnchorEl(null);
-//               openActionDialog('reject', selectedTenant);
-//             }}>
-//               <ListItemIcon>
-//                 <CancelIcon fontSize="small" />
-//               </ListItemIcon>
-//               <ListItemText>Reject</ListItemText>
-//             </MenuItem>
-//           </>
-//         )}
-
-//         <Divider />
-
-//         <MenuItem onClick={() => {
-//           setAnchorEl(null);
-//           // Add edit functionality here
-//         }}>
-//           <ListItemIcon>
-//             <EditIcon fontSize="small" />
-//           </ListItemIcon>
-//           <ListItemText>Edit Details</ListItemText>
-//         </MenuItem>
-
-//         <MenuItem onClick={() => {
-//           setAnchorEl(null);
-//           // Add delete functionality here
-//         }}>
-//           <ListItemIcon>
-//             <DeleteIcon fontSize="small" />
-//           </ListItemIcon>
-//           <ListItemText>Delete Request</ListItemText>
-//         </MenuItem>
-//       </Menu>
-
-//       {/* Bulk Actions Menu */}
-//       <Menu
-//         anchorEl={bulkActionAnchor}
-//         open={Boolean(bulkActionAnchor)}
-//         onClose={() => setBulkActionAnchor(null)}
-//       >
-//         <MenuItem onClick={() => {
-//           setBulkActionAnchor(null);
-//           handleExportData('csv');
-//         }}>
-//           <ListItemIcon>
-//             <DownloadIcon fontSize="small" />
-//           </ListItemIcon>
-//           <ListItemText>Export as CSV</ListItemText>
-//         </MenuItem>
-
-//         <MenuItem onClick={() => {
-//           setBulkActionAnchor(null);
-//           handleExportData('xlsx');
-//         }}>
-//           <ListItemIcon>
-//             <DownloadIcon fontSize="small" />
-//           </ListItemIcon>
-//           <ListItemText>Export as Excel</ListItemText>
-//         </MenuItem>
-
-//         <MenuItem onClick={() => {
-//           setBulkActionAnchor(null);
-//           handleExportData('pdf');
-//         }}>
-//           <ListItemIcon>
-//             <DownloadIcon fontSize="small" />
-//           </ListItemIcon>
-//           <ListItemText>Export as PDF</ListItemText>
-//         </MenuItem>
-//       </Menu>
-
-//       {/* Snackbar for notifications */}
-//       <Snackbar
-//         open={snackbar.open}
-//         autoHideDuration={6000}
-//         onClose={handleCloseSnackbar}
-//         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-//       >
-//         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-//           {snackbar.message}
-//         </Alert>
-//       </Snackbar>
-
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Estimated Users</Typography>
-//                           <Typography variant="body1">{selectedTenant.estimated_users}</Typography>
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Monthly Budget</Typography>
-//                           <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-//                             ${selectedTenant.monthly_budget}
-//                           </Typography>
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Status</Typography>
-//                           <Chip
-//                             icon={getStatusIcon(selectedTenant.status)}
-//                             label={selectedTenant.status.toUpperCase()}
-//                             color={getStatusColor(selectedTenant.status)}
-//                             sx={{ mt: 0.5 }}
-//                           />
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Priority</Typography>
-//                           <Chip
-//                             label={selectedTenant.priority}
-//                             size="small"
-//                             sx={{
-//                               mt: 0.5,
-//                               bgcolor: alpha(getPriorityColor(selectedTenant.priority), 0.1),
-//                               color: getPriorityColor(selectedTenant.priority)
-//                             }}
-//                           />
-//                         </Box>
-
-//                   <Card variant="outlined">
-//                     <CardContent>
-//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-//                         <SettingsIcon sx={{ mr: 1 }} />
-//                         Requested Features
-//                       </Typography>
-//                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-//                         {selectedTenant.requested_features?.map((feature, index) => (
-//                           <Chip
-//                             key={index}
-//                             label={feature}
-//                             variant="outlined"
-//                             size="small"
-//                           />
-//                         ))}
-//                       </Box>
-//                     </CardContent>
-//                   </Card>
-
-//                   <Card variant="outlined">
-//                     <CardContent>
-//                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-//                         <CalendarTodayIcon sx={{ mr: 1 }} />
-//                         Timeline
-//                       </Typography>
-//                       <Stack spacing={1}>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Request Date</Typography>
-//                           <Typography variant="body1">{formatDate(selectedTenant.created_at)}</Typography>
-//                         </Box>
-//                         <Box>
-//                           <Typography variant="body2" color="text.secondary">Last Updated</Typography>
-//                           <Typography variant="body1">{formatDate(selectedTenant.updated_at)}</Typography>
-//                         </Box>
-//                         {selectedTenant.status === 'rejected' && selectedTenant.rejection_reason && (
-//                           <Box>
-//                             <Typography variant="body2" color="text.secondary">Rejection Reason</Typography>
-//                             <Typography variant="body1" color="error.main">
-//                               {selectedTenant.rejection_reason}
-//                             </Typography>
-//                           </Box>
-//                         )}
-//                       </Stack>
-//                     </CardContent>
-//                   </Card>
-
-//               </Grid>
-//             </Grid>
-//           )}
-//         </DialogContent>
-
-//         <DialogActions sx={{ p: 3, pt: 1 }}>
-//           <Button onClick={() => setDialogOpen(false)}>
-//             Close
-//           </Button>
-//           {selectedTenant?.status === 'pending' && (
-//             <>
-//               <Button
-//                 variant="contained"
-//                 color="success"
-//                 startIcon={<CheckCircleIcon />}
-//                 onClick={() => {
-//                   setDialogOpen(false);
-//                   openActionDialog('approve', selectedTenant);
-//                 }}
-//               >
-//                 Approve
-//               </Button>
-//               <Button
-//                 variant="contained"
-//                 color="error"
-//                 startIcon={<CancelIcon />}
-//                 onClick={() => {
-//                   setDialogOpen(false);
-//                   openActionDialog('reject', selectedTenant);
-//                 }}
-//               >
-//                 Reject
-//               </Button>
-//             </>
-//           )}
-//         </DialogActions>
-//       </Dialog>
-
-//       {/* Action Confirmation Dialog */}
-//       <Dialog
-//         open={actionDialog.open}
-//         onClose={() => setActionDialog({ open: false, type: '', tenant: null })}
-//         maxWidth="sm"
-//         fullWidth
-//       >
-//         <DialogTitle>
-//           {actionDialog.type === 'approve' ? 'Approve Tenant Request' : 'Reject Tenant Request'}
-//         </DialogTitle>
-//         <DialogContent>
-//           <Typography variant="body1" gutterBottom>
-//             Are you sure you want to {actionDialog.type} the request from{' '}
-//             <strong>{actionDialog.tenant?.tenant_name}</strong>?
-//           </Typography>
-
-//           {actionDialog.type === 'reject' && (
-//             <TextField
-//               fullWidth
-//               multiline
-//               rows={3}
-//               label="Reason for rejection (optional)"
-//               value={actionReason}
-//               onChange={(e) => setActionReason(e.target.value)}
-//               sx={{ mt: 2 }}
-//               inputProps={{ maxLength: 500 }}
-//             />
-//           )}
-//         </DialogContent>
-//       </Dialog>
-
-//   </Box>
-// )
-// };
-
-// export default SuperAdminDashboard;
