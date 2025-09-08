@@ -12,7 +12,9 @@ import {
   getTenantsWithUserCount,
   activateUser,
   deactivateUser,
-  softDeleteUser
+  softDeleteUser,
+  activateTenant,
+  deactivateTenant
 } from "../controllers/tenant.controller.js";
 import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 const router = express.Router();
@@ -70,5 +72,11 @@ router.delete("/:id", authenticateJWT, softDeleteTenant);
 
 // Get a tenant request by ID
 router.get("/:id", authenticateJWT, getTenantRequestById);
+
+// Activate a tenant
+router.put("/:id/activate", authenticateJWT, activateTenant);
+
+// Deactivate a tenant  
+router.put("/:id/deactivate", authenticateJWT, deactivateTenant);
 
 export default router;

@@ -597,7 +597,8 @@ export const softDeleteTenant = async (req, res) => {
     await tenant.update({
       is_deleted: true,
       deleted_at: newDate,
-      is_active: false
+      is_active: false,
+      updatedAt: newDate
     });
 
     return res.status(200).json({
@@ -613,6 +614,80 @@ export const softDeleteTenant = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error soft deleting tenant",
+      error: error.message,
+    });
+  }
+};
+
+export const activateTenant = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ✅ Check if user is super admin
+    if (!req.user || req.user.roles[0] !== "superAdmin") {
+      return res.status(403).json({ message: "Forbidden: Only super admins can delete tenants." });
+    }
+
+    // 1. Find tenant
+    const tenant = await Tenant.findOne({ where: { id: id , is_active: false } });
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found or already activated." });
+    }
+    const newDate = formatDate(new Date()).toString();
+    await tenant.update({
+      is_active: true,
+      updatedAt: newDate
+    });
+
+    return res.status(200).json({
+      message: "Tenant activatedd successfully",
+      tenant: {
+        id: tenant.id,
+        name: tenant.name,
+        is_active: tenant.is_active
+      }
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error activating tenant",
+      error: error.message,
+    });
+  }
+};
+
+export const deactivateTenant = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ✅ Check if user is super admin
+    if (!req.user || req.user.roles[0] !== "superAdmin") {
+      return res.status(403).json({ message: "Forbidden: Only super admins can delete tenants." });
+    }
+
+    // 1. Find tenant
+    const tenant = await Tenant.findOne({ where: { id: id, is_active: true } });
+    if (!tenant) {
+      return res.status(404).json({ message: "Tenant not found or already deactivated." });
+    }
+    const newDate = formatDate(new Date()).toString();
+    await tenant.update({
+      is_active: false,
+      updatedAt: newDate
+    });
+
+    return res.status(200).json({
+      message: "Tenant deactivated successfully",
+      tenant: {
+        id: tenant.id,
+        name: tenant.name,
+        is_active: tenant.is_active
+      }
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error deactivating tenant",
       error: error.message,
     });
   }
