@@ -139,18 +139,26 @@ const TenantList = () => {
 
   // Filter tenants by status & search
   const filteredTenants = tenants.filter((t) => {
-    if (tabValue === 0 && (!t.is_active || t.is_deleted)) return false; // Active tab
-    if (tabValue === 1 && (t.is_active || t.is_deleted)) return false; // Inactive tab
-    if (tabValue === 2 && !t.is_deleted) return false; // Deleted tab
+  // Active tab → active & not deleted
+  if (tabValue === 0 && !(t.is_active && !t.is_deleted)) return false;
 
-    if (searchQuery) {
-      return (
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.email.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    return true;
-  });
+  // Inactive tab → inactive & not deleted
+  if (tabValue === 1 && !(!t.is_active && !t.is_deleted)) return false;
+
+  // Deleted tab → deleted
+  if (tabValue === 2 && !t.is_deleted) return false;
+
+  // Apply search filter if query exists
+  if (searchQuery) {
+    return (
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
+
+  return true;
+});
+
 
   if (loading) {
     return (
