@@ -85,15 +85,26 @@ export const login = async (req, res) => {
         return res.status(400).json({ message: "Tenant name is required" });
       }
 
-      // 👇 Require tenant to be not deleted AND active
       const tenant = await Tenant.findOne({
-        where: { name: tenantName, is_deleted: false, is_active: true },
-      });
-      if (!tenant) {
-        return res
-          .status(400)
-          .json({ message: "Invalid tenant or tenant is deleted/inactive" });
-      }
+  where: { name: tenantName },
+});
+
+if (!tenant) {
+  return res.status(400).json({ message: "Tenant does not exist" });
+}
+
+if (tenant.is_deleted) {
+  return res.status(403).json({ message: "This tenant has been deleted. Please contact support." });
+}
+
+if (!tenant.is_active) {
+  return res.status(403).json({ message: "This tenant is currently inactive. Please contact your administrator." });
+}
+
+if (user.tenant_id !== tenant.id) {
+  return res.status(403).json({ message: "You are not assigned to this tenant" });
+}
+
 
       if (user.tenant_id !== tenant.id) {
         return res.status(403).json({ message: "Invalid tenant name." });
