@@ -1,50 +1,286 @@
 import React, { useEffect, useState } from "react";
-import {
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Grid,
-  IconButton,
-  Chip,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  CircularProgress,
-  Tabs,
-  Tab,
-  TextField,
-  InputAdornment,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import BlockIcon from "@mui/icons-material/Block";
-import RestoreIcon from "@mui/icons-material/Restore";
-import { useNavigate } from "react-router";
-import { superAdmin } from "../../services/superAdminAPI"; // API helper
-import { Delete } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import { superAdmin } from "../../services/superAdminAPI";
+
+// Import icons from react-icons
+import { 
+  MdVisibility, 
+  MdBlock, 
+  MdRestore, 
+  MdDelete, 
+  MdSearch, 
+  MdClose,
+  MdFilterList,
+  MdAdd,
+  MdEdit,
+  MdMoreVert,
+  MdCheckCircle,
+  MdCancel,
+  MdPending,
+  MdDeleteSweep
+} from 'react-icons/md';
+
+// Helper for safe date formatting
+const safeFormatDate = (dateStr) => {
+  if (!dateStr) return "N/A";
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// Custom Modal Component
+const CustomModal = ({ open, title, children, actions, onClose, size = "md" }) => {
+  if (!open) return null;
+
+  const sizeClasses = {
+    sm: "max-w-sm",
+    md: "max-w-md",
+    lg: "max-w-lg",
+    xl: "max-w-xl"
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/20 bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+      <div className={`bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} mx-auto relative transform transition-all`}>
+        <div className="p-6">
+          <button 
+            onClick={onClose} 
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+          >
+            <MdClose size={20} />
+          </button>
+          <h3 className="text-xl font-semibold mb-4 text-gray-800 pr-8">{title}</h3>
+          {children}
+        </div>
+        {actions && (
+          <div className="flex justify-end p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl space-x-3">
+            {actions}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Dropdown Filter Component
+const FilterDropdown = ({ filter, setFilter, counts }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filterOptions = [
+    { value: 'all', label: 'All Tenants', icon: MdFilterList, count: counts.all },
+    { value: 'active', label: 'Active', icon: MdCheckCircle, count: counts.active, color: 'text-green-600' },
+    { value: 'inactive', label: 'Inactive', icon: MdCancel, count: counts.inactive, color: 'text-gray-600' },
+    { value: 'pending', label: 'Pending', icon: MdPending, count: counts.pending, color: 'text-yellow-600' },
+    { value: 'deleted', label: 'Deleted', icon: MdDeleteSweep, count: counts.deleted, color: 'text-red-600' }
+  ];
+
+  const selectedOption = filterOptions.find(option => option.value === filter);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[160px]"
+      >
+        <selectedOption.icon size={18} className={selectedOption.color || 'text-gray-600'} />
+        <span className="font-medium text-gray-700">{selectedOption.label}</span>
+        <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
+          {selectedOption.count}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+          {filterOptions.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                setFilter(option.value);
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
+                filter === option.value ? 'bg-blue-50 border-r-2 border-blue-500' : ''
+              }`}
+            >
+              <option.icon size={18} className={option.color || 'text-gray-600'} />
+              <span className="font-medium text-gray-700 flex-1 text-left">{option.label}</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                filter === option.value 
+                  ? 'bg-blue-100 text-blue-800' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {option.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Status Badge Component
+const StatusBadge = ({ tenant }) => {
+  if (tenant.is_deleted) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+        <MdDeleteSweep size={14} className="mr-1" />
+        Deleted
+      </span>
+    );
+  }
+  
+  if (tenant.is_pending) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+        <MdPending size={14} className="mr-1" />
+        Pending
+      </span>
+    );
+  }
+  
+  if (tenant.is_active) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+        <MdCheckCircle size={14} className="mr-1" />
+        Active
+      </span>
+    );
+  }
+  
+  return (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+      <MdCancel size={14} className="mr-1" />
+      Inactive
+    </span>
+  );
+};
+
+// Action Dropdown Component
+const ActionDropdown = ({ tenant, onView, onAction }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const getAvailableActions = () => {
+    const actions = [
+      { key: 'view', label: 'View Details', icon: MdVisibility, color: 'text-blue-600' }
+    ];
+
+    if (tenant.is_deleted) {
+      actions.push(
+        { key: 'restore', label: 'Restore Tenant', icon: MdRestore, color: 'text-green-600' }
+      );
+    } else if (tenant.is_pending) {
+      actions.push(
+        { key: 'approve', label: 'Approve', icon: MdCheckCircle, color: 'text-green-600' },
+        { key: 'reject', label: 'Reject', icon: MdCancel, color: 'text-red-600' }
+      );
+    } else if (tenant.is_active) {
+      actions.push(
+        { key: 'edit', label: 'Edit Tenant', icon: MdEdit, color: 'text-gray-600' },
+        { key: 'deactivate', label: 'Deactivate', icon: MdBlock, color: 'text-yellow-600' },
+        { key: 'delete', label: 'Delete', icon: MdDelete, color: 'text-red-600' }
+      );
+    } else {
+      actions.push(
+        { key: 'activate', label: 'Activate', icon: MdRestore, color: 'text-green-600' },
+        { key: 'delete', label: 'Delete', icon: MdDelete, color: 'text-red-600' }
+      );
+    }
+
+    return actions;
+  };
+
+  const actions = getAvailableActions();
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+      >
+        <MdMoreVert size={20} className="text-gray-600" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+          {actions.map((action) => (
+            <button
+              key={action.key}
+              onClick={() => {
+                if (action.key === 'view') {
+                  onView(tenant);
+                } else {
+                  onAction({ tenant, type: action.key });
+                }
+                setIsOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left ${
+                action.key === 'delete' || action.key === 'reject' ? 'hover:bg-red-50' : ''
+              }`}
+            >
+              <action.icon size={16} className={action.color} />
+              <span className="text-sm font-medium text-gray-700">{action.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-10" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Toast Notification Component
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+
+  return (
+    <div className={`fixed bottom-4 right-4 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-2 transform transition-all animate-slide-in-right max-w-sm`}>
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="text-white hover:text-gray-200">
+        <MdClose size={18} />
+      </button>
+    </div>
+  );
+};
 
 const TenantList = () => {
   const [tenants, setTenants] = useState([]);
   const [totalTenantCount, setTotalTenantCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
   const [selectedTenant, setSelectedTenant] = useState(null);
-  const [tabValue, setTabValue] = useState(0);
+  const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const navigate = useNavigate();
+
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
 
   // Fetch tenants from API
   const fetchTenants = async () => {
@@ -56,13 +292,18 @@ const TenantList = () => {
         ...t,
         is_deleted: t.is_deleted || false,
         is_active: t.is_active !== undefined ? t.is_active : true,
+        is_pending: t.is_pending || false,
+        createdAt: t.createdAt || null,
+        updatedAt: t.updatedAt || null,
+        deletedAt: t.deletedAt || null,
+        userCount: t.userCount || 0,
       }));
 
       setTenants(tenantsWithDefaults);
       setTotalTenantCount(data.totalCount || tenantsWithDefaults.length);
     } catch (err) {
       console.error("Failed to fetch tenants:", err);
-      setError("Failed to fetch tenants.");
+      showToast("Failed to fetch tenants.", 'error');
     } finally {
       setLoading(false);
     }
@@ -72,327 +313,435 @@ const TenantList = () => {
     fetchTenants();
   }, []);
 
-  // Toggle Active / Inactive
-  const handleToggleStatus = async (id) => {
-    try {
-      const tenant = tenants.find((t) => t.id === id);
-      if (!tenant) return;
+  // Calculate counts for each filter
+  const getCounts = () => {
+    return {
+      all: tenants.length,
+      active: tenants.filter(t => t.is_active && !t.is_deleted && !t.is_pending).length,
+      inactive: tenants.filter(t => !t.is_active && !t.is_deleted && !t.is_pending).length,
+      pending: tenants.filter(t => t.is_pending && !t.is_deleted).length,
+      deleted: tenants.filter(t => t.is_deleted).length,
+    };
+  };
 
-      if (tenant.is_active) {
-        await superAdmin.deactive(id);
-      } else {
-        await superAdmin.activate(id);
+  // Action handler with confirmation
+  const confirmAndExecute = async () => {
+    if (!confirmAction) return;
+
+    const { tenant, type } = confirmAction;
+    try {
+      switch (type) {
+        case "deactivate":
+          await superAdmin.deactive(tenant.id);
+          setTenants((prev) =>
+            prev.map((t) =>
+              t.id === tenant.id
+                ? { ...t, is_active: false, updatedAt: new Date() }
+                : t
+            )
+          );
+          showToast("Tenant deactivated successfully!");
+          break;
+
+        case "activate":
+          await superAdmin.activate(tenant.id);
+          setTenants((prev) =>
+            prev.map((t) =>
+              t.id === tenant.id
+                ? {
+                    ...t,
+                    is_active: true,
+                    is_deleted: false,
+                    is_pending: false,
+                    updatedAt: new Date(),
+                  }
+                : t
+            )
+          );
+          showToast("Tenant activated successfully!");
+          break;
+
+        case "delete":
+          await superAdmin.softDelete(tenant.id);
+          setTenants((prev) =>
+            prev.map((t) =>
+              t.id === tenant.id
+                ? {
+                    ...t,
+                    is_deleted: true,
+                    is_active: false,
+                    deletedAt: new Date(),
+                  }
+                : t
+            )
+          );
+          showToast("Tenant deleted successfully!");
+          break;
+
+        case "restore":
+          await superAdmin.activate(tenant.id);
+          setTenants((prev) =>
+            prev.map((t) =>
+              t.id === tenant.id
+                ? {
+                    ...t,
+                    is_deleted: false,
+                    is_active: true,
+                    is_pending: false,
+                    updatedAt: new Date(),
+                  }
+                : t
+            )
+          );
+          showToast("Tenant restored successfully!");
+          break;
+
+        case "approve":
+          // Assuming there's an approve API endpoint
+          await superAdmin.approve(tenant.id);
+          setTenants((prev) =>
+            prev.map((t) =>
+              t.id === tenant.id
+                ? {
+                    ...t,
+                    is_pending: false,
+                    is_active: true,
+                    updatedAt: new Date(),
+                  }
+                : t
+            )
+          );
+          showToast("Tenant approved successfully!");
+          break;
+
+        case "reject":
+          // Assuming there's a reject API endpoint
+          await superAdmin.reject(tenant.id);
+          setTenants((prev) =>
+            prev.map((t) =>
+              t.id === tenant.id
+                ? {
+                    ...t,
+                    is_pending: false,
+                    is_active: false,
+                    updatedAt: new Date(),
+                  }
+                : t
+            )
+          );
+          showToast("Tenant rejected successfully!");
+          break;
+
+        default:
+          break;
       }
-
-      setTenants((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, is_active: !t.is_active } : t
-        )
-      );
-
-      setSuccess("Tenant status updated successfully!");
     } catch (err) {
       console.error(err);
-      setError("Failed to update tenant status.");
+      showToast("Action failed. Please try again.", 'error');
+    } finally {
+      setConfirmAction(null);
     }
   };
 
-  // Soft delete
-  const handleDelete = async (id) => {
-    try {
-      await superAdmin.softDelete(id); // API call
-      setTenants((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, is_deleted: true, is_active: false } : t
-        )
-      );
-      setSuccess("Tenant moved to Deleted state!");
-    } catch (err) {
-      console.error(err);
-      setError("Tenant is already deleted.");
-    }
-  };
-
-  // Restore from Inactive → Active
-  const handleRestore = async (id) => {
-
-    console.log("id log",id)
-    try {
-      await superAdmin.activate(id);
-
-      setTenants((prev) =>
-        prev.map((t) =>
-          t.id === id ? { ...t, is_deleted: false, is_active: true } : t
-        )
-      );
-
-      setSuccess("Tenant restored successfully!");
-    } catch (err) {
-      console.error(err);
-      setError("Failed to restore tenant.");
-    }
-  };
-
-  // View tenant
   const handleView = (tenant) => setSelectedTenant(tenant);
   const handleCloseView = () => setSelectedTenant(null);
 
-  // Filter tenants by status & search
+  // Filter tenants based on state and search query
   const filteredTenants = tenants.filter((t) => {
-  // Active tab → active & not deleted
-  if (tabValue === 0 && !(t.is_active && !t.is_deleted)) return false;
+    let isFiltered = false;
 
-  // Inactive tab → inactive & not deleted
-  if (tabValue === 1 && !(!t.is_active && !t.is_deleted)) return false;
+    switch (filter) {
+      case "all":
+        isFiltered = true;
+        break;
+      case "active":
+        isFiltered = t.is_active && !t.is_deleted && !t.is_pending;
+        break;
+      case "inactive":
+        isFiltered = !t.is_active && !t.is_deleted && !t.is_pending;
+        break;
+      case "pending":
+        isFiltered = t.is_pending && !t.is_deleted;
+        break;
+      case "deleted":
+        isFiltered = t.is_deleted;
+        break;
+      default:
+        isFiltered = true;
+    }
 
-  // Deleted tab → deleted
-  if (tabValue === 2 && !t.is_deleted) return false;
+    const isSearched = searchQuery === "" ||
+      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-  // Apply search filter if query exists
-  if (searchQuery) {
-    return (
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }
+    return isFiltered && isSearched;
+  });
 
-  return true;
-});
-
+  // Get action confirmation text
+  const getActionConfirmText = () => {
+    if (!confirmAction) return '';
+    
+    const { type, tenant } = confirmAction;
+    const actionTexts = {
+      deactivate: 'deactivate',
+      activate: 'activate',
+      delete: 'delete',
+      restore: 'restore',
+      approve: 'approve',
+      reject: 'reject'
+    };
+    
+    return `Are you sure you want to ${actionTexts[type]} tenant "${tenant.name}"?`;
+  };
 
   if (loading) {
     return (
-      <Grid container justifyContent="center" sx={{ mt: 5 }}>
-        <CircularProgress />
-      </Grid>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+          <p className="text-gray-600 font-medium">Loading tenants...</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div>
-      {/* Header */}
-      <Grid
-        container
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{ mb: 3 }}
-      >
-        <Typography variant="h5">Tenant Management</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => navigate("/superAdmin/create")}
-        >
-          Create New Tenant
-        </Button>
-      </Grid>
+    <div className="min-h-screen bg-gray-50">
+      <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Tenant Management</h1>
+            <p className="text-gray-600">Manage and monitor all tenant accounts</p>
+          </div>
+          <button
+            onClick={() => navigate("/superAdmin/create")}
+            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm font-medium"
+          >
+            <MdAdd size={20} className="mr-2" />
+            Create New Tenant
+          </button>
+        </div>
 
-      {/* Total Tenant Count */}
-      <Typography variant="subtitle1" sx={{ mb: 2 }}>
-        Total Tenants: <strong>{totalTenantCount}</strong>
-      </Typography>
+        {/* Search and Filter Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 md:space-x-4">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MdSearch className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-      {/* Tabs for Status */}
-      <Tabs
-        value={tabValue}
-        onChange={(e, newValue) => setTabValue(newValue)}
-        sx={{ mb: 2 }}
-      >
-        <Tab label="Active" />
-        <Tab label="Inactive" />
-        <Tab label="Deleted" />
-      </Tabs>
+            {/* Filter Dropdown */}
+            <FilterDropdown 
+              filter={filter} 
+              setFilter={setFilter} 
+              counts={getCounts()} 
+            />
+          </div>
+        </div>
 
-      {/* Search Bar */}
-      <TextField
-        placeholder="Search by name or email..."
-        variant="outlined"
-        size="small"
-        fullWidth
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        sx={{ mb: 2 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" />
-            </InputAdornment>
-          ),
-        }}
-      />
+        {/* Results Summary */}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-sm text-gray-600">
+            Showing <span className="font-semibold">{filteredTenants.length}</span> of{' '}
+            <span className="font-semibold">{tenants.length}</span> tenants
+          </p>
+        </div>
 
-      {/* Card Wrapper */}
-      <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            {tabValue === 0 && "Active Tenants"}
-            {tabValue === 1 && "Inactive Tenants"}
-            {tabValue === 2 && "Deleted Tenants"}
-          </Typography>
-
-          {/* Tenants Table */}
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow style={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell style={{ fontSize: "14px", fontWeight: "bold" }}>
-                    Tenant Name
-                  </TableCell>
-                  <TableCell style={{ fontSize: "14px", fontWeight: "bold" }}>
-                    Admin Email
-                  </TableCell>
-                  <TableCell style={{ fontSize: "14px", fontWeight: "bold" }}>
-                    Total Users
-                  </TableCell>
-                  <TableCell style={{ fontSize: "14px", fontWeight: "bold" }}>
+        {/* Tenant Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Tenant Details
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    style={{ fontSize: "14px", fontWeight: "bold" }}
-                  >
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Users
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Created Date
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
                 {filteredTenants.length > 0 ? (
                   filteredTenants.map((tenant) => (
-                    <TableRow
-                      key={tenant.id}
-                      sx={{ opacity: tenant.is_deleted ? 0.5 : 1 }}
-                    >
-                      <TableCell>{tenant.name}</TableCell>
-                      <TableCell>{tenant.email}</TableCell>
-                      <TableCell>{tenant.userCount}</TableCell>
-                      <TableCell>
-                        {tenant.is_deleted ? (
-                          <Chip label="Deleted" color="error" size="small" />
-                        ) : tenant.is_active ? (
-                          <Chip label="Active" color="success" size="small" />
-                        ) : (
-                          <Chip label="Inactive" color="default" size="small" />
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        {!tenant.is_deleted ? (
-                          <>
-                            <IconButton
-                              color="primary"
-                              onClick={() => handleView(tenant)}
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                            {tenant.is_active ? (
-                            <>
-                              <IconButton
-                                color="warning"
-                                onClick={() => handleToggleStatus(tenant.id)}
-                              >
-                                <BlockIcon />
-                              </IconButton>
-
-                          
-                          </>
-                            ) : (
-                              <>
-                              <IconButton
-                                color="secondary"
-                                onClick={() => handleRestore(tenant.id)}
-                              >
-                                <RestoreIcon />
-                              </IconButton>
-
-                              <IconButton
-                                color="secondary"
-                                onClick={() => handleDelete(tenant.id)}
-                              >
-                                <Delete/>
-                              </IconButton>
-
-                               
-                              </>
-
-                            )}
-                          </>
-                        ) : (
-                          <IconButton
-                            color="secondary"
-                            onClick={() => handleRestore(tenant.id)}
-                          >
-                            <RestoreIcon />
-                          </IconButton>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                    <tr key={tenant.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{tenant.name}</div>
+                          <div className="text-sm text-gray-500">{tenant.email}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge tenant={tenant} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{tenant.userCount}</div>
+                        <div className="text-sm text-gray-500">Total users</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{safeFormatDate(tenant.createdAt)}</div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <ActionDropdown
+                          tenant={tenant}
+                          onView={handleView}
+                          onAction={setConfirmAction}
+                        />
+                      </td>
+                    </tr>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">
-                      No tenants found.
-                    </TableCell>
-                  </TableRow>
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center">
+                        <MdSearch size={48} className="text-gray-300 mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No tenants found</h3>
+                        <p className="text-gray-500">
+                          {searchQuery ? 'Try adjusting your search terms' : 'No tenants match the current filter'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
                 )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      {/* View Tenant Modal */}
-      <Dialog open={!!selectedTenant} onClose={handleCloseView}>
-        <DialogTitle>Tenant Details</DialogTitle>
-        <DialogContent>
+        {/* View Tenant Modal */}
+        <CustomModal
+          open={!!selectedTenant}
+          title="Tenant Details"
+          onClose={handleCloseView}
+          size="lg"
+          actions={
+            <button 
+              onClick={handleCloseView} 
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              Close
+            </button>
+          }
+        >
           {selectedTenant && (
-            <>
-              <Typography variant="subtitle1">
-                <strong>Name:</strong> {selectedTenant.name}
-              </Typography>
-              <Typography variant="subtitle1">
-                <strong>Admin Email:</strong> {selectedTenant.email}
-              </Typography>
-              <Typography variant="subtitle1">
-                <strong>Total Users:</strong> {selectedTenant.userCount}
-              </Typography>
-              <Typography variant="subtitle1">
-                <strong>Status:</strong>{" "}
-                {selectedTenant.is_deleted
-                  ? "Deleted"
-                  : selectedTenant.is_active
-                  ? "Active"
-                  : "Inactive"}
-              </Typography>
-            </>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Tenant Name</label>
+                  <p className="text-sm text-gray-900 mt-1">{selectedTenant.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Admin Email</label>
+                  <p className="text-sm text-gray-900 mt-1">{selectedTenant.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Total Users</label>
+                  <p className="text-sm text-gray-900 mt-1">{selectedTenant.userCount}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Status</label>
+                  <div className="mt-1">
+                    <StatusBadge tenant={selectedTenant} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-gray-600">Created Date</label>
+                  <p className="text-sm text-gray-900 mt-1">{safeFormatDate(selectedTenant.createdAt)}</p>
+                </div>
+                {selectedTenant.updatedAt && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600">Last Updated</label>
+                    <p className="text-sm text-gray-900 mt-1">{safeFormatDate(selectedTenant.updatedAt)}</p>
+                  </div>
+                )}
+              </div>
+              {selectedTenant.is_deleted && selectedTenant.deletedAt && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <label className="text-sm font-semibold text-red-800">Deleted Date</label>
+                  <p className="text-sm text-red-700 mt-1">{safeFormatDate(selectedTenant.deletedAt)}</p>
+                </div>
+              )}
+            </div>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseView}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        </CustomModal>
 
-      {/* Snackbar for success messages */}
-      <Snackbar
-        open={!!success}
-        autoHideDuration={3000}
-        onClose={() => setSuccess("")}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="success" sx={{ width: "100%" }}>
-          {success}
-        </Alert>
-      </Snackbar>
+        {/* Confirmation Modal */}
+        <CustomModal
+          open={!!confirmAction}
+          title="Confirm Action"
+          onClose={() => setConfirmAction(null)}
+          actions={
+            <>
+              <button 
+                onClick={() => setConfirmAction(null)} 
+                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmAndExecute} 
+                className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  confirmAction?.type === 'delete' || confirmAction?.type === 'reject'
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                Confirm
+              </button>
+            </>
+          }
+        >
+          <div className="flex items-start space-x-3">
+            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+              confirmAction?.type === 'delete' || confirmAction?.type === 'reject'
+                ? 'bg-red-100'
+                : 'bg-blue-100'
+            }`}>
+              {confirmAction?.type === 'delete' || confirmAction?.type === 'reject' ? (
+                <MdDelete className="w-5 h-5 text-red-600" />
+              ) : (
+                <MdCheckCircle className="w-5 h-5 text-blue-600" />
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-gray-900 font-medium mb-1">
+                {getActionConfirmText()}
+              </p>
+              <p className="text-sm text-gray-500">
+                This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        </CustomModal>
 
-      {/* Snackbar for error messages */}
-      <Snackbar
-        open={!!error}
-        autoHideDuration={3000}
-        onClose={() => setError("")}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert severity="error" sx={{ width: "100%" }}>
-          {error}
-        </Alert>
-      </Snackbar>
+        {/* Toast Notification */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </div>
     </div>
   );
 };

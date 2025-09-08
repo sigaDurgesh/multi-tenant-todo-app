@@ -12,7 +12,7 @@ import Layout from "./layouts/full/Layout";
 
 import TenantList from "./pages/superAdmin/TenantList";
 import TenantRequest from "./pages/superAdmin/TenantRequest";
-import { CreateTenant } from "./pages/superAdmin/CreateTenant";
+import CreateTenant  from "./pages/superAdmin/CreateTenant";
 import UsersList from "./pages/tenant-admin/UsersList";
 import CreateUser from "./pages/tenant-admin/CreateUser";
 import TodosList from "./pages/user/TodosList";
