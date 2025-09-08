@@ -54,7 +54,6 @@ export const login = async (req, res) => {
       ],
     });
 
-
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
@@ -65,24 +64,35 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
+    let roles = (user.Roles || []).map((r) => r.name);
 
-let roles = (user.Roles || []).map(r => r.name);
+    // If user has no roles, assign 'user' role
+    if (
+      roles.length === 0 ||
+      (!roles.includes("superAdmin") && !roles.includes("tenantAdmin"))
+    ) {
+      roles = ["user"];
+    }
 
-// If user has no roles, assign 'user' role
-if (roles.length === 0 || (!roles.includes("superAdmin") && !roles.includes("tenantAdmin"))) {
-  roles = ["user"];
-}
     if (roles.includes("superAdmin")) {
       if (tenantName) {
-        return res.status(400).json({ message: "Super Admin should not log in with a tenant" });
+        return res
+          .status(400)
+          .json({ message: "Super Admin should not log in with a tenant" });
       }
     } else if (roles.includes("tenantAdmin") || roles.includes("user")) {
       if (!tenantName) {
         return res.status(400).json({ message: "Tenant name is required" });
       }
-      const tenant = await Tenant.findOne({ where: { name: tenantName, is_deleted: false } });
+
+      // 👇 Require tenant to be not deleted AND active
+      const tenant = await Tenant.findOne({
+        where: { name: tenantName, is_deleted: false, is_active: true },
+      });
       if (!tenant) {
-        return res.status(400).json({ message: "Invalid tenant" });
+        return res
+          .status(400)
+          .json({ message: "Invalid tenant or tenant is deleted/inactive" });
       }
 
       if (user.tenant_id !== tenant.id) {
@@ -104,14 +114,17 @@ if (roles.length === 0 || (!roles.includes("superAdmin") && !roles.includes("ten
         email: user.email,
         name: user.name || "User",
         tenant_id: user.tenant_id,
-        tenant_name: user.Tenant ? user.Tenant.name : null, // 👈 Added tenant name
+        tenant_name: user.Tenant ? user.Tenant.name : null,
         roles,
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: "Error logging in", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Error logging in", error: error.message });
   }
 };
+
 
 export const changePassword = async (req, res) => {
   try {
