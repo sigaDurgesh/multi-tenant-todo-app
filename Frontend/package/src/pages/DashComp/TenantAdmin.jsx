@@ -217,7 +217,7 @@ if (!sessionStorage.getItem("tenantAdminReloaded")) {
       {!loadingUsers && !errorUsers && (
         <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 3 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom>Recent Tenant Requests</Typography>
+            <Typography variant="h6" gutterBottom>Recent Users</Typography>
             <Divider sx={{ mb: 2 }} />
             <TableContainer component={Paper}>
               <Table size="small">

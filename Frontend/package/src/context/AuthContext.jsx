@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   //   return;
   // }  
   setUser(null);
-  // localStorage.removeItem("tenantId");
+  localStorage.removeItem("tenantId");
   localStorage.removeItem("user");
   localStorage.removeItem("token");
 };

@@ -28,17 +28,18 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
 import RestoreIcon from "@mui/icons-material/Restore";
 import { useNavigate } from "react-router";
 import { superAdmin } from "../../services/superAdminAPI"; // API helper
+import { Delete } from "@mui/icons-material";
 
 const TenantList = () => {
   const [tenants, setTenants] = useState([]);
   const [totalTenantCount, setTotalTenantCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,7 +62,7 @@ const TenantList = () => {
       setTotalTenantCount(data.totalCount || tenantsWithDefaults.length);
     } catch (err) {
       console.error("Failed to fetch tenants:", err);
-      setSuccess("Failed to fetch tenants.");
+      setError("Failed to fetch tenants.");
     } finally {
       setLoading(false);
     }
@@ -74,15 +75,25 @@ const TenantList = () => {
   // Toggle Active / Inactive
   const handleToggleStatus = async (id) => {
     try {
+      const tenant = tenants.find((t) => t.id === id);
+      if (!tenant) return;
+
+      if (tenant.is_active) {
+        await superAdmin.deactive(id);
+      } else {
+        await superAdmin.activate(id);
+      }
+
       setTenants((prev) =>
         prev.map((t) =>
           t.id === id ? { ...t, is_active: !t.is_active } : t
         )
       );
+
       setSuccess("Tenant status updated successfully!");
     } catch (err) {
       console.error(err);
-      setSuccess("Failed to update tenant status.");
+      setError("Failed to update tenant status.");
     }
   };
 
@@ -95,25 +106,30 @@ const TenantList = () => {
           t.id === id ? { ...t, is_deleted: true, is_active: false } : t
         )
       );
-      setSuccess("Tenant moved to Inactive state!");
+      setSuccess("Tenant moved to Deleted state!");
     } catch (err) {
       console.error(err);
-      setSuccess("Tenant is already deleted.");
+      setError("Tenant is already deleted.");
     }
   };
 
-  // Restore
+  // Restore from Inactive → Active
   const handleRestore = async (id) => {
+
+    console.log("id log",id)
     try {
+      await superAdmin.activate(id);
+
       setTenants((prev) =>
         prev.map((t) =>
           t.id === id ? { ...t, is_deleted: false, is_active: true } : t
         )
       );
+
       setSuccess("Tenant restored successfully!");
     } catch (err) {
       console.error(err);
-      setSuccess("Failed to restore tenant.");
+      setError("Failed to restore tenant.");
     }
   };
 
@@ -123,9 +139,9 @@ const TenantList = () => {
 
   // Filter tenants by status & search
   const filteredTenants = tenants.filter((t) => {
-    if (tabValue === 0 && (!t.is_active || t.is_deleted)) return false; // Active
-    if (tabValue === 1 && (t.is_active || t.is_deleted)) return false; // Inactive
-    if (tabValue === 2 && !t.is_deleted) return false; // Deleted
+    if (tabValue === 0 && (!t.is_active || t.is_deleted)) return false; // Active tab
+    if (tabValue === 1 && (t.is_active || t.is_deleted)) return false; // Inactive tab
+    if (tabValue === 2 && !t.is_deleted) return false; // Deleted tab
 
     if (searchQuery) {
       return (
@@ -176,7 +192,7 @@ const TenantList = () => {
       >
         <Tab label="Active" />
         <Tab label="Inactive" />
-        {/* <Tab label="Deleted" /> */}
+        <Tab label="Deleted" />
       </Tabs>
 
       {/* Search Bar */}
@@ -259,25 +275,35 @@ const TenantList = () => {
                             >
                               <VisibilityIcon />
                             </IconButton>
-                            {/* <IconButton
-                              color={tenant.is_active ? "warning" : "success"}
-                              onClick={() => handleToggleStatus(tenant.id)}
-                            >
-                              <BlockIcon />
-                            </IconButton> */}
-                             <IconButton
-                              color={tenant.is_active ? "warning" : "success"}
-                              onClick={() => handleDelete(tenant.id)}
-                            >
-                              <BlockIcon />
-                            </IconButton> 
+                            {tenant.is_active ? (
+                            <>
+                              <IconButton
+                                color="warning"
+                                onClick={() => handleToggleStatus(tenant.id)}
+                              >
+                                <BlockIcon />
+                              </IconButton>
 
-                            {/* <IconButton
-                              color="error"
-                              onClick={() => handleDelete(tenant.id)}
-                            >
-                              <DeleteIcon />
-                            </IconButton> */}
+                              <IconButton
+                                color="secondary"
+                                onClick={() => handleDelete(tenant.id)}
+                              >
+                                <Delete/>
+                              </IconButton>
+                          </>
+                            ) : (
+                              <>
+                              <IconButton
+                                color="secondary"
+                                onClick={() => handleRestore(tenant.id)}
+                              >
+                                <RestoreIcon />
+                              </IconButton>
+
+                               
+                              </>
+
+                            )}
                           </>
                         ) : (
                           <IconButton
@@ -343,6 +369,18 @@ const TenantList = () => {
       >
         <Alert severity="success" sx={{ width: "100%" }}>
           {success}
+        </Alert>
+      </Snackbar>
+
+      {/* Snackbar for error messages */}
+      <Snackbar
+        open={!!error}
+        autoHideDuration={3000}
+        onClose={() => setError("")}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity="error" sx={{ width: "100%" }}>
+          {error}
         </Alert>
       </Snackbar>
     </div>
