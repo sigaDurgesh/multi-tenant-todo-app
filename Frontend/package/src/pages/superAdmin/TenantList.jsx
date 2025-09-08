@@ -284,12 +284,7 @@ const TenantList = () => {
                                 <BlockIcon />
                               </IconButton>
 
-                              <IconButton
-                                color="secondary"
-                                onClick={() => handleDelete(tenant.id)}
-                              >
-                                <Delete/>
-                              </IconButton>
+                          
                           </>
                             ) : (
                               <>
@@ -298,6 +293,13 @@ const TenantList = () => {
                                 onClick={() => handleRestore(tenant.id)}
                               >
                                 <RestoreIcon />
+                              </IconButton>
+
+                              <IconButton
+                                color="secondary"
+                                onClick={() => handleDelete(tenant.id)}
+                              >
+                                <Delete/>
                               </IconButton>
 
                                
