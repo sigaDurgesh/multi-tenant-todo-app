@@ -18,12 +18,9 @@ import {
   MdMoreVert,
   MdFilterList,
   MdDownload,
-  MdAdd,
-  MdEdit,
-  MdDelete,
   MdInfo,
   MdWarning,
-  MdError
+  MdError,
 } from 'react-icons/md';
 
 // Custom Modal Component
@@ -31,7 +28,7 @@ const Modal = ({ isOpen, onClose, title, children, actions }) => {
   if (!isOpen) return null;
 
   return (
-<div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto relative transform transition-all">
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
@@ -158,111 +155,6 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Tenant Card Component
-const TenantCard = ({ tenant, onView, onStatusUpdate }) => {
-  const [showActions, setShowActions] = useState(false);
-
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    const d = new Date(date);
-    return isNaN(d) ? "N/A" : d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 p-6 relative">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-            {tenant.tenant_name || "Unnamed Tenant"}
-          </h3>
-          <p className="text-sm text-gray-600 mb-2">{tenant.requester?.email}</p>
-          <StatusBadge status={tenant.status} />
-        </div>
-        <div className="relative">
-          <button
-            onClick={() => setShowActions(!showActions)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <MdMoreVert size={20} className="text-gray-600" />
-          </button>
-          
-          {showActions && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-              <button
-                onClick={() => {
-                  onView(tenant);
-                  setShowActions(false);
-                }}
-                className="w-full flex items-center px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-              >
-                <MdVisibility size={16} className="mr-3 text-blue-600" />
-                <span className="text-sm font-medium">View Details</span>
-              </button>
-              
-              {tenant.status === 'pending' && (
-                <>
-                  <button
-                    onClick={() => {
-                      onStatusUpdate(tenant.id, 'approved');
-                      setShowActions(false);
-                    }}
-                    className="w-full flex items-center px-4 py-3 hover:bg-green-50 transition-colors text-left"
-                  >
-                    <MdCheckCircle size={16} className="mr-3 text-green-600" />
-                    <span className="text-sm font-medium">Approve</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onStatusUpdate(tenant.id, 'rejected');
-                      setShowActions(false);
-                    }}
-                    className="w-full flex items-center px-4 py-3 hover:bg-red-50 transition-colors text-left"
-                  >
-                    <MdCancel size={16} className="mr-3 text-red-600" />
-                    <span className="text-sm font-medium">Reject</span>
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-          
-          {showActions && (
-            <div 
-              className="fixed inset-0 z-5" 
-              onClick={() => setShowActions(false)}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-2 text-sm text-gray-600">
-        <div className="flex justify-between">
-          <span>Requested:</span>
-          <span className="font-medium">{formatDate(tenant.requested_at)}</span>
-        </div>
-        {tenant.reviewed_at && (
-          <div className="flex justify-between">
-            <span>Reviewed:</span>
-            <span className="font-medium">{formatDate(tenant.reviewed_at)}</span>
-          </div>
-        )}
-        {tenant.reviewer?.email && (
-          <div className="flex justify-between">
-            <span>Reviewer:</span>
-            <span className="font-medium">{tenant.reviewer.email}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // Tab Component
 const TabButton = ({ active, onClick, children, count }) => (
   <button
@@ -297,6 +189,7 @@ const SuperAdminDashboard = () => {
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [toast, setToast] = useState(null);
+  const [openMenu, setOpenMenu] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -373,6 +266,11 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  const handleViewDetails = (tenant) => {
+    setSelectedTenant(tenant);
+    setDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -388,7 +286,7 @@ const SuperAdminDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className=" mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="bg-blue-600 rounded-2xl p-3">
@@ -509,7 +407,7 @@ const SuperAdminDashboard = () => {
 
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200 px-6 py-4">
+          {/* <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex flex-wrap gap-2">
               <TabButton
                 active={currentTab === 0}
@@ -538,7 +436,7 @@ const SuperAdminDashboard = () => {
                 Analytics
               </TabButton>
             </div>
-          </div>
+          </div> */}
 
           <div className="p-6">
             {currentTab === 3 ? (
@@ -562,8 +460,8 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
             ) : (
-              // Tenant Grid
-              <div>
+              // Tenant Table
+              <div className="overflow-x-auto">
                 {getTabContent().length === 0 ? (
                   <div className="text-center py-16">
                     <MdBusiness size={64} className="text-gray-300 mx-auto mb-4" />
@@ -575,18 +473,116 @@ const SuperAdminDashboard = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {getTabContent().map((tenant) => (
-                      <TenantCard
-                        key={tenant.id}
-                        tenant={tenant}
-                        onView={(t) => {
-                          setSelectedTenant(t);
-                          setDialogOpen(true);
-                        }}
-                        onStatusUpdate={handleStatusUpdate}
-                      />
-                    ))}
+                  <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
+                    <table className="min-w-full table-auto">
+                      {/* Table Header */}
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tenant</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Requester</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Requested At</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Reviewed At</th>
+                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                      </thead>
+
+                      {/* Table Body */}
+                      <tbody className="divide-y divide-gray-100">
+                        {getTabContent().map((tenant) => (
+                          <tr key={tenant.id} className="hover:bg-gray-50 transition">
+                            {/* Tenant Name */}
+                            <td className="px-6 py-4">
+                              <div className="font-medium text-gray-900">
+                                {tenant.tenant_name || "Unnamed Tenant"}
+                              </div>
+                            </td>
+
+                            {/* Requester */}
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {tenant.requester?.email || "—"}
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-6 py-4">
+                              <StatusBadge status={tenant.status} />
+                            </td>
+
+                            {/* Requested At */}
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {formatDate(tenant.requested_at)}
+                            </td>
+
+                            {/* Reviewed At */}
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {tenant.reviewed_at ? formatDate(tenant.reviewed_at) : "—"}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="px-6 py-4 text-right">
+                              <div className="relative inline-block text-left">
+                                <button
+                                  onClick={() =>
+                                    setOpenMenu(openMenu === tenant.id ? null : tenant.id)
+                                  }
+                                  className="p-2 hover:bg-gray-100 rounded-full transition"
+                                >
+                                  <MdMoreVert size={20} className="text-gray-600" />
+                                </button>
+
+                                {openMenu === tenant.id && (
+                                  <>
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                      <button
+                                        onClick={() => {
+                                          handleViewDetails(tenant);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="w-full flex items-center px-4 py-3 hover:bg-gray-50 transition text-left"
+                                      >
+                                        <MdVisibility size={16} className="mr-3 text-blue-600" />
+                                        <span className="text-sm font-medium">View Details</span>
+                                      </button>
+
+                                      {tenant.status === "pending" && (
+                                        <>
+                                          <button
+                                            onClick={() => {
+                                              handleStatusUpdate(tenant.id, "approved");
+                                              setOpenMenu(null);
+                                            }}
+                                            className="w-full flex items-center px-4 py-3 hover:bg-green-50 transition text-left"
+                                          >
+                                            <MdCheckCircle size={16} className="mr-3 text-green-600" />
+                                            <span className="text-sm font-medium">Approve</span>
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              handleStatusUpdate(tenant.id, "rejected");
+                                              setOpenMenu(null);
+                                            }}
+                                            className="w-full flex items-center px-4 py-3 hover:bg-red-50 transition text-left"
+                                          >
+                                            <MdCancel size={16} className="mr-3 text-red-600" />
+                                            <span className="text-sm font-medium">Reject</span>
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+
+                                    {/* Overlay */}
+                                    <div
+                                      className="fixed inset-0"
+                                      onClick={() => setOpenMenu(null)}
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
