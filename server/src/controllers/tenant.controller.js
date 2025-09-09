@@ -12,6 +12,8 @@ import {formatDate} from "../utlis/dateFormatter.js";
 
 import transporter from "../config/nodemailer.js";
 import { generateEmailTemplate } from "../utlis/emailTemplate.js";
+import { validateTenantName } from "../utlis/tenantNameValidators.js";
+import { emailLoginButton } from "../utlis/emailLoginButton.js";
 
 // ------------------ LIST PENDING REQUESTS ------------------
 export const listReviewedTenantRequests = async (req, res) => {
@@ -83,15 +85,38 @@ export const createTenantRequest = async (req, res) => {
   try {
     const { tenantName, email, password } = req.body;
 
-    // 1. Check for duplicate tenant request
-    const existingTenant = await TenantRequest.findOne({
-      where: { tenant_name: tenantName, status: "pending" },
-    });
-    if (existingTenant) {
-      return res.status(400).json({ message: "This tenant name already has a pending request" });
+    // 1. Validate tenant name
+    const validation = validateTenantName(tenantName);
+    if (!validation.valid) {
+      return res.status(400).json({ message: validation.message });
     }
 
-    // 2. Create a new user (hash password before saving)
+    // 2. Block if tenant exists and is deleted OR inactive
+    const blockedTenant = await Tenant.findOne({
+      where: {
+        name: tenantName,
+        [Op.or]: [{ is_deleted: true }, { is_active: false }],
+      },
+    });
+
+    if (blockedTenant) {
+      return res.status(400).json({
+        message:
+          "This tenant is either deleted or inactive and cannot accept new requests.",
+      });
+    }
+
+    // 3. Check for duplicate pending tenant request
+    const existingTenantRequest = await TenantRequest.findOne({
+      where: { tenant_name: tenantName, status: "pending" },
+    });
+    if (existingTenantRequest) {
+      return res
+        .status(400)
+        .json({ message: "This tenant name already has a pending request" });
+    }
+
+    // 4. Create a new user (hash password before saving)
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       email,
@@ -99,7 +124,7 @@ export const createTenantRequest = async (req, res) => {
       // tenant_id will be assigned once tenant is approved
     });
 
-    // 3. Create the tenant request (linking user_id)
+    // 5. Create the tenant request (linking user_id)
     const request = await TenantRequest.create({
       user_id: user.id,
       tenant_name: tenantName,
@@ -107,7 +132,7 @@ export const createTenantRequest = async (req, res) => {
       status: "pending"
     });
 
-    // 4. Audit log
+    // 6. Audit log
     await AuditLog.create({
       actor_user_id: user.id,
       action: "CREATE_TENANT_REQUEST",
@@ -192,6 +217,12 @@ export const reviewTenantRequest = async (req, res) => {
                    <p><strong><em>Make sure to change your password.</em></strong></p>`
                 : `<p>You can log in using your existing password.</p>`
             }
+            <p>
+              ${emailLoginButton({
+          url: `${process.env.LOCAL_URL}/login`,
+          label: "Log in to Tenant System",
+        })}
+          </p>
           `,
           footer:
             "If you did not make this request, please contact support immediately.",
@@ -293,6 +324,11 @@ export const getTenantRequestById = async (req, res) => {
 export const registerUserUnderTenant = async (req, res) => {
   try {
     const { tenantName, email, password, name } = req.body;
+
+    const validation = validateTenantName(tenantName);
+    if (!validation.valid) {
+      return res.status(400).json({ message: validation.message });
+    }
 
     // 1. Find tenant
     const tenant = await Tenant.findOne({ where: { name: tenantName, is_deleted: false } });
@@ -396,14 +432,35 @@ export const createTenantWithAdmin = async (req, res) => {
   try {
     const { tenantName, email } = req.body;
 
-    // 1. Check duplicate tenant
-    const existingTenant = await Tenant.findOne({
-      where: { name: tenantName, is_deleted: false },
-    });
-    if (existingTenant) {
-      await t.rollback();
-      return res.status(400).json({ message: "Tenant name already exists" });
+    const validation = validateTenantName(tenantName);
+    if (!validation.valid) {
+      return res.status(400).json({ message: validation.message });
     }
+
+    // 1. Check duplicate tenant
+    const existingTenant = await Tenant.findOne({ where: { name: tenantName } });
+    if (existingTenant) {
+      if (!existingTenant.is_deleted) {
+        await t.rollback();
+        return res.status(400).json({ message: "Tenant name already exists" });
+      }
+      if (existingTenant.is_deleted && !existingTenant.is_active) {
+        await t.rollback();
+        return res.status(400).json({
+          message:
+            "This tenant was deleted and cannot be recreated.",
+        });
+      }
+    }
+
+// 2. Check duplicate email
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "This email is already associated with another tenant. Please use new email." });
+  }
 
     // 2. Generate secure password
     const plainPassword = generateSecurePassword(12);
@@ -453,6 +510,12 @@ export const createTenantWithAdmin = async (req, res) => {
           <p><b>Email:</b> ${email}</p>
           <p><b>Password:</b> ${plainPassword}</p>
           <p><strong><em>Please change your password after first login.</em></strong></p>
+          <p>
+              ${emailLoginButton({
+          url: `${process.env.LOCAL_URL}/login`,
+          label: "Log in to Tenant System",
+        })}
+          </p>
         `,
         footer: "This is an automated message from Tenant System.",
       }),
@@ -509,7 +572,13 @@ export const addUserUnderTenant = async (req, res) => {
           body: `
             <p><b>Tenant:</b> ${tenant.name}</p>
             <p><b>Email:</b> ${email}</p>
-            <p>No further action is required. You can continue using your existing account.</p>
+            <p>No further action is required. You can continue using your existing account.</p> 
+            <p>
+              ${emailLoginButton({
+          url: `${process.env.LOCAL_URL}/login`,
+          label: "Log in to Tenant System",
+        })}
+          </p>
           `,
           footer: "This is an automated message from Tenant System.",
         }),
@@ -557,6 +626,12 @@ export const addUserUnderTenant = async (req, res) => {
           <br/>
           <p><strong><em>Please change your password after your first login.</em></strong></p>
           <p><strong><em>Don't forget your tenant name – it's required for login.</em></strong></p>
+          <p>
+              ${emailLoginButton({
+          url: `${process.env.LOCAL_URL}/login`,
+          label: "Log in to Tenant System",
+        })}
+          </p>
         `,
         footer: "This is an automated message from Tenant System.",
       }),
@@ -601,6 +676,37 @@ export const softDeleteTenant = async (req, res) => {
       updatedAt: newDate
     });
 
+    const tenantRequest = await TenantRequest.findOne({ where: { tenant_name: tenant.name } });
+    const tenantEmail = tenantRequest?.email;
+
+    // 3. Prepare email (if tenant has an email field)
+    if (tenantEmail) {
+      const mailOptions = {
+        from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+        to: tenantEmail,
+        subject: `Tenant ${tenant.name} has been deleted`,
+        html: generateEmailTemplate({
+          title: "Tenant Deleted",
+          subTitle: "Your tenant account has been deactivated by the super admin.",
+          body: `
+            <p>Hello ${tenant.name},</p>
+            <p>Your tenant account (<b>${tenant.name}</b>) has been <strong>soft deleted</strong> on ${newDate}.</p>
+            <p>You will no longer be able to access the system unless reactivated by a super admin.</p>
+            <br/>
+            <p>If you believe this is a mistake, please contact support immediately.</p>
+          `,
+          footer: "This is an automated message from Tenant System.",
+        }),
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+      } catch (emailErr) {
+        console.error("⚠️ Failed to send tenant deletion email:", emailErr.message);
+      }
+    }
+
+    // 4. Return API response
     return res.status(200).json({
       message: "Tenant soft deleted successfully",
       tenant: {
@@ -625,7 +731,7 @@ export const activateTenant = async (req, res) => {
 
     // ✅ Check if user is super admin
     if (!req.user || req.user.roles[0] !== "superAdmin") {
-      return res.status(403).json({ message: "Forbidden: Only super admins can delete tenants." });
+      return res.status(403).json({ message: "Forbidden: Only super admins can activate tenants." });
     }
 
     // 1. Find tenant
@@ -639,9 +745,43 @@ export const activateTenant = async (req, res) => {
       updatedAt: newDate,
       is_deleted: false
     });
+    
+    const tenantRequest = await TenantRequest.findOne({ where: { tenant_name: tenant.name } });
+    const tenantEmail = tenantRequest?.email;
+    // 📧 Send activation email (if tenant has email)
+    if (tenantEmail) {
+      const mailOptions = {
+        from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+        to: tenantEmail,
+        subject: `Tenant ${tenant.name} has been activated 🎉`,
+        html: generateEmailTemplate({
+          title: "Tenant Activated",
+          subTitle: "Your tenant account is now active again.",
+          body: `
+            <p>Hello ${tenant.name},</p>
+            <p>Your tenant account (<b>${tenant.name}</b>) has been <strong>activated</strong> by the super admin.</p>
+            <p>You can now log in and continue using the system.</p>
+            <br/>
+            <p>
+              ${emailLoginButton({
+          url: `${process.env.LOCAL_URL}/login`,
+          label: "Log in to Tenant System",
+        })}
+            </p>
+          `,
+          footer: "This is an automated message from Tenant System.",
+        }),
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+      } catch (emailErr) {
+        console.error("⚠️ Failed to send tenant activation email:", emailErr.message);
+      }
+    }
 
     return res.status(200).json({
-      message: "Tenant activatedd successfully",
+      message: "Tenant activated successfully",
       tenant: {
         id: tenant.id,
         name: tenant.name,
@@ -663,7 +803,7 @@ export const deactivateTenant = async (req, res) => {
 
     // ✅ Check if user is super admin
     if (!req.user || req.user.roles[0] !== "superAdmin") {
-      return res.status(403).json({ message: "Forbidden: Only super admins can delete tenants." });
+      return res.status(403).json({ message: "Forbidden: Only super admins can deactivate tenants." });
     }
 
     // 1. Find tenant
@@ -677,6 +817,36 @@ export const deactivateTenant = async (req, res) => {
       updatedAt: newDate,
       is_deleted: false
     });
+
+    const tenantRequest = await TenantRequest.findOne({ where: { tenant_name: tenant.name } });
+    const tenantEmail = tenantRequest?.email;
+
+    // 📧 Send deactivation email (if tenant has email)
+    if (tenantEmail) {
+      const mailOptions = {
+        from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+        to: tenantEmail,
+        subject: `Tenant ${tenant.name} has been deactivated`,
+        html: generateEmailTemplate({
+          title: "Tenant Deactivated",
+          subTitle: "Your tenant account has been temporarily disabled.",
+          body: `
+            <p>Hello ${tenant.name},</p>
+            <p>Your tenant account (<b>${tenant.name}</b>) has been <strong>deactivated</strong> by the super admin.</p>
+            <p>You will not be able to log in until it is reactivated.</p>
+            <br/>
+            <p>If you believe this action was taken in error, please contact support.</p>
+          `,
+          footer: "This is an automated message from Tenant System.",
+        }),
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+      } catch (emailErr) {
+        console.error("⚠️ Failed to send tenant deactivation email:", emailErr.message);
+      }
+    }
 
     return res.status(200).json({
       message: "Tenant deactivated successfully",
@@ -749,6 +919,36 @@ export const activateUser = async (req, res) => {
 
     await user.update({ is_active: true });
 
+    const tenant = await Tenant.findByPk(tenantAdmin.tenant_id);
+
+    // 📧 Send activation email
+    const mailOptions = {
+      from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Your account has been activated 🎉",
+      html: generateEmailTemplate({
+        title: "Account Activated",
+        subTitle: "You can now log in and access your account again.",
+        body: `
+          <p>Hello ${user.name || user.email || ""},</p>
+          <p>Your account under tenant <b>${tenant.name}</b> has been <strong>activated</strong> by your administrator.</p>
+          <p>You can now log in and continue using the system as usual.</p>
+          <br/>
+          <p>${emailLoginButton({
+          url: `${process.env.LOCAL_URL}/login`,
+          label: "Log in to Tenant System",
+        })}</p>
+        `,
+        footer: "This is an automated message from Tenant System.",
+      }),
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (emailErr) {
+      console.error("Failed to send activation email:", emailErr.message);
+    }
+
     return res.status(200).json({ message: "User activated successfully", user });
   } catch (error) {
     return res.status(500).json({ message: "Error activating user", error: error.message });
@@ -773,6 +973,33 @@ export const deactivateUser = async (req, res) => {
     }
 
     await user.update({ is_active: false });
+    
+    const tenant = await Tenant.findByPk(tenantAdmin.tenant_id);
+
+    // 📧 Prepare and send notification email
+    const mailOptions = {
+      from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Your account has been deactivated",
+      html: generateEmailTemplate({
+        title: "Account Deactivated",
+        subTitle: "Your account has been temporarily disabled.",
+        body: `
+          <p>Hello ${user.name || user.email || ""},</p>
+          <p>Your account under tenant <b>${tenant.name}</b> has been <strong>deactivated</strong> by your administrator.</p>
+          <p>This means you will not be able to log in until your account is reactivated.</p>
+          <br/>
+          <p>If you believe this action was taken in error, please contact your tenant admin.</p>
+        `,
+        footer: "This is an automated message from Tenant System.",
+      }),
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (emailErr) {
+      console.error("Failed to send deactivation email:", emailErr.message);
+    }
 
     return res.status(200).json({ message: "User deactivated successfully", user });
   } catch (error) {
@@ -798,6 +1025,34 @@ export const softDeleteUser = async (req, res) => {
     }
 
     await user.update({ is_deleted: true , is_active: false});
+
+    const tenant = await Tenant.findByPk(tenantAdmin.tenant_id);
+
+    // 📧 Prepare notification email
+    const mailOptions = {
+      from: `"Tenant System" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Your account has been deleted",
+      html: generateEmailTemplate({
+        title: "Account Deactivated",
+        subTitle: "Your account has been deleted by your tenant administrator.",
+        body: `
+          <p>Hello ${user.name || user.email || ""},</p>
+          <p>Your account under tenant <b>${tenant.name}</b> has been <strong>deleted</strong> by your administrator.</p>
+          <p>If you believe this is a mistake, please reach out to your tenant admin for clarification.</p>
+          <br/>
+          <p style="color:#ef4444;font-weight:600;">You will no longer be able to log in until your account is reactivated.</p>
+        `,
+        footer: "This is an automated message from Tenant System.",
+      }),
+    };
+
+    // Send email (ignore errors for the API response but log them)
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (emailErr) {
+      console.error("Failed to send deletion email:", emailErr.message);
+    }
 
     return res.status(200).json({ message: "User deleted successfully (soft delete)", user });
   } catch (error) {
