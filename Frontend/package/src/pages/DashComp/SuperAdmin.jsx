@@ -156,25 +156,25 @@ const StatusBadge = ({ status }) => {
 };
 
 // Tab Component
-const TabButton = ({ active, onClick, children, count }) => (
-  <button
-    onClick={onClick}
-    className={`px-6 py-3 font-medium text-sm rounded-lg transition-all duration-200 flex items-center space-x-2 ${
-      active
-        ? 'bg-blue-600 text-white shadow-lg'
-        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-    }`}
-  >
-    <span>{children}</span>
-    {count !== undefined && (
-      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-        active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-      }`}>
-        {count}
-      </span>
-    )}
-  </button>
-);
+// const TabButton = ({ active, onClick, children, count }) => (
+//   <button
+//     onClick={onClick}
+//     className={`px-6 py-3 font-medium text-sm rounded-lg transition-all duration-200 flex items-center space-x-2 ${
+//       active
+//         ? 'bg-blue-600 text-white shadow-lg'
+//         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+//     }`}
+//   >
+//     <span>{children}</span>
+//     {count !== undefined && (
+//       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+//         active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+//       }`}>
+//         {count}
+//       </span>
+//     )}
+//   </button>
+// );
 
 // Main Dashboard Component
 const SuperAdminDashboard = () => {
@@ -407,37 +407,7 @@ const SuperAdminDashboard = () => {
 
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* <div className="border-b border-gray-200 px-6 py-4">
-            <div className="flex flex-wrap gap-2">
-              <TabButton
-                active={currentTab === 0}
-                onClick={() => setCurrentTab(0)}
-                count={tenants.length}
-              >
-                All Tenants
-              </TabButton>
-              <TabButton
-                active={currentTab === 1}
-                onClick={() => setCurrentTab(1)}
-                count={totalPending}
-              >
-                Pending Requests
-              </TabButton>
-              <TabButton
-                active={currentTab === 2}
-                onClick={() => setCurrentTab(2)}
-              >
-                Recent Activity
-              </TabButton>
-              <TabButton
-                active={currentTab === 3}
-                onClick={() => setCurrentTab(3)}
-              >
-                Analytics
-              </TabButton>
-            </div>
-          </div> */}
-
+          
           <div className="p-6">
             {currentTab === 3 ? (
               // Analytics Tab

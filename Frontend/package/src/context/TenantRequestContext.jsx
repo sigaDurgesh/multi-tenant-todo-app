@@ -8,10 +8,10 @@ export const TenantRequestContext = createContext();
 export const TenantRequestProvider = ({ children }) => {
   const { user } = useContext(AuthContext); // Logged-in user
   const [tenantRequestId, setTenantRequestId] = useState(
-    () => localStorage.getItem("tenantRequestId") || null
+    () => sessionStorage.getItem("tenantRequestId") || null
   );
   const [tenantId, setTenantId] = useState(
-    () => localStorage.getItem("tenantId") || null
+    () => sessionStorage.getItem("tenantId") || null
   );
 
   // ----------------------------
@@ -46,18 +46,18 @@ export const TenantRequestProvider = ({ children }) => {
   });
 
   // ----------------------------
-  // Sync state with localStorage
+  // Sync state with sessionStorage
   // ----------------------------
   useEffect(() => {
     tenantRequestId
-      ? localStorage.setItem("tenantRequestId", tenantRequestId)
-      : localStorage.removeItem("tenantRequestId");
+      ? sessionStorage.setItem("tenantRequestId", tenantRequestId)
+      : sessionStorage.removeItem("tenantRequestId");
   }, [tenantRequestId]);
 
   useEffect(() => {
     tenantId
-      ? localStorage.setItem("tenantId", tenantId)
-      : localStorage.removeItem("tenantId");
+      ? sessionStorage.setItem("tenantId", tenantId)
+      : sessionStorage.removeItem("tenantId");
   }, [tenantId]);
 
   // ----------------------------

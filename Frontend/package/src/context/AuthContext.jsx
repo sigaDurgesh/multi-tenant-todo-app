@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem("user");
+      const savedUser = sessionStorage.getItem("user");
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
@@ -21,11 +21,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-      if (user.token) localStorage.setItem("token", user.token);
+      sessionStorage.setItem("user", JSON.stringify(user));
+      if (user.token) sessionStorage.setItem("token", user.token);
     } else {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("token");
     }
   }, [user]);
 
@@ -41,9 +41,9 @@ export const AuthProvider = ({ children }) => {
   //   return;
   // }  
   setUser(null);
-  localStorage.removeItem("tenantId");
-  localStorage.removeItem("user");
-  localStorage.removeItem("token");
+  sessionStorage.removeItem("tenantId");
+  sessionStorage.removeItem("user");
+  sessionStorage.removeItem("token");
 };
 
 // Control dialog

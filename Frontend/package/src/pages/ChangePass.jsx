@@ -65,13 +65,13 @@ const ChangePassword = () => {
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = sessionStorage.getItem("token");
       if (!token) throw new Error("Unauthorized");
 
       const data = await authApi.changePassword(newPassword, token);
 
       // Clear sensitive data
-      localStorage.clear();
+      sessionStorage.clear();
       sessionStorage.clear();
 
       toast.success(data.message || "Password updated successfully", {

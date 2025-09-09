@@ -53,8 +53,8 @@ const Login = () => {
           return;
         }
 
-        localStorage.setItem("token", token);
-        if (role === "tenantAdmin") localStorage.setItem("tenantId", user.tenant_id);
+        sessionStorage.setItem("token", token);
+        if (role === "tenantAdmin") sessionStorage.setItem("tenantId", user.tenant_id);
 
         setUser({ ...user, token, role });
         login({ ...user, token, role });
