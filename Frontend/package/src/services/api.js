@@ -1,7 +1,7 @@
 const API_BASE_URL = "http://localhost:5000";
 
 async function apiRequest(endpoint, method = "GET", body = null, headers = {}) {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   const config = {
     method,
     headers: {

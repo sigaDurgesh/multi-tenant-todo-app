@@ -191,66 +191,112 @@ const ViewUserDialog = ({ open, setOpen, user }) => {
         </Transition.Child>
 
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-              enterTo="opacity-100 translate-y-0 sm:scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            >
-              <Dialog.Panel className="relative transform overflow-hidden rounded-xl bg-white p-6 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                <div className="absolute top-4 right-4">
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="rounded-md bg-white text-gray-400 hover:text-gray-500"
-                  >
-                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                  </button>
-                </div>
-                <div className="text-center">
-                  <EyeIcon className="mx-auto h-10 w-10 text-blue-600 mb-3" />
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-bold leading-6 text-gray-900"
-                  >
-                    User Details
-                  </Dialog.Title>
-                  <div className="mt-4 text-sm text-gray-600 space-y-2">
-                    <p>
-                      <strong>Name:</strong> {user.name}
-                    </p>
-                    <p>
-                      <strong>Email:</strong> {user.email}
-                    </p>
-                    <p>
-                      <strong>Role:</strong> {user.role}
-                    </p>
-                    <p>
-                      <strong>Status:</strong>{" "}
-                      {user.is_deleted ? (
-                        <span className="text-red-600">Deleted</span>
-                      ) : user.is_active ? (
-                        <span className="text-green-600">Active</span>
-                      ) : (
-                        <span className="text-yellow-600">Inactive</span>
-                      )}
-                    </p>
-                    <p>
-                      <strong>Created:</strong> {formatDate(user.createdAt)}
-                    </p>
-                    <p>
-                      <strong>Last Updated:</strong> {formatDate(user.updatedAt)}
-                    </p>
-                  </div>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
+  <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+    <Transition.Child
+      as={Fragment}
+      enter="ease-out duration-300"
+      enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+      enterTo="opacity-100 translate-y-0 sm:scale-100"
+      leave="ease-in duration-200"
+      leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+      leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+    >
+      <Dialog.Panel className="relative transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+        
+        {/* Close Button */}
+        <div className="absolute top-4 right-4">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-md bg-white p-1 text-gray-400 hover:text-gray-600 transition"
+          >
+            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+          </button>
         </div>
+
+        {/* Header */}
+        <div className="text-center px-6 pt-6">
+          <EyeIcon className="mx-auto h-12 w-12 text-blue-600 mb-4" />
+          <Dialog.Title
+            as="h3"
+            className="text-xl font-bold leading-6 text-gray-900 mb-1"
+          >
+            User Details
+          </Dialog.Title>
+          <p className="text-gray-500 text-sm">
+            View detailed information about the selected user.
+          </p>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+            
+            {/* Name */}
+            <div>
+              <p className="font-semibold">Name</p>
+              <p className="text-gray-900">{user.email.split("@")[0]}</p>
+            </div>
+
+            {/* Email */}
+            <div>
+              <p className="font-semibold">Email</p>
+              <p className="text-gray-900">{user.email || "N/A"}</p>
+            </div>
+
+            {/* Role */}
+            <div>
+              <p className="font-semibold">Role</p>
+              <p className="text-gray-900 capitalize">{user.role || "N/A"}</p>
+            </div>
+
+            {/* Status */}
+            <div>
+              <p className="font-semibold">Status</p>
+              {user.is_deleted ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                  Deleted
+                </span>
+              ) : user.is_active ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                  Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                  Inactive
+                </span>
+              )}
+            </div>
+
+            
+          </div>
+
+          {/* Optional Notes */}
+          {user.notes && (
+            <div className="mt-6">
+              <p className="font-semibold text-gray-700 mb-1">Notes</p>
+              <div className="bg-gray-50 p-4 rounded-lg text-gray-800 text-sm">
+                {user.notes}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="px-6 py-4 mt-6 border-t border-gray-200 flex justify-end space-x-3">
+          <button
+            onClick={() => setOpen(false)}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
+          >
+            Close
+          </button>
+        </div>
+
+      </Dialog.Panel>
+    </Transition.Child>
+  </div>
+</div>
+
       </Dialog>
     </Transition.Root>
   );
@@ -431,7 +477,7 @@ const UsersList = () => {
                       className="hover:bg-gray-50 transition-colors duration-150"
                     >
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {u.name || u.email.split("@")[0]}
+                        {u.name ||  u.email.split("@")[0]}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {u.email}

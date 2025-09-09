@@ -96,27 +96,40 @@ const TenantAdminDashboard = () => {
     }
   };
 
-  const fetchUsers = useCallback(async () => {
-    if (!tenantId) return;
+ 
+
+  useEffect(() => {
+  if (!tenantId) return;
+
+  let isMounted = true; // Prevent state updates after unmount
+
+  const fetchUsers = async () => {
     try {
       await fetchTenantUsers(tenantId);
     } catch (err) {
       console.error("Error fetching tenant users:", err);
-      setSnackbar({
-        open: true,
-        message: "Failed to fetch users. Please try again.",
-        severity: "error",
-      });
+      if (isMounted) {
+        setSnackbar({
+          open: true,
+          message: "Failed to fetch users. Please try again.",
+          severity: "error",
+        });
+      }
     }
-  }, [tenantId, fetchTenantUsers]);
+  };
 
-  useEffect(() => {
-    if (!tenantId) return;
-    // fetchUsers();
-    // Fetch users every 30 seconds for real-time updates
-    const interval = setInterval(fetchUsers, 30000);
-    return () => clearInterval(interval);
-  }, [tenantId, fetchUsers]);
+  // Fetch immediately on mount / tenantId change
+  fetchUsers();
+
+  // Fetch repeatedly every 30s
+  const interval = setInterval(fetchUsers, 30000);
+
+  // Cleanup
+  return () => {
+    isMounted = false;
+    clearInterval(interval);
+  };
+}, [tenantId]);
 
   // Filtering Logic
   const filteredUsers = tenantUsers.filter(
