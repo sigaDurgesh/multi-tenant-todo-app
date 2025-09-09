@@ -3,33 +3,36 @@ import { useNavigate } from "react-router-dom";
 import { superAdmin } from "../../services/superAdminAPI";
 
 // Import icons from react-icons
-import { 
-  MdVisibility, 
-  MdBlock, 
-  MdRestore, 
-  MdDelete, 
-  MdSearch, 
+import {
+  MdVisibility,
+  MdBlock,
+  MdRestore,
+  MdDelete,
+  MdSearch,
   MdClose,
   MdFilterList,
-  MdAdd,
-  MdEdit,
   MdMoreVert,
   MdCheckCircle,
   MdCancel,
   MdPending,
-  MdDeleteSweep
-} from 'react-icons/md';
-
+  
+} from "react-icons/md";
+import PaginationComponent from "../../components/PaginationComponent";
+import { MdAdd } from "react-icons/md";
 // Helper for safe date formatting
 const safeFormatDate = (dateStr) => {
   if (!dateStr) return "N/A";
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  try {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "Invalid Date";
+  }
 };
 
 // Custom Modal Component
@@ -40,20 +43,24 @@ const CustomModal = ({ open, title, children, actions, onClose, size = "md" }) =
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
-    xl: "max-w-xl"
+    xl: "max-w-xl",
   };
 
   return (
     <div className="fixed inset-0 bg-black/20 bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-      <div className={`bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} mx-auto relative transform transition-all`}>
+      <div
+        className={`bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} mx-auto relative transform transition-all`}
+      >
         <div className="p-6">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
           >
             <MdClose size={20} />
           </button>
-          <h3 className="text-xl font-semibold mb-4 text-gray-800 pr-8">{title}</h3>
+          <h3 className="text-xl font-semibold mb-4 text-gray-800 pr-8">
+            {title}
+          </h3>
           {children}
         </div>
         {actions && (
@@ -71,14 +78,14 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const filterOptions = [
-    { value: 'all', label: 'All Tenants', icon: MdFilterList, count: counts.all },
-    { value: 'active', label: 'Active', icon: MdCheckCircle, count: counts.active, color: 'text-green-600' },
-    { value: 'inactive', label: 'Inactive', icon: MdCancel, count: counts.inactive, color: 'text-gray-600' },
-    { value: 'pending', label: 'Pending', icon: MdPending, count: counts.pending, color: 'text-yellow-600' },
-    { value: 'deleted', label: 'Deleted', icon: MdDeleteSweep, count: counts.deleted, color: 'text-red-600' }
+    { value: "all", label: "All Tenants", icon: MdFilterList, count: counts.all },
+    { value: "active", label: "Active", icon: MdCheckCircle, count: counts.active, color: "text-green-600" },
+    { value: "inactive", label: "Inactive", icon: MdCancel, count: counts.inactive, color: "text-gray-600" },
+    { value: "pending", label: "Pending", icon: MdPending, count: counts.pending, color: "text-yellow-600" },
+    { value: "deleted", label: "Deleted", icon: MdDelete, count: counts.deleted, color: "text-red-600" },
   ];
 
-  const selectedOption = filterOptions.find(option => option.value === filter);
+  const selectedOption = filterOptions.find((option) => option.value === filter);
 
   return (
     <div className="relative">
@@ -86,7 +93,10 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[160px]"
       >
-        <selectedOption.icon size={18} className={selectedOption.color || 'text-gray-600'} />
+        <selectedOption.icon
+          size={18}
+          className={selectedOption.color || "text-gray-600"}
+        />
         <span className="font-medium text-gray-700">{selectedOption.label}</span>
         <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
           {selectedOption.count}
@@ -103,16 +113,25 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
                 setIsOpen(false);
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
-                filter === option.value ? 'bg-blue-50 border-r-2 border-blue-500' : ''
+                filter === option.value
+                  ? "bg-blue-50 border-r-2 border-blue-500"
+                  : ""
               }`}
             >
-              <option.icon size={18} className={option.color || 'text-gray-600'} />
-              <span className="font-medium text-gray-700 flex-1 text-left">{option.label}</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                filter === option.value 
-                  ? 'bg-blue-100 text-blue-800' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
+              <option.icon
+                size={18}
+                className={option.color || "text-gray-600"}
+              />
+              <span className="font-medium text-gray-700 flex-1 text-left">
+                {option.label}
+              </span>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                  filter === option.value
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {option.count}
               </span>
             </button>
@@ -121,10 +140,7 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
       )}
 
       {isOpen && (
-        <div 
-          className="fixed inset-0 z-10" 
-          onClick={() => setIsOpen(false)}
-        />
+        <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
       )}
     </div>
   );
@@ -135,12 +151,12 @@ const StatusBadge = ({ tenant }) => {
   if (tenant.is_deleted) {
     return (
       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-        <MdDeleteSweep size={14} className="mr-1" />
+        <MdDelete size={14} className="mr-1" />
         Deleted
       </span>
     );
   }
-  
+
   if (tenant.is_pending) {
     return (
       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
@@ -149,7 +165,7 @@ const StatusBadge = ({ tenant }) => {
       </span>
     );
   }
-  
+
   if (tenant.is_active) {
     return (
       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
@@ -158,7 +174,7 @@ const StatusBadge = ({ tenant }) => {
       </span>
     );
   }
-  
+
   return (
     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
       <MdCancel size={14} className="mr-1" />
@@ -173,28 +189,25 @@ const ActionDropdown = ({ tenant, onView, onAction }) => {
 
   const getAvailableActions = () => {
     const actions = [
-      { key: 'view', label: 'View Details', icon: MdVisibility, color: 'text-blue-600' }
+      { key: "view", label: "View Details", icon: MdVisibility, color: "text-blue-600" },
     ];
 
     if (tenant.is_deleted) {
-      actions.push(
-        { key: 'restore', label: 'Restore Tenant', icon: MdRestore, color: 'text-green-600' }
-      );
+      actions.push({ key: "restore", label: "Restore Tenant", icon: MdRestore, color: "text-green-600" });
     } else if (tenant.is_pending) {
       actions.push(
-        { key: 'approve', label: 'Approve', icon: MdCheckCircle, color: 'text-green-600' },
-        { key: 'reject', label: 'Reject', icon: MdCancel, color: 'text-red-600' }
+        { key: "approve", label: "Approve", icon: MdCheckCircle, color: "text-green-600" },
+        { key: "reject", label: "Reject", icon: MdCancel, color: "text-red-600" }
       );
     } else if (tenant.is_active) {
       actions.push(
-        { key: 'edit', label: 'Edit Tenant', icon: MdEdit, color: 'text-gray-600' },
-        { key: 'deactivate', label: 'Deactivate', icon: MdBlock, color: 'text-yellow-600' },
-        { key: 'delete', label: 'Delete', icon: MdDelete, color: 'text-red-600' }
+        { key: "deactivate", label: "Deactivate", icon: MdBlock, color: "text-yellow-600" },
+        { key: "delete", label: "Delete", icon: MdDelete, color: "text-red-600" }
       );
     } else {
       actions.push(
-        { key: 'activate', label: 'Activate', icon: MdRestore, color: 'text-green-600' },
-        { key: 'delete', label: 'Delete', icon: MdDelete, color: 'text-red-600' }
+        { key: "activate", label: "Activate", icon: MdRestore, color: "text-green-600" },
+        { key: "delete", label: "Delete", icon: MdDelete, color: "text-red-600" }
       );
     }
 
@@ -218,7 +231,7 @@ const ActionDropdown = ({ tenant, onView, onAction }) => {
             <button
               key={action.key}
               onClick={() => {
-                if (action.key === 'view') {
+                if (action.key === "view") {
                   onView(tenant);
                 } else {
                   onAction({ tenant, type: action.key });
@@ -226,21 +239,22 @@ const ActionDropdown = ({ tenant, onView, onAction }) => {
                 setIsOpen(false);
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left ${
-                action.key === 'delete' || action.key === 'reject' ? 'hover:bg-red-50' : ''
+                action.key === "delete" || action.key === "reject"
+                  ? "hover:bg-red-50"
+                  : ""
               }`}
             >
               <action.icon size={16} className={action.color} />
-              <span className="text-sm font-medium text-gray-700">{action.label}</span>
+              <span className="text-sm font-medium text-gray-700">
+                {action.label}
+              </span>
             </button>
           ))}
         </div>
       )}
 
       {isOpen && (
-        <div 
-          className="fixed inset-0 z-10" 
-          onClick={() => setIsOpen(false)}
-        />
+        <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
       )}
     </div>
   );
@@ -253,10 +267,12 @@ const Toast = ({ message, type, onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+  const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
 
   return (
-    <div className={`fixed bottom-4 right-4 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-2 transform transition-all animate-slide-in-right max-w-sm`}>
+    <div
+      className={`fixed bottom-4 right-4 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-2 transform transition-all animate-slide-in-right max-w-sm`}
+    >
       <span className="text-sm font-medium">{message}</span>
       <button onClick={onClose} className="text-white hover:text-gray-200">
         <MdClose size={18} />
@@ -267,18 +283,19 @@ const Toast = ({ message, type, onClose }) => {
 
 const TenantList = () => {
   const [tenants, setTenants] = useState([]);
-  const [totalTenantCount, setTotalTenantCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const navigate = useNavigate();
 
   // Show toast notification
-  const showToast = (message, type = 'success') => {
+  const showToast = (message, type = "success") => {
     setToast({ message, type });
   };
 
@@ -300,10 +317,9 @@ const TenantList = () => {
       }));
 
       setTenants(tenantsWithDefaults);
-      setTotalTenantCount(data.totalCount || tenantsWithDefaults.length);
     } catch (err) {
       console.error("Failed to fetch tenants:", err);
-      showToast("Failed to fetch tenants.", 'error');
+      showToast("Failed to fetch tenants.", "error");
     } finally {
       setLoading(false);
     }
@@ -313,14 +329,35 @@ const TenantList = () => {
     fetchTenants();
   }, []);
 
+  // Filter tenants based on state and search query
+  const filteredTenants = tenants.filter((t) => {
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "active" && t.is_active && !t.is_deleted && !t.is_pending) ||
+      (filter === "inactive" && !t.is_active && !t.is_deleted && !t.is_pending) ||
+      (filter === "pending" && t.is_pending && !t.is_deleted) ||
+      (filter === "deleted" && t.is_deleted);
+
+    const matchesSearch =
+      searchQuery === "" ||
+      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.email?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesFilter && matchesSearch;
+  });
+
   // Calculate counts for each filter
   const getCounts = () => {
     return {
       all: tenants.length,
-      active: tenants.filter(t => t.is_active && !t.is_deleted && !t.is_pending).length,
-      inactive: tenants.filter(t => !t.is_active && !t.is_deleted && !t.is_pending).length,
-      pending: tenants.filter(t => t.is_pending && !t.is_deleted).length,
-      deleted: tenants.filter(t => t.is_deleted).length,
+      active: tenants.filter(
+        (t) => t.is_active && !t.is_deleted && !t.is_pending
+      ).length,
+      inactive: tenants.filter(
+        (t) => !t.is_active && !t.is_deleted && !t.is_pending
+      ).length,
+      pending: tenants.filter((t) => t.is_pending && !t.is_deleted).length,
+      deleted: tenants.filter((t) => t.is_deleted).length,
     };
   };
 
@@ -330,114 +367,34 @@ const TenantList = () => {
 
     const { tenant, type } = confirmAction;
     try {
+      let apiCall;
       switch (type) {
         case "deactivate":
-          await superAdmin.deactive(tenant.id);
-          setTenants((prev) =>
-            prev.map((t) =>
-              t.id === tenant.id
-                ? { ...t, is_active: false, updatedAt: new Date() }
-                : t
-            )
-          );
-          showToast("Tenant deactivated successfully!");
+          apiCall = superAdmin.deactive(tenant.id);
           break;
-
         case "activate":
-          await superAdmin.activate(tenant.id);
-          setTenants((prev) =>
-            prev.map((t) =>
-              t.id === tenant.id
-                ? {
-                    ...t,
-                    is_active: true,
-                    is_deleted: false,
-                    is_pending: false,
-                    updatedAt: new Date(),
-                  }
-                : t
-            )
-          );
-          showToast("Tenant activated successfully!");
-          break;
-
-        case "delete":
-          await superAdmin.softDelete(tenant.id);
-          setTenants((prev) =>
-            prev.map((t) =>
-              t.id === tenant.id
-                ? {
-                    ...t,
-                    is_deleted: true,
-                    is_active: false,
-                    deletedAt: new Date(),
-                  }
-                : t
-            )
-          );
-          showToast("Tenant deleted successfully!");
-          break;
-
         case "restore":
-          await superAdmin.activate(tenant.id);
-          setTenants((prev) =>
-            prev.map((t) =>
-              t.id === tenant.id
-                ? {
-                    ...t,
-                    is_deleted: false,
-                    is_active: true,
-                    is_pending: false,
-                    updatedAt: new Date(),
-                  }
-                : t
-            )
-          );
-          showToast("Tenant restored successfully!");
+          apiCall = superAdmin.activate(tenant.id);
           break;
-
+        case "delete":
+          apiCall = superAdmin.softDelete(tenant.id);
+          break;
         case "approve":
-          // Assuming there's an approve API endpoint
-          await superAdmin.approve(tenant.id);
-          setTenants((prev) =>
-            prev.map((t) =>
-              t.id === tenant.id
-                ? {
-                    ...t,
-                    is_pending: false,
-                    is_active: true,
-                    updatedAt: new Date(),
-                  }
-                : t
-            )
-          );
-          showToast("Tenant approved successfully!");
+          apiCall = superAdmin.approve(tenant.id);
           break;
-
         case "reject":
-          // Assuming there's a reject API endpoint
-          await superAdmin.reject(tenant.id);
-          setTenants((prev) =>
-            prev.map((t) =>
-              t.id === tenant.id
-                ? {
-                    ...t,
-                    is_pending: false,
-                    is_active: false,
-                    updatedAt: new Date(),
-                  }
-                : t
-            )
-          );
-          showToast("Tenant rejected successfully!");
+          apiCall = superAdmin.reject(tenant.id);
           break;
-
         default:
-          break;
+          return;
       }
+
+      await apiCall;
+      showToast("Action completed successfully!");
+      fetchTenants(); // Re-fetch all tenants to ensure data consistency
     } catch (err) {
       console.error(err);
-      showToast("Action failed. Please try again.", 'error');
+      showToast("Action failed. Please try again.", "error");
     } finally {
       setConfirmAction(null);
     }
@@ -446,53 +403,33 @@ const TenantList = () => {
   const handleView = (tenant) => setSelectedTenant(tenant);
   const handleCloseView = () => setSelectedTenant(null);
 
-  // Filter tenants based on state and search query
-  const filteredTenants = tenants.filter((t) => {
-    let isFiltered = false;
-
-    switch (filter) {
-      case "all":
-        isFiltered = true;
-        break;
-      case "active":
-        isFiltered = t.is_active && !t.is_deleted && !t.is_pending;
-        break;
-      case "inactive":
-        isFiltered = !t.is_active && !t.is_deleted && !t.is_pending;
-        break;
-      case "pending":
-        isFiltered = t.is_pending && !t.is_deleted;
-        break;
-      case "deleted":
-        isFiltered = t.is_deleted;
-        break;
-      default:
-        isFiltered = true;
-    }
-
-    const isSearched = searchQuery === "" ||
-      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.email?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return isFiltered && isSearched;
-  });
-
   // Get action confirmation text
   const getActionConfirmText = () => {
-    if (!confirmAction) return '';
-    
+    if (!confirmAction) return "";
+
     const { type, tenant } = confirmAction;
     const actionTexts = {
-      deactivate: 'deactivate',
-      activate: 'activate',
-      delete: 'delete',
-      restore: 'restore',
-      approve: 'approve',
-      reject: 'reject'
+      deactivate: "deactivate",
+      activate: "activate",
+      delete: "delete",
+      restore: "restore",
+      approve: "approve",
+      reject: "reject",
     };
-    
+
     return `Are you sure you want to ${actionTexts[type]} tenant "${tenant.name}"?`;
   };
+
+  // Pagination logic on filtered data
+  const totalPages = Math.ceil(filteredTenants.length / rowsPerPage);
+  const indexOfLastTenant = currentPage * rowsPerPage;
+  const indexOfFirstTenant = indexOfLastTenant - rowsPerPage;
+  const tenantsToDisplay = filteredTenants.slice(indexOfFirstTenant, indexOfLastTenant);
+
+  // Reset to page 1 on filter/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filter]);
 
   if (loading) {
     return (
@@ -511,7 +448,9 @@ const TenantList = () => {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Tenant Management</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Tenant Management
+            </h1>
             <p className="text-gray-600">Manage and monitor all tenant accounts</p>
           </div>
           <button
@@ -541,10 +480,10 @@ const TenantList = () => {
             </div>
 
             {/* Filter Dropdown */}
-            <FilterDropdown 
-              filter={filter} 
-              setFilter={setFilter} 
-              counts={getCounts()} 
+            <FilterDropdown
+              filter={filter}
+              setFilter={setFilter}
+              counts={getCounts()}
             />
           </div>
         </div>
@@ -552,8 +491,9 @@ const TenantList = () => {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-gray-600">
-            Showing <span className="font-semibold">{filteredTenants.length}</span> of{' '}
-            <span className="font-semibold">{tenants.length}</span> tenants
+            Showing <span className="font-semibold">{tenantsToDisplay.length}</span> of{" "}
+            <span className="font-semibold">{filteredTenants.length}</span>{" "}
+            filtered tenants
           </p>
         </div>
 
@@ -561,6 +501,7 @@ const TenantList = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
+              {/* Header */}
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -580,26 +521,48 @@ const TenantList = () => {
                   </th>
                 </tr>
               </thead>
+
+              {/* Body */}
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredTenants.length > 0 ? (
-                  filteredTenants.map((tenant) => (
-                    <tr key={tenant.id} className="hover:bg-gray-50 transition-colors duration-150">
+                {tenantsToDisplay.length > 0 ? (
+                  tenantsToDisplay.map((tenant) => (
+                    <tr
+                      key={tenant.id}
+                      className="hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      {/* Tenant details */}
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-sm font-semibold text-gray-900">{tenant.name}</div>
-                          <div className="text-sm text-gray-500">{tenant.email}</div>
+                          <div className="text-sm font-semibold text-gray-900">
+                            {tenant.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {tenant.email}
+                          </div>
                         </div>
                       </td>
+
+                      {/* Status */}
                       <td className="px-6 py-4">
                         <StatusBadge tenant={tenant} />
                       </td>
+
+                      {/* Users */}
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{tenant.userCount}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {tenant.userCount}
+                        </div>
                         <div className="text-sm text-gray-500">Total users</div>
                       </td>
+
+                      {/* Created Date */}
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{safeFormatDate(tenant.createdAt)}</div>
+                        <div className="text-sm text-gray-900">
+                          {safeFormatDate(tenant.createdAt)}
+                        </div>
                       </td>
+
+                      {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <ActionDropdown
                           tenant={tenant}
@@ -610,13 +573,18 @@ const TenantList = () => {
                     </tr>
                   ))
                 ) : (
+                  // Empty state
                   <tr>
                     <td colSpan="5" className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center">
                         <MdSearch size={48} className="text-gray-300 mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No tenants found</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                          No tenants found
+                        </h3>
                         <p className="text-gray-500">
-                          {searchQuery ? 'Try adjusting your search terms' : 'No tenants match the current filter'}
+                          {searchQuery
+                            ? "Try adjusting your search terms"
+                            : "No tenants match the current filter"}
                         </p>
                       </div>
                     </td>
@@ -625,6 +593,25 @@ const TenantList = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination + Summary */}
+          {filteredTenants.length > 0 && (
+            <div>
+              <div className="px-6 py-3 text-sm text-gray-600 border-t border-gray-200 bg-gray-50">
+                Showing {indexOfFirstTenant + 1} –{" "}
+                {Math.min(indexOfLastTenant, filteredTenants.length)} of{" "}
+                {filteredTenants.length} tenants
+              </div>
+
+              <PaginationComponent
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                rowsPerPage={rowsPerPage}
+                setRowsPerPage={setRowsPerPage}
+              />
+            </div>
+          )}
         </div>
 
         {/* View Tenant Modal */}
@@ -634,8 +621,8 @@ const TenantList = () => {
           onClose={handleCloseView}
           size="lg"
           actions={
-            <button 
-              onClick={handleCloseView} 
+            <button
+              onClick={handleCloseView}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               Close
@@ -646,38 +633,64 @@ const TenantList = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-semibold text-gray-600">Tenant Name</label>
-                  <p className="text-sm text-gray-900 mt-1">{selectedTenant.name}</p>
+                  <label className="text-sm font-semibold text-gray-600">
+                    Tenant Name
+                  </label>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {selectedTenant.name}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-600">Admin Email</label>
-                  <p className="text-sm text-gray-900 mt-1">{selectedTenant.email}</p>
+                  <label className="text-sm font-semibold text-gray-600">
+                    Admin Email
+                  </label>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {selectedTenant.email}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-600">Total Users</label>
-                  <p className="text-sm text-gray-900 mt-1">{selectedTenant.userCount}</p>
+                  <label className="text-sm font-semibold text-gray-600">
+                    Total Users
+                  </label>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {selectedTenant.userCount}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-600">Status</label>
+                  <label className="text-sm font-semibold text-gray-600">
+                    Status
+                  </label>
                   <div className="mt-1">
                     <StatusBadge tenant={selectedTenant} />
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-600">Created Date</label>
-                  <p className="text-sm text-gray-900 mt-1">{safeFormatDate(selectedTenant.createdAt)}</p>
+                  <label className="text-sm font-semibold text-gray-600">
+                    Created Date
+                  </label>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {safeFormatDate(selectedTenant.createdAt)}
+                  </p>
                 </div>
                 {selectedTenant.updatedAt && (
                   <div>
-                    <label className="text-sm font-semibold text-gray-600">Last Updated</label>
-                    <p className="text-sm text-gray-900 mt-1">{safeFormatDate(selectedTenant.updatedAt)}</p>
+                    <label className="text-sm font-semibold text-gray-600">
+                      Last Updated
+                    </label>
+                    <p className="text-sm text-gray-900 mt-1">
+                      {safeFormatDate(selectedTenant.updatedAt)}
+                    </p>
                   </div>
                 )}
               </div>
               {selectedTenant.is_deleted && selectedTenant.deletedAt && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <label className="text-sm font-semibold text-red-800">Deleted Date</label>
-                  <p className="text-sm text-red-700 mt-1">{safeFormatDate(selectedTenant.deletedAt)}</p>
+                  <label className="text-sm font-semibold text-red-800">
+                    Deleted Date
+                  </label>
+                  <p className="text-sm text-red-700 mt-1">
+                    {safeFormatDate(selectedTenant.deletedAt)}
+                  </p>
                 </div>
               )}
             </div>
@@ -691,18 +704,19 @@ const TenantList = () => {
           onClose={() => setConfirmAction(null)}
           actions={
             <>
-              <button 
-                onClick={() => setConfirmAction(null)} 
+              <button
+                onClick={() => setConfirmAction(null)}
                 className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
                 Cancel
               </button>
-              <button 
-                onClick={confirmAndExecute} 
+              <button
+                onClick={confirmAndExecute}
                 className={`px-4 py-2 rounded-lg transition-colors font-medium ${
-                  confirmAction?.type === 'delete' || confirmAction?.type === 'reject'
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                  confirmAction?.type === "delete" ||
+                  confirmAction?.type === "reject"
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
                 Confirm
@@ -711,12 +725,16 @@ const TenantList = () => {
           }
         >
           <div className="flex items-start space-x-3">
-            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-              confirmAction?.type === 'delete' || confirmAction?.type === 'reject'
-                ? 'bg-red-100'
-                : 'bg-blue-100'
-            }`}>
-              {confirmAction?.type === 'delete' || confirmAction?.type === 'reject' ? (
+            <div
+              className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                confirmAction?.type === "delete" ||
+                confirmAction?.type === "reject"
+                  ? "bg-red-100"
+                  : "bg-blue-100"
+              }`}
+            >
+              {confirmAction?.type === "delete" ||
+              confirmAction?.type === "reject" ? (
                 <MdDelete className="w-5 h-5 text-red-600" />
               ) : (
                 <MdCheckCircle className="w-5 h-5 text-blue-600" />
@@ -726,9 +744,7 @@ const TenantList = () => {
               <p className="text-sm text-gray-900 font-medium mb-1">
                 {getActionConfirmText()}
               </p>
-              <p className="text-sm text-gray-500">
-                This action cannot be undone.
-              </p>
+              <p className="text-sm text-gray-500">This action cannot be undone.</p>
             </div>
           </div>
         </CustomModal>

@@ -22,6 +22,7 @@ import {
   MdWarning,
   MdError,
 } from 'react-icons/md';
+import PaginationComponent from "../../components/PaginationComponent";
 
 // Custom Modal Component
 const Modal = ({ isOpen, onClose, title, children, actions }) => {
@@ -155,28 +156,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-// Tab Component
-// const TabButton = ({ active, onClick, children, count }) => (
-//   <button
-//     onClick={onClick}
-//     className={`px-6 py-3 font-medium text-sm rounded-lg transition-all duration-200 flex items-center space-x-2 ${
-//       active
-//         ? 'bg-blue-600 text-white shadow-lg'
-//         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-//     }`}
-//   >
-//     <span>{children}</span>
-//     {count !== undefined && (
-//       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-//         active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
-//       }`}>
-//         {count}
-//       </span>
-//     )}
-//   </button>
-// );
 
-// Main Dashboard Component
 const SuperAdminDashboard = () => {
   const { user } = useContext(AuthContext);
 
@@ -270,6 +250,25 @@ const SuperAdminDashboard = () => {
     setSelectedTenant(tenant);
     setDialogOpen(true);
   };
+
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const tenantsPerPage = 5; // you can change this
+
+  // ✅ Paginate data
+  const tenantsToDisplay = getTabContent().slice(
+    (currentPage - 1) * tenantsPerPage,
+    currentPage * tenantsPerPage
+  );
+
+  const totalPages = Math.ceil(getTabContent().length / tenantsPerPage);
+
+  // Reset to page 1 when filter/search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, currentTab]);
+
+
 
   if (loading) {
     return (
@@ -406,159 +405,101 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          
-          <div className="p-6">
-            {currentTab === 3 ? (
-              // Analytics Tab
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-gray-50 rounded-xl p-8 text-center">
-                  <MdTrendingUp size={48} className="text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Trends</h3>
-                  <p className="text-gray-600">Weekly request volume analytics</p>
-                  <div className="mt-4 p-4 bg-white rounded-lg">
-                    <p className="text-sm text-gray-500">Chart visualization will be implemented here</p>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-8 text-center">
-                  <MdGroup size={48} className="text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Status Distribution</h3>
-                  <p className="text-gray-600">Approved / Pending / Rejected breakdown</p>
-                  <div className="mt-4 p-4 bg-white rounded-lg">
-                    <p className="text-sm text-gray-500">Pie chart will be implemented here</p>
-                  </div>
-                </div>
+        =<div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="p-6">
+        {currentTab === 3 ? (
+          // 🔹 Analytics Tab
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-gray-50 rounded-xl p-8 text-center">
+              <MdTrendingUp size={48} className="text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Request Trends</h3>
+              <p className="text-gray-600">Weekly request volume analytics</p>
+              <div className="mt-4 p-4 bg-white rounded-lg">
+                <p className="text-sm text-gray-500">Chart visualization will be implemented here</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-8 text-center">
+              <MdGroup size={48} className="text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Status Distribution</h3>
+              <p className="text-gray-600">Approved / Pending / Rejected breakdown</p>
+              <div className="mt-4 p-4 bg-white rounded-lg">
+                <p className="text-sm text-gray-500">Pie chart will be implemented here</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // 🔹 Tenant Table
+          <div className="overflow-x-auto">
+            {tenantsToDisplay.length === 0 ? (
+              <div className="text-center py-16">
+                <MdBusiness size={64} className="text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No tenants found</h3>
+                <p className="text-gray-600">
+                  {searchTerm || statusFilter !== "all"
+                    ? "Try adjusting your search or filter criteria"
+                    : "No tenant requests available"}
+                </p>
               </div>
             ) : (
-              // Tenant Table
-              <div className="overflow-x-auto">
-                {getTabContent().length === 0 ? (
-                  <div className="text-center py-16">
-                    <MdBusiness size={64} className="text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No tenants found</h3>
-                    <p className="text-gray-600">
-                      {searchTerm || statusFilter !== 'all' 
-                        ? 'Try adjusting your search or filter criteria' 
-                        : 'No tenant requests available'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
-                    <table className="min-w-full table-auto">
-                      {/* Table Header */}
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tenant</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Requester</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Requested At</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Reviewed At</th>
-                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Actions</th>
-                        </tr>
-                      </thead>
+              <div className="overflow-x-auto bg-white rounded-2xl shadow-sm border border-gray-200">
+                <table className="min-w-full table-auto">
+                  {/* Table Header */}
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tenant</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Requester</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Requested At</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Reviewed At</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
 
-                      {/* Table Body */}
-                      <tbody className="divide-y divide-gray-100">
-                        {getTabContent().map((tenant) => (
-                          <tr key={tenant.id} className="hover:bg-gray-50 transition">
-                            {/* Tenant Name */}
-                            <td className="px-6 py-4">
-                              <div className="font-medium text-gray-900">
-                                {tenant.tenant_name || "Unnamed Tenant"}
-                              </div>
-                            </td>
+                  {/* Table Body */}
+                  <tbody className="divide-y divide-gray-100">
+                    {tenantsToDisplay.map((tenant) => (
+                      <tr key={tenant.id} className="hover:bg-gray-50 transition">
+                        {/* Tenant Name */}
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-gray-900">
+                            {tenant.tenant_name || "Unnamed Tenant"}
+                          </div>
+                        </td>
+                        {/* Requester */}
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {tenant.requester?.email || "—"}
+                        </td>
+                        {/* Status */}
+                        <td className="px-6 py-4">
+                          <StatusBadge status={tenant.status} />
+                        </td>
+                        {/* Requested At */}
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {formatDate(tenant.requested_at)}
+                        </td>
+                        {/* Reviewed At */}
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {tenant.reviewed_at ? formatDate(tenant.reviewed_at) : "—"}
+                        </td>
+                        {/* Actions */}
+                        <td className="px-6 py-4 text-right">{/* ...menu */}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
-                            {/* Requester */}
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {tenant.requester?.email || "—"}
-                            </td>
-
-                            {/* Status */}
-                            <td className="px-6 py-4">
-                              <StatusBadge status={tenant.status} />
-                            </td>
-
-                            {/* Requested At */}
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {formatDate(tenant.requested_at)}
-                            </td>
-
-                            {/* Reviewed At */}
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {tenant.reviewed_at ? formatDate(tenant.reviewed_at) : "—"}
-                            </td>
-
-                            {/* Actions */}
-                            <td className="px-6 py-4 text-right">
-                              <div className="relative inline-block text-left">
-                                <button
-                                  onClick={() =>
-                                    setOpenMenu(openMenu === tenant.id ? null : tenant.id)
-                                  }
-                                  className="p-2 hover:bg-gray-100 rounded-full transition"
-                                >
-                                  <MdMoreVert size={20} className="text-gray-600" />
-                                </button>
-
-                                {openMenu === tenant.id && (
-                                  <>
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                                      <button
-                                        onClick={() => {
-                                          handleViewDetails(tenant);
-                                          setOpenMenu(null);
-                                        }}
-                                        className="w-full flex items-center px-4 py-3 hover:bg-gray-50 transition text-left"
-                                      >
-                                        <MdVisibility size={16} className="mr-3 text-blue-600" />
-                                        <span className="text-sm font-medium">View Details</span>
-                                      </button>
-
-                                      {tenant.status === "pending" && (
-                                        <>
-                                          <button
-                                            onClick={() => {
-                                              handleStatusUpdate(tenant.id, "approved");
-                                              setOpenMenu(null);
-                                            }}
-                                            className="w-full flex items-center px-4 py-3 hover:bg-green-50 transition text-left"
-                                          >
-                                            <MdCheckCircle size={16} className="mr-3 text-green-600" />
-                                            <span className="text-sm font-medium">Approve</span>
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              handleStatusUpdate(tenant.id, "rejected");
-                                              setOpenMenu(null);
-                                            }}
-                                            className="w-full flex items-center px-4 py-3 hover:bg-red-50 transition text-left"
-                                          >
-                                            <MdCancel size={16} className="mr-3 text-red-600" />
-                                            <span className="text-sm font-medium">Reject</span>
-                                          </button>
-                                        </>
-                                      )}
-                                    </div>
-
-                                    {/* Overlay */}
-                                    <div
-                                      className="fixed inset-0"
-                                      onClick={() => setOpenMenu(null)}
-                                    />
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                {/* ✅ Pagination Below Table */}
+                <PaginationComponent
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(page) => setCurrentPage(page)}
+                />
               </div>
             )}
           </div>
-        </div>
+        )}
+      </div>
+    </div>
       </div>
 
       {/* Tenant Details Modal */}
