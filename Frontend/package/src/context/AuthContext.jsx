@@ -38,8 +38,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
   // const confirmLogout = window.confirm("Are you sure you want to logout?");
   // if (!confirmLogout) {
-  //   return;
-  // }  
+    //   return;
+    // }  
   setUser(null);
   sessionStorage.removeItem("tenantId");
   sessionStorage.removeItem("user");

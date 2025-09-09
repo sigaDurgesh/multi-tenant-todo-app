@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { superAdmin } from "../../services/superAdminAPI";
 
@@ -15,7 +15,6 @@ import {
   MdCheckCircle,
   MdCancel,
   MdPending,
-  
 } from "react-icons/md";
 import PaginationComponent from "../../components/PaginationComponent";
 import { MdAdd } from "react-icons/md";
@@ -36,7 +35,14 @@ const safeFormatDate = (dateStr) => {
 };
 
 // Custom Modal Component
-const CustomModal = ({ open, title, children, actions, onClose, size = "md" }) => {
+const CustomModal = ({
+  open,
+  title,
+  children,
+  actions,
+  onClose,
+  size = "md",
+}) => {
   if (!open) return null;
 
   const sizeClasses = {
@@ -78,14 +84,45 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const filterOptions = [
-    { value: "all", label: "All Tenants", icon: MdFilterList, count: counts.all },
-    { value: "active", label: "Active", icon: MdCheckCircle, count: counts.active, color: "text-green-600" },
-    { value: "inactive", label: "Inactive", icon: MdCancel, count: counts.inactive, color: "text-gray-600" },
-    { value: "pending", label: "Pending", icon: MdPending, count: counts.pending, color: "text-yellow-600" },
-    { value: "deleted", label: "Deleted", icon: MdDelete, count: counts.deleted, color: "text-red-600" },
+    {
+      value: "all",
+      label: "All Tenants",
+      icon: MdFilterList,
+      count: counts.all,
+    },
+    {
+      value: "active",
+      label: "Active",
+      icon: MdCheckCircle,
+      count: counts.active,
+      color: "text-green-600",
+    },
+    {
+      value: "inactive",
+      label: "Inactive",
+      icon: MdCancel,
+      count: counts.inactive,
+      color: "text-gray-600",
+    },
+    {
+      value: "pending",
+      label: "Pending",
+      icon: MdPending,
+      count: counts.pending,
+      color: "text-yellow-600",
+    },
+    {
+      value: "deleted",
+      label: "Deleted",
+      icon: MdDelete,
+      count: counts.deleted,
+      color: "text-red-600",
+    },
   ];
 
-  const selectedOption = filterOptions.find((option) => option.value === filter);
+  const selectedOption = filterOptions.find(
+    (option) => option.value === filter
+  );
 
   return (
     <div className="relative">
@@ -97,7 +134,9 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
           size={18}
           className={selectedOption.color || "text-gray-600"}
         />
-        <span className="font-medium text-gray-700">{selectedOption.label}</span>
+        <span className="font-medium text-gray-700">
+          {selectedOption.label}
+        </span>
         <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-semibold">
           {selectedOption.count}
         </span>
@@ -183,31 +222,73 @@ const StatusBadge = ({ tenant }) => {
   );
 };
 
-// Action Dropdown Component
 const ActionDropdown = ({ tenant, onView, onAction }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef(null);
+  const dropRef = useRef(null);
 
   const getAvailableActions = () => {
     const actions = [
-      { key: "view", label: "View Details", icon: MdVisibility, color: "text-blue-600" },
+      {
+        key: "view",
+        label: "View Details",
+        icon: MdVisibility,
+        color: "text-blue-600",
+      },
     ];
 
     if (tenant.is_deleted) {
-      actions.push({ key: "restore", label: "Restore Tenant", icon: MdRestore, color: "text-green-600" });
+      actions.push({
+        key: "restore",
+        label: "Restore Tenant",
+        icon: MdRestore,
+        color: "text-green-600",
+      });
     } else if (tenant.is_pending) {
       actions.push(
-        { key: "approve", label: "Approve", icon: MdCheckCircle, color: "text-green-600" },
-        { key: "reject", label: "Reject", icon: MdCancel, color: "text-red-600" }
+        {
+          key: "approve",
+          label: "Approve",
+          icon: MdCheckCircle,
+          color: "text-green-600",
+        },
+        {
+          key: "reject",
+          label: "Reject",
+          icon: MdCancel,
+          color: "text-red-600",
+        }
       );
     } else if (tenant.is_active) {
       actions.push(
-        { key: "deactivate", label: "Deactivate", icon: MdBlock, color: "text-yellow-600" },
-        { key: "delete", label: "Delete", icon: MdDelete, color: "text-red-600" }
+        {
+          key: "deactivate",
+          label: "Deactivate",
+          icon: MdBlock,
+          color: "text-yellow-600",
+        },
+        {
+          key: "delete",
+          label: "Delete",
+          icon: MdDelete,
+          color: "text-red-600",
+        }
       );
     } else {
       actions.push(
-        { key: "activate", label: "Activate", icon: MdRestore, color: "text-green-600" },
-        { key: "delete", label: "Delete", icon: MdDelete, color: "text-red-600" }
+        {
+          key: "activate",
+          label: "Activate",
+          icon: MdRestore,
+          color: "text-green-600",
+        },
+        {
+          key: "delete",
+          label: "Delete",
+          icon: MdDelete,
+          color: "text-red-600",
+        }
       );
     }
 
@@ -216,9 +297,39 @@ const ActionDropdown = ({ tenant, onView, onAction }) => {
 
   const actions = getAvailableActions();
 
+  // Calculate dropdown position
+  useEffect(() => {
+    if (isOpen && buttonRef.current && dropRef.current) {
+      const btnRect = buttonRef.current.getBoundingClientRect();
+      const dropHeight = dropRef.current.offsetHeight;
+      const dropWidth = dropRef.current.offsetWidth;
+
+      let top = btnRect.bottom;
+      let left = btnRect.right - dropWidth;
+
+      const spaceBelow = window.innerHeight - btnRect.bottom;
+      const spaceAbove = btnRect.top;
+      const spaceRight = window.innerWidth - btnRect.right;
+
+      // Show above if not enough space below
+      if (spaceBelow < dropHeight && spaceAbove > dropHeight) {
+        top = btnRect.top - dropHeight;
+      }
+
+      // Show to the left if not enough space on right
+      if (spaceRight < dropWidth) {
+        left = btnRect.left - dropWidth + btnRect.width; // align to left of button
+      }
+
+      setDropdownPos({ top, left });
+    }
+  }, [isOpen]);
+
   return (
-    <div className="relative">
+    <div className="relative inline-block">
+      {/* Trigger button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
       >
@@ -226,35 +337,45 @@ const ActionDropdown = ({ tenant, onView, onAction }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-          {actions.map((action) => (
-            <button
-              key={action.key}
-              onClick={() => {
-                if (action.key === "view") {
-                  onView(tenant);
-                } else {
-                  onAction({ tenant, type: action.key });
-                }
-                setIsOpen(false);
-              }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left ${
-                action.key === "delete" || action.key === "reject"
-                  ? "hover:bg-red-50"
-                  : ""
-              }`}
-            >
-              <action.icon size={16} className={action.color} />
-              <span className="text-sm font-medium text-gray-700">
-                {action.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
+        <>
+          {/* Dropdown */}
+          <div
+            ref={dropRef}
+            className="fixed z-[9999] w-48 bg-white border border-gray-200 rounded-lg shadow-lg"
+            style={{
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              minWidth: "12rem",
+            }}
+          >
+            {actions.map((action) => (
+              <button
+                key={action.key}
+                onClick={() => {
+                  if (action.key === "view") onView(tenant);
+                  else onAction({ tenant, type: action.key });
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left ${
+                  action.key === "delete" || action.key === "reject"
+                    ? "hover:bg-red-50"
+                    : ""
+                }`}
+              >
+                <action.icon size={16} className={action.color} />
+                <span className="text-sm font-medium text-gray-700">
+                  {action.label}
+                </span>
+              </button>
+            ))}
+          </div>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 z-[9998]"
+            onClick={() => setIsOpen(false)}
+          />
+        </>
       )}
     </div>
   );
@@ -334,7 +455,10 @@ const TenantList = () => {
     const matchesFilter =
       filter === "all" ||
       (filter === "active" && t.is_active && !t.is_deleted && !t.is_pending) ||
-      (filter === "inactive" && !t.is_active && !t.is_deleted && !t.is_pending) ||
+      (filter === "inactive" &&
+        !t.is_active &&
+        !t.is_deleted &&
+        !t.is_pending) ||
       (filter === "pending" && t.is_pending && !t.is_deleted) ||
       (filter === "deleted" && t.is_deleted);
 
@@ -424,7 +548,10 @@ const TenantList = () => {
   const totalPages = Math.ceil(filteredTenants.length / rowsPerPage);
   const indexOfLastTenant = currentPage * rowsPerPage;
   const indexOfFirstTenant = indexOfLastTenant - rowsPerPage;
-  const tenantsToDisplay = filteredTenants.slice(indexOfFirstTenant, indexOfLastTenant);
+  const tenantsToDisplay = filteredTenants.slice(
+    indexOfFirstTenant,
+    indexOfLastTenant
+  );
 
   // Reset to page 1 on filter/search change
   useEffect(() => {
@@ -451,7 +578,9 @@ const TenantList = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Tenant Management
             </h1>
-            <p className="text-gray-600">Manage and monitor all tenant accounts</p>
+            <p className="text-gray-600">
+              Manage and monitor all tenant accounts
+            </p>
           </div>
           <button
             onClick={() => navigate("/superAdmin/create")}
@@ -491,7 +620,8 @@ const TenantList = () => {
         {/* Results Summary */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-gray-600">
-            Showing <span className="font-semibold">{tenantsToDisplay.length}</span> of{" "}
+            Showing{" "}
+            <span className="font-semibold">{tenantsToDisplay.length}</span> of{" "}
             <span className="font-semibold">{filteredTenants.length}</span>{" "}
             filtered tenants
           </p>
@@ -563,7 +693,7 @@ const TenantList = () => {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right relative">
                         <ActionDropdown
                           tenant={tenant}
                           onView={handleView}
@@ -744,7 +874,9 @@ const TenantList = () => {
               <p className="text-sm text-gray-900 font-medium mb-1">
                 {getActionConfirmText()}
               </p>
-              <p className="text-sm text-gray-500">This action cannot be undone.</p>
+              <p className="text-sm text-gray-500">
+                This action cannot be undone.
+              </p>
             </div>
           </div>
         </CustomModal>
