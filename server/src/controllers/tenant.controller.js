@@ -81,6 +81,75 @@ export const listReviewedTenantRequests = async (req, res) => {
 
 // ------------------ CREATE REQUEST ------------------
 
+// export const createTenantRequest = async (req, res) => {
+//   try {
+//     const { tenantName, email, password } = req.body;
+
+//     // 1. Validate tenant name
+//     const validation = validateTenantName(tenantName);
+//     if (!validation.valid) {
+//       return res.status(400).json({ message: validation.message });
+//     }
+
+//     // 2. Block if tenant exists and is deleted OR inactive
+//     const blockedTenant = await Tenant.findOne({
+//       where: {
+//         name: tenantName,
+//         [Op.or]: [{ is_deleted: true }, { is_active: false }],
+//       },
+//     });
+
+//     if (blockedTenant) {
+//       return res.status(400).json({
+//         message:
+//           "This tenant is either deleted or inactive and cannot accept new requests.",
+//       });
+//     }
+
+//     // 3. Check for duplicate pending tenant request
+//     const existingTenantRequest = await TenantRequest.findOne({
+//       where: { tenant_name: tenantName, status: "pending" },
+//     });
+//     if (existingTenantRequest) {
+//       return res
+//         .status(400)
+//         .json({ message: "This tenant name already has a pending request" });
+//     }
+
+//     // 4. Create a new user (hash password before saving)
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const user = await User.create({
+//       email,
+//       password_hash: hashedPassword,
+//       // tenant_id will be assigned once tenant is approved
+//     });
+
+//     // 5. Create the tenant request (linking user_id)
+//     const request = await TenantRequest.create({
+//       user_id: user.id,
+//       tenant_name: tenantName,
+//       email,
+//       status: "pending"
+//     });
+
+//     // 6. Audit log
+//     await AuditLog.create({
+//       actor_user_id: user.id,
+//       action: "CREATE_TENANT_REQUEST",
+//       entity_type: "TenantRequest",
+//       entity_id: request.id,
+//       details: { tenant_name: tenantName, email, status: request.status },
+//     });
+
+//     return res.status(201).json({
+//       message: "Tenant request submitted successfully",
+//       data: request,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ message: "Error creating request", error: error.message });
+//   }
+// };
+
 export const createTenantRequest = async (req, res) => {
   try {
     const { tenantName, email, password } = req.body;
@@ -106,17 +175,28 @@ export const createTenantRequest = async (req, res) => {
       });
     }
 
-    // 3. Check for duplicate pending tenant request
+    // 3. Check if an active tenant already exists
+    const existingTenant = await Tenant.findOne({
+      where: { name: tenantName, is_deleted: false, is_active: true },
+    });
+
+    if (existingTenant) {
+      return res.status(400).json({
+        message: "This tenant name is already taken. Please use a different name.",
+      });
+    }
+
+    // 4. Check for duplicate pending tenant request
     const existingTenantRequest = await TenantRequest.findOne({
       where: { tenant_name: tenantName, status: "pending" },
     });
     if (existingTenantRequest) {
       return res
         .status(400)
-        .json({ message: "This tenant name already has a pending request" });
+        .json({ message: "This tenant name is already taken. Please use a different name." });
     }
 
-    // 4. Create a new user (hash password before saving)
+    // 5. Create a new user (hash password before saving)
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       email,
@@ -124,15 +204,15 @@ export const createTenantRequest = async (req, res) => {
       // tenant_id will be assigned once tenant is approved
     });
 
-    // 5. Create the tenant request (linking user_id)
+    // 6. Create the tenant request (linking user_id)
     const request = await TenantRequest.create({
       user_id: user.id,
       tenant_name: tenantName,
       email,
-      status: "pending"
+      status: "pending",
     });
 
-    // 6. Audit log
+    // 7. Audit log
     await AuditLog.create({
       actor_user_id: user.id,
       action: "CREATE_TENANT_REQUEST",
@@ -146,9 +226,12 @@ export const createTenantRequest = async (req, res) => {
       data: request,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Error creating request", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Error creating request", error: error.message });
   }
 };
+
 
 // ------------------ REVIEW REQUEST (Super Admin) ------------------
 export const reviewTenantRequest = async (req, res) => {
