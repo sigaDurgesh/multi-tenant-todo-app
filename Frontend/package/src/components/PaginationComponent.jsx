@@ -22,7 +22,7 @@ const PaginationComponent = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg disabled:opacity-50 hover:bg-gray-200 transition"
+        className="cursor-pointer px-3 py-2 bg-gray-100 text-gray-600 rounded-lg disabled:opacity-50 hover:bg-gray-200 transition"
       >
         Prev
       </button>
@@ -32,7 +32,7 @@ const PaginationComponent = ({ currentPage, totalPages, onPageChange }) => {
         <button
           key={num}
           onClick={() => onPageChange(num)}
-          className={`px-3 py-2 rounded-lg transition ${
+          className={`cursor-pointer px-3 py-2 rounded-lg transition ${
             currentPage === num
               ? "bg-blue-600 text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -46,7 +46,7 @@ const PaginationComponent = ({ currentPage, totalPages, onPageChange }) => {
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg disabled:opacity-50 hover:bg-gray-200 transition"
+        className="cursor-pointer px-3 py-2 bg-gray-100 text-gray-600 rounded-lg disabled:opacity-50 hover:bg-gray-200 transition"
       >
         Next
       </button>

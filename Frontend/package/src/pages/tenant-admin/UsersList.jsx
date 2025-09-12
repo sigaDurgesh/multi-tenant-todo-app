@@ -492,7 +492,7 @@ const UsersList = () => {
                         <div className="flex justify-end space-x-2">
                           <button
                             onClick={() => handleOpenView(u)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded-full"
                             title="View Details"
                           >
                             <EyeIcon className="w-5 h-5" />
@@ -500,7 +500,7 @@ const UsersList = () => {
                           {u.is_active && !u.is_deleted && (
                             <button
                               onClick={() => handleOpenConfirm(u, "deactivate")}
-                              className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-full"
+                              className="cursor-pointer p-2 text-yellow-600 hover:bg-yellow-50 rounded-full"
                               title="Deactivate"
                             >
                               <UserMinusIcon className="w-5 h-5" />
@@ -509,7 +509,7 @@ const UsersList = () => {
                           {!u.is_active && !u.is_deleted && (
                             <button
                               onClick={() => handleOpenConfirm(u, "restore")}
-                              className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                              className="cursor-pointer p-2 text-green-600 hover:bg-green-50 rounded-full"
                               title="Restore"
                             >
                               <UserPlusIcon className="w-5 h-5" />
@@ -520,7 +520,7 @@ const UsersList = () => {
                               onClick={() =>
                                 handleOpenConfirm(u, "soft-delete")
                               }
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-full"
+                              className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-full"
                               title="Delete"
                             >
                               <TrashIcon className="w-5 h-5" />
@@ -534,7 +534,7 @@ const UsersList = () => {
                   <tr>
                     <td
                       colSpan="5"
-                      className="px-6 py-12 text-center text-gray-500 text-lg"
+                      className="cursor-pointer px-6 py-12 text-center text-gray-500 text-lg"
                     >
                       No users found.
                     </td>
@@ -556,7 +556,7 @@ const UsersList = () => {
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-2 border rounded-l-md text-sm disabled:opacity-50 hover:bg-gray-100"
+              className="cursor-pointer px-3 py-2 border rounded-l-md text-sm disabled:opacity-50 hover:bg-gray-100"
             >
               Prev
             </button>
@@ -576,7 +576,7 @@ const UsersList = () => {
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="px-3 py-2 border rounded-r-md text-sm disabled:opacity-50 hover:bg-gray-100"
+              className="cursor-pointer px-3 py-2 border rounded-r-md text-sm disabled:opacity-50 hover:bg-gray-100"
             >
               Next
             </button>
@@ -676,14 +676,14 @@ const UsersList = () => {
                       type="button"
                       disabled={actionLoading}
                       onClick={handleAction}
-                      className="inline-flex w-full justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:opacity-50 sm:ml-3 sm:w-auto"
+                      className="cursor-pointer inline-flex w-full justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:opacity-50 sm:ml-3 sm:w-auto"
                     >
                       {actionLoading ? "Processing..." : "Confirm"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmOpen(false)}
-                      className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                      className="cursor-pointer mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
                     >
                       Cancel
                     </button>
