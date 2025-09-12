@@ -375,7 +375,7 @@ const SuperAdminDashboard = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="cursor-pointer appearance-none bg-white border border-gray-300 rounded-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="all">All Status</option>
                   <option value="pending">Pending</option>
@@ -391,12 +391,12 @@ const SuperAdminDashboard = () => {
             <div className="flex space-x-3">
               <button
                 onClick={fetchTenants}
-                className="inline-flex items-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                className="cursor-pointer inline-flex items-center px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
                 <MdRefresh size={18} className="mr-2" />
                 Refresh
               </button>
-              <button className="inline-flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+              <button className="cursor-pointer inline-flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
                 <MdDownload size={18} className="mr-2" />
                 Export
               </button>
@@ -451,7 +451,7 @@ const SuperAdminDashboard = () => {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Requested At</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Reviewed At</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Actions</th>
+                      {/* <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Actions</th> */}
                     </tr>
                   </thead>
 

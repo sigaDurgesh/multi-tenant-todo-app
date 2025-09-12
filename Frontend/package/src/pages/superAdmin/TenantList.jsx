@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { superAdmin } from "../../services/superAdminAPI";
 
@@ -18,6 +18,7 @@ import {
 } from "react-icons/md";
 import PaginationComponent from "../../components/PaginationComponent";
 import { MdAdd } from "react-icons/md";
+import TenantRequestContext from "../../context/TenantRequestContext";
 // Helper for safe date formatting
 const safeFormatDate = (dateStr) => {
   if (!dateStr) return "N/A";
@@ -60,7 +61,7 @@ const CustomModal = ({
         <div className="p-6">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+            className="cursor-pointer absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
           >
             <MdClose size={20} />
           </button>
@@ -82,7 +83,8 @@ const CustomModal = ({
 // Dropdown Filter Component
 const FilterDropdown = ({ filter, setFilter, counts }) => {
   const [isOpen, setIsOpen] = useState(false);
-
+const{pendingRequests} = useContext(TenantRequestContext);
+console.log(pendingRequests)
   const filterOptions = [
     {
       value: "all",
@@ -104,11 +106,12 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
       count: counts.inactive,
       color: "text-gray-600",
     },
+    
     {
       value: "pending",
       label: "Pending",
       icon: MdPending,
-      count: counts.pending,
+      count: pendingRequests.length,
       color: "text-yellow-600",
     },
     {
@@ -128,7 +131,7 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[160px]"
+        className="cursor-pointer flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[160px]"
       >
         <selectedOption.icon
           size={18}
@@ -143,7 +146,7 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+        <div className=" cursor-pointer absolute top-full left-0 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-20">
           {filterOptions.map((option) => (
             <button
               key={option.value}
@@ -151,7 +154,7 @@ const FilterDropdown = ({ filter, setFilter, counts }) => {
                 setFilter(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
+              className={`cursor-pointer w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
                 filter === option.value
                   ? "bg-blue-50 border-r-2 border-blue-500"
                   : ""
@@ -331,7 +334,7 @@ const ActionDropdown = ({ tenant, onView, onAction }) => {
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        className=" cursor-pointer p-2 hover:bg-gray-100 rounded-full transition-colors"
       >
         <MdMoreVert size={20} className="text-gray-600" />
       </button>
@@ -356,7 +359,7 @@ const ActionDropdown = ({ tenant, onView, onAction }) => {
                   else onAction({ tenant, type: action.key });
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left ${
+                className={`cursor-pointer w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left ${
                   action.key === "delete" || action.key === "reject"
                     ? "hover:bg-red-50"
                     : ""
@@ -395,7 +398,7 @@ const Toast = ({ message, type, onClose }) => {
       className={`fixed bottom-4 right-4 ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-2 transform transition-all animate-slide-in-right max-w-sm`}
     >
       <span className="text-sm font-medium">{message}</span>
-      <button onClick={onClose} className="text-white hover:text-gray-200">
+      <button onClick={onClose} className="cursor-pointer text-white hover:text-gray-200">
         <MdClose size={18} />
       </button>
     </div>
@@ -451,24 +454,54 @@ const TenantList = () => {
   }, []);
 
   // Filter tenants based on state and search query
-  const filteredTenants = tenants.filter((t) => {
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "active" && t.is_active && !t.is_deleted && !t.is_pending) ||
-      (filter === "inactive" &&
-        !t.is_active &&
-        !t.is_deleted &&
-        !t.is_pending) ||
-      (filter === "pending" && t.is_pending && !t.is_deleted) ||
-      (filter === "deleted" && t.is_deleted);
+  // const filteredTenants = tenants.filter((t) => {
+  //   const matchesFilter =
+  //     filter === "all" ||
+  //     (filter === "active" && t.is_active && !t.is_deleted && !t.is_pending) ||
+  //     (filter === "inactive" &&
+  //       !t.is_active &&
+  //       !t.is_deleted &&
+  //       !t.is_pending) ||
+  //     (filter === "pending" && t.is_pending && !t.is_deleted) ||
+  //     (filter === "deleted" && t.is_deleted);
 
-    const matchesSearch =
-      searchQuery === "" ||
-      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.email?.toLowerCase().includes(searchQuery.toLowerCase());
+  //   const matchesSearch =
+  //     searchQuery === "" ||
+  //     t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //     t.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesFilter && matchesSearch;
-  });
+  //   return matchesFilter && matchesSearch;
+  // });
+
+
+  const { pendingRequests,superAdminId } = useContext(TenantRequestContext);
+
+const filteredTenants =
+  filter === "pending"
+    ? pendingRequests.map((req) => ({
+        id: req.id,
+        name: req.tenant_name,
+        email: req.requester.email || "N/A",
+        is_pending: true,
+        is_deleted: false,
+        is_active: false,
+        userCount: req.userCount || 0,
+        requested_at: req.requested_at,
+      }))
+    : tenants.filter((t) => {
+        const matchesFilter =
+          filter === "all" ||
+          (filter === "active" && t.is_active && !t.is_deleted && !t.is_pending) ||
+          (filter === "inactive" && !t.is_active && !t.is_deleted && !t.is_pending) ||
+          (filter === "deleted" && t.is_deleted);
+
+        const matchesSearch =
+          searchQuery === "" ||
+          t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.email?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        return matchesFilter && matchesSearch;
+      });
 
   // Calculate counts for each filter
   const getCounts = () => {
@@ -503,12 +536,20 @@ const TenantList = () => {
         case "delete":
           apiCall = superAdmin.softDelete(tenant.id);
           break;
-        case "approve":
-          apiCall = superAdmin.approve(tenant.id);
-          break;
-        case "reject":
-          apiCall = superAdmin.reject(tenant.id);
-          break;
+        // case "approve":
+        //   apiCall = superAdmin.approve(tenant.id);
+        //   break;
+        // case "reject":
+        //   apiCall = superAdmin.reject(tenant.id);
+        //   break;
+        // New unified API for approve/reject
+      case "approve":
+      case "reject": {
+        const action = type === "approve" ? "approved" : "rejected";
+        const reviewerId = superAdminId; // replace with actual logged-in super admin ID
+        apiCall = superAdmin.updateStatus(tenant.id, action, reviewerId);
+        break;
+      }
         default:
           return;
       }
@@ -516,6 +557,11 @@ const TenantList = () => {
       await apiCall;
       showToast("Action completed successfully!");
       fetchTenants(); // Re-fetch all tenants to ensure data consistency
+      
+         // Full page reload
+         setTimeout(() => {
+  window.location.reload();
+}, 4000);
     } catch (err) {
       console.error(err);
       showToast("Action failed. Please try again.", "error");
@@ -584,7 +630,7 @@ const TenantList = () => {
           </div>
           <button
             onClick={() => navigate("/superAdmin/create")}
-            className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm font-medium"
+            className="cursor-pointer mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-sm font-medium"
           >
             <MdAdd size={20} className="mr-2" />
             Create New Tenant
@@ -727,7 +773,7 @@ const TenantList = () => {
           {/* Pagination + Summary */}
           {filteredTenants.length > 0 && (
             <div>
-              <div className="px-6 py-3 text-sm text-gray-600 border-t border-gray-200 bg-gray-50">
+              <div className="cursor-pointer px-6 py-3 text-sm text-gray-600 border-t border-gray-200 bg-gray-50">
                 Showing {indexOfFirstTenant + 1} –{" "}
                 {Math.min(indexOfLastTenant, filteredTenants.length)} of{" "}
                 {filteredTenants.length} tenants
@@ -753,7 +799,7 @@ const TenantList = () => {
           actions={
             <button
               onClick={handleCloseView}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="cursor-pointer px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               Close
             </button>
@@ -836,17 +882,17 @@ const TenantList = () => {
             <>
               <button
                 onClick={() => setConfirmAction(null)}
-                className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                className=" cursor-pointer px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmAndExecute}
-                className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
                   confirmAction?.type === "delete" ||
                   confirmAction?.type === "reject"
-                    ? "bg-red-600 text-white hover:bg-red-700"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    ? "cursor-pointer bg-red-600 text-white hover:bg-red-700"
+                    : "cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
                 Confirm
