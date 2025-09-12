@@ -141,14 +141,14 @@ const CreateTenant = () => {
           <div className="border-t pt-4 flex justify-end gap-3">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+              className="cursor-pointer px-4 py-2 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-60 transition"
+              className="cursor-pointer px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-semibold hover:opacity-90 disabled:opacity-60 transition"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
