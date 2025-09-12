@@ -412,9 +412,11 @@ const TenantList = () => {
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
 
   const navigate = useNavigate();
 
@@ -475,6 +477,7 @@ const TenantList = () => {
 
 
   const { pendingRequests,superAdminId } = useContext(TenantRequestContext);
+console.log(pendingRequests)
 
 const filteredTenants =
   filter === "pending"
@@ -522,6 +525,8 @@ const filteredTenants =
   const confirmAndExecute = async () => {
     if (!confirmAction) return;
 
+        setConfirmLoading(true); // Start loading
+
     const { tenant, type } = confirmAction;
     try {
       let apiCall;
@@ -561,11 +566,13 @@ const filteredTenants =
          // Full page reload
          setTimeout(() => {
   window.location.reload();
-}, 4000);
+}, 2000);
     } catch (err) {
       console.error(err);
       showToast("Action failed. Please try again.", "error");
     } finally {
+          setConfirmLoading(false); // Stop loading
+
       setConfirmAction(null);
     }
   };
@@ -887,16 +894,40 @@ const filteredTenants =
                 Cancel
               </button>
               <button
-                onClick={confirmAndExecute}
-                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
-                  confirmAction?.type === "delete" ||
-                  confirmAction?.type === "reject"
-                    ? "cursor-pointer bg-red-600 text-white hover:bg-red-700"
-                    : "cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-              >
-                Confirm
-              </button>
+  onClick={confirmAndExecute}
+  disabled={confirmLoading} // prevent double click
+  className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-medium ${
+    confirmAction?.type === "delete" || confirmAction?.type === "reject"
+      ? "bg-red-600 text-white hover:bg-red-700"
+      : "bg-blue-600 text-white hover:bg-blue-700"
+  } flex items-center justify-center`}
+>
+  {confirmLoading ? (
+    <svg
+      className="animate-spin h-5 w-5 text-white"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v8H4z"
+      />
+    </svg>
+  ) : (
+    "Confirm"
+  )}
+</button>
+
             </>
           }
         >
