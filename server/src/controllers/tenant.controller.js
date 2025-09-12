@@ -876,6 +876,7 @@ export const getTenantsWithUserCount = async (req, res) => {
           tr."email",
           t."is_deleted",
           t."deleted_at",
+          tr.status,
           (
               SELECT COUNT(*) 
               FROM "users" u
