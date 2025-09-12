@@ -14,6 +14,9 @@ export default defineConfig({
             src: resolve(__dirname, 'src'),
         },
     },
+    build: {
+        outDir: "../public",
+    },
     esbuild: {
         loader: 'jsx',
         include: /src\/.*\.jsx?$/,

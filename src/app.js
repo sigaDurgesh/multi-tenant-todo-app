@@ -10,7 +10,17 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors()); // Enable CORS for all routes
+// app.use(cors()); // Enable CORS for all routes
+
+app.use(cors({
+    origin: "*", // allow frontend
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+}))
+
+
+
 app.use(express.json()); // For JSON body parsing
 app.use(express.urlencoded({ extended: true })); // For URL-encoded body parsing
 
