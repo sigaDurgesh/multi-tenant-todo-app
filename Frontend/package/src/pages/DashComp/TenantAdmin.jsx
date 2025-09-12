@@ -97,39 +97,31 @@ const TenantAdminDashboard = () => {
   };
 
  
+  // Wrap fetch in useCallback
+  const fetchUsersCallback = useCallback(async () => {
+    if (!tenantId) return;
 
-  useEffect(() => {
-  if (!tenantId) return;
-
-  let isMounted = true; // Prevent state updates after unmount
-
-  const fetchUsers = async () => {
     try {
-      await fetchTenantUsers(tenantId);
+      setLoading(true);
+      const users = await fetchTenantUsers(tenantId); // assume it returns users array
+      setTenantUsers(users || []);
     } catch (err) {
       console.error("Error fetching tenant users:", err);
-      if (isMounted) {
-        setSnackbar({
-          open: true,
-          message: "Failed to fetch users. Please try again.",
-          severity: "error",
-        });
-      }
+      setSnackbar({
+        open: true,
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [tenantId, fetchTenantUsers]);
 
-  // Fetch immediately on mount / tenantId change
-  fetchUsers();
-
-  // Fetch repeatedly every 30s
-  const interval = setInterval(fetchUsers, 30000);
-
-  // Cleanup
-  return () => {
-    isMounted = false;
-    clearInterval(interval);
-  };
-}, [tenantId]);
+  // Fetch immediately and on interval
+  useEffect(() => {
+    fetchUsersCallback(); // immediate fetch
+    const interval = setInterval(fetchUsersCallback, 30000); // every 30s
+    return () => clearInterval(interval);
+  }, [fetchUsersCallback]);
 
   // Filtering Logic
   const filteredUsers = tenantUsers.filter(
@@ -275,7 +267,7 @@ const TenantAdminDashboard = () => {
                       setStatusFilter(e.target.value);
                       setCurrentPage(1); // Reset to first page on filter change
                     }}
-                    className="w-full p-2 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
+                    className=" cursor-pointer w-full p-2 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
                   >
                     <option value="all">All</option>
                     <option value="active">Active</option>
@@ -447,7 +439,7 @@ const TenantAdminDashboard = () => {
         )}
 
         {/* Snackbar */}
-        {snackbar.open && (
+        {/* {snackbar.open && (
           <div
             className={`fixed bottom-6 right-6 p-4 rounded-lg shadow-xl text-white ${
               snackbar.severity === "success"
@@ -458,7 +450,7 @@ const TenantAdminDashboard = () => {
           >
             {snackbar.message}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
